@@ -32,10 +32,10 @@ def impute_df(
         ]
 
         if forward_column is not None:
-            col_list.append(col(forward_column).alias(forward))
+            col_list.append(col(forward_column).alias("forward"))
 
         if backward_column is not None:
-            col_list.append(col(backward_column).alias("backward")
+            col_list.append(col(backward_column).alias("backward"))
 
         if marker_column in df:
             col_list.append(col(marker_column).alias("marker"))
@@ -54,7 +54,17 @@ def impute_df(
         return df
 
     def remove_constructions(df):
-        return df.filter("marker not like '%c'")
+        return df.select(
+            df["period"],
+            df["strata"],
+            when(df["marker"].endswith("C"), df["output"]).alias("output"),
+            df["aux"],
+            df["ref"],
+            df["forward"],
+            df["backward"],
+            df["marker"]
+        )
+
 
     def impute(df, link_column, marker):
         df = build_links(df, link_column)
