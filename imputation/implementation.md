@@ -1,4 +1,4 @@
-Link calculation
+Link Calculation
 ================
 
 We can calculate the links on a per-strata level in one direction then use
@@ -91,7 +91,7 @@ A construction filter can also be provided. In this case construction is
 only performed when the filter returns true. Otherwise construction is
 skipped for the contributor and period.
 
-Overall algorithm
+Overall Algorithm
 =================
 
 The overall imputation algorithm performs steps in the following order:
