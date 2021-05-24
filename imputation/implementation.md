@@ -54,15 +54,15 @@ Forward Imputation
 ------------------
 
 For forward imputation the data is ordered by period in ascending order. The
-markers for forward imputation are "fir" and "fic" where "fir" means
-forward imputation from response and "fic" means forward imputation from
+markers for forward imputation are "FIR" and "FIC" where "FIR" means
+forward imputation from response and "FIC" means forward imputation from
 construction.
 
 Backward Imputation
 -------------------
 
 In backward imputation the data is ordered by period in descending order.
-The marker for backward imputation is "bi". Of note is that backward
+The marker for backward imputation is "BI". Of note is that backward
 imputation takes priority over both constructed values and forward
 imputation from constructed values. As such, if any of these values are
 present in the block for which backward imputation is being performed they
@@ -85,7 +85,7 @@ auxiliary values for the responders in the current period and
 `auxiliary(current_period)` is the auxiliary value for the contributor being
 constructed for the current period. If the denominator is 0 then the
 denominator defaults to 1. If any values in the auxiliary column are null a
-runtime error is raised. The marker for constructed values is "c".
+runtime error is raised. The marker for constructed values is "C".
 
 A construction filter can also be provided. In this case construction is
 only performed when the filter returns true. Otherwise construction is
