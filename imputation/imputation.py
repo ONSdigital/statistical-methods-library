@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, when
+from pyspark.sql.functions import col, when, lit
 
 def impute_df(
     df,
@@ -16,7 +16,7 @@ def impute_df(
     input_df = df
 
     def validate_df(df):
-        if df.filter(col(auxiliary_column) == lit(None)).count() > 0:
+        if df.filter(col(auxiliary_column).isNull()).count() > 0:
             raise ValueError(
                 f"Auxiliary column {auxiliary_column} contains null values")
 
@@ -57,7 +57,8 @@ def impute_df(
         return df.select(
             df["period"],
             df["strata"],
-            when(df["marker"].endswith("C"), df["output"]).alias("output"),
+            when(df["marker"].endswith("C"), lit(None)).otherwise(
+                df["output"]).alias("output"),
             df["aux"],
             df["ref"],
             df["forward"],
