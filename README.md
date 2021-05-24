@@ -1,2 +1,2 @@
-# SML
+# S.M.L.
 Statistical Methods Library
