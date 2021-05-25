@@ -26,12 +26,12 @@ def impute_df(
         )
 
         for stage in stages:
-            if col_not_null(df, "output"):
+            if df.filter("output IS NULL").count() == 0:
                 return create_output(df)
 
             df = stage(df)
 
-        if not col_not_null(df, "output"):
+        if df.filter("output IS NULL").count() > 0:
             raise RuntimeError("Found null in output after imputation")
 
         return create_output(df)
