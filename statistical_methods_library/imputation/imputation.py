@@ -16,6 +16,9 @@ def impute_df(
 ):
     input_df = df
 
+    def col_not_null(df, col_name):
+        ...
+
     def run(df):
         stages = (
             validate_df,
@@ -46,6 +49,9 @@ def impute_df(
         return df
 
     def prepare_df(df):
+        forward_column = None  # TODO - implement
+        backward_column = None  # TODO - implement
+
         col_list = [
             col(period_column).alias("period"),
             col(strata_column).alias("strata"),
