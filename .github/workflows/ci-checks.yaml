@@ -86,7 +86,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: run isort
-        run: poetry run isort --check-only
+        run: poetry run isort --check-only statistical_methods_library tests
   black:
     runs-on: ubuntu-latest
     strategy:

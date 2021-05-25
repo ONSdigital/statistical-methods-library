@@ -8,18 +8,17 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7"
 pyspark = "2.4.3"
-coverage = "^5.5"
-pytest-cov = "^2.12.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
 black = "^21.5b1"
 isort = "^5.8.0"
 flake8 = "^3.9.2"
+coverage = "^5.5"
+pytest-cov = "^2.12.0"
 
 [tool.isort]
 profile = "black"
-src_paths = ["statistical_methods_library", "tests"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=statistical_methods_library"
