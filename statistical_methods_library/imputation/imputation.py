@@ -1,4 +1,5 @@
-from pyspark.sql.functions import col, when, lit
+from pyspark.sql.functions import col, lit, when
+
 
 def impute_df(
     df,
@@ -11,9 +12,13 @@ def impute_df(
     marker_column,
     forward_link_column=None,
     backward_link_column=None,
-    construction_filter="true"
+    construction_filter="true",
 ):
     input_df = df
+
+    def col_not_null(df, col_name):
+        # TODO - implement
+        ...
 
     def run(df):
         stages = (
@@ -22,7 +27,7 @@ def impute_df(
             forward_impute_from_response,
             backward_impute,
             construct_values,
-            forward_impute_from_construction
+            forward_impute_from_construction,
         )
 
         for stage in stages:
@@ -39,17 +44,21 @@ def impute_df(
     def validate_df(df):
         if df.filter(col(auxiliary_column).isNull()).count() > 0:
             raise ValueError(
-                f"Auxiliary column {auxiliary_column} contains null values")
+                f"Auxiliary column {auxiliary_column} contains null values"
+            )
 
         return df
 
     def prepare_df(df):
+        forward_column = None  # TODO - implement
+        backward_column = None  # TODO - implement
+
         col_list = [
             col(period_column).alias("period"),
             col(strata_column).alias("strata"),
             col(target_column).alias("output"),
             col(auxiliary_column).alias("aux"),
-            col(reference_column).alias("ref")
+            col(reference_column).alias("ref"),
         ]
 
         if forward_column is not None:
@@ -78,15 +87,15 @@ def impute_df(
         return df.select(
             df["period"],
             df["strata"],
-            when(df["marker"].endswith("C"), lit(None)).otherwise(
-                df["output"]).alias("output"),
+            when(df["marker"].endswith("C"), lit(None))
+            .otherwise(df["output"])
+            .alias("output"),
             df["aux"],
             df["ref"],
             df["forward"],
             df["backward"],
-            df["marker"]
+            df["marker"],
         )
-
 
     def impute(df, link_column, marker):
         df = build_links(df, link_column)
@@ -98,11 +107,7 @@ def impute_df(
         return impute(reorder_df(df, "asc"), "forward", "fir")
 
     def backward_impute(df):
-        return impute(
-            reorder_df(remove_constructions(df),
-            "desc"),
-            "backward",
-            "bi")
+        return impute(reorder_df(remove_constructions(df), "desc"), "backward", "bi")
 
     def construct_values(df):
         # TODO: construction calculation
