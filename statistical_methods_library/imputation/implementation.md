@@ -6,7 +6,7 @@ the reciprocal of the previous period's to calculate the other direction's
 links. Links can then be joined onto the rest of the data by strata such
 that each contributor will have its own links. In the event that the link
 columns are provided these steps can be skipped since the link columns can
-be selected as the correctly named colums for imputation.
+be selected as the correctly named columns for imputation.
 
 The link calculation is:
 ```
@@ -101,8 +101,10 @@ The overall imputation algorithm performs steps in the following order:
 4. Construction
 5. Forward imputation from construction
 
-If, at any point, the output column no longer contains null values, the
-function returns. If nulls are still present at the end of the process, a
+* If, at any point, the output column no longer contains null values, the
+function returns. 
+
+* If nulls are still present at the end of the process, a
 runtime error is raised.
 
 TODO
