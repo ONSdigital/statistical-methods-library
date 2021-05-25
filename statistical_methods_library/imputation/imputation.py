@@ -15,6 +15,27 @@ def impute_df(
 ):
     input_df = df
 
+    def run(df):
+        stages = (
+            validate_df,
+            prepare_df,
+            forward_impute_from_response,
+            backward_impute,
+            construct_values,
+            forward_impute_from_construction
+        )
+
+        for stage in stages:
+            if col_not_null(df, "output"):
+                return create_output(df)
+
+            df = stage(df)
+
+        if not col_not_null(df, "output"):
+            raise RuntimeError("Found null in output after imputation")
+
+        return create_output(df)
+
     def validate_df(df):
         if df.filter(col(auxiliary_column).isNull()).count() > 0:
             raise ValueError(
@@ -98,22 +119,4 @@ def impute_df(
 
     # ----------
 
-    stages = (
-        validate_df,
-        prepare_df,
-        forward_impute_from_response,
-        backward_impute,
-        construct_values,
-        forward_impute_from_construction
-    )
-
-    for stage in stages:
-        if col_not_null(df, "output"):
-            return create_output(df)
-
-        df = stage(df)
-
-    if not col_not_null(df, "output"):
-        raise RuntimeError("Found null in output after imputation")
-
-    return create_output(df)
+    return run(df)
