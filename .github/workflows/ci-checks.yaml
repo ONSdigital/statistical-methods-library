@@ -43,7 +43,7 @@ jobs:
           poetry-version: 1.1.6
       - name: Install dependencies
         run: poetry install
-      - name: build
+      - name: test
         run: poetry run pytest
   flake8:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
           poetry-version: 1.1.6
       - name: Install dependencies
         run: poetry install
-      - name: build
+      - name: run flake8
         run: poetry run flake8 statistical_methods_library tests
   isort:
     runs-on: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
           poetry-version: 1.1.6
       - name: Install dependencies
         run: poetry install
-      - name: build
+      - name: run isort
         run: poetry run isort --check-only
   black:
     runs-on: ubuntu-latest
@@ -106,5 +106,5 @@ jobs:
           poetry-version: 1.1.6
       - name: Install dependencies
         run: poetry install
-      - name: build
+      - name: run black
         run: poetry run black --check --diff statistical_methods_library tests
