@@ -69,7 +69,7 @@ def imputation(
             expected_cols.add(forward_link_col)
 
         if backward_link_col is not None:
-            expected_cols.addbackward_link_col)
+            expected_cols.add(backward_link_col)
 
         missing_cols = expected_cols - input_cols
 
