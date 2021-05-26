@@ -1,6 +1,6 @@
 import pytest
 
-from statistical_methods_library.imputation import imputation
+from statistical_methods_library import imputation
 
 auxiliary_col = "auxiliary"
 marker_col = "marker"
@@ -9,6 +9,15 @@ period_col = "period"
 reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
+params = (
+    reference_col,
+    period_col,
+    strata_col,
+    target_col,
+    auxiliary_col,
+    output_col,
+    marker_col
+)
 
 # ====================================================================================
 # --------------- TESTING TEMPLATE ---------------------------
@@ -44,10 +53,10 @@ target_col = "target"
 # --- Test if cols missing from input dataframe(s) ---
 def test_dataframe_column_missing(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv('data/sample_data.csv')
-    bad_dataframe = test_dataframe.drop(strata_col).collect()
-    with pytest.raises(KeyError):
-        ret_val = imputation(bad_dataframe, auxiliary_col, marker_col, output_col,
-                             period_col, reference_col, strata_col, target_col)
+    bad_dataframe = test_dataframe.drop(strata_col)
+    with pytest.raises(imputation.ValidationError):
+        ret_val = imputation.imputation(bad_dataframe, *params)
+
 
 
 # --- Test if output is a dataframe (or the expected type)---
@@ -55,6 +64,5 @@ def test_dataframe_column_missing(fxt_spark_session):
 # noinspection PyMethodMayBeStatic
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv('data/sample_data.csv')
-    ret_val = imputation(test_dataframe, auxiliary_col, marker_col, output_col,
-                         period_col, reference_col, strata_col, target_col)
+    ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
