@@ -1,8 +1,8 @@
 from pyspark.sql.functions import col, lit, when
 
 
-def impute_df(
-    df,
+def imputation(
+    input_df,
     reference_column,
     period_column,
     strata_column,
@@ -12,9 +12,8 @@ def impute_df(
     marker_column,
     forward_link_column=None,
     backward_link_column=None,
-    construction_filter="true",
+    construction_filter="true"
 ):
-    input_df = df
 
     def run(df):
         stages = (
