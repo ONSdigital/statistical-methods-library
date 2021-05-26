@@ -37,8 +37,8 @@ def imputation(
 
 
     def run(df):
+        validate_df(df)
         stages = (
-            validate_df,
             prepare_df,
             forward_impute_from_response,
             backward_impute,
@@ -55,6 +55,7 @@ def imputation(
             raise DataIntegrityError("Found null in output after imputation")
 
         return create_output(df)
+
 
     def validate_df(df):
         input_cols = set(df.columns)
@@ -77,7 +78,7 @@ def imputation(
             raise ValidationError(
                 f"Missing columns: {', '.join(c for c in missing_cols)}"
             )
-        return df
+
 
     def prepare_df(df):
         col_list = [
