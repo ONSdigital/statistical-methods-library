@@ -95,7 +95,7 @@ def imputation(
         if backward_link_col is not None:
             col_list.append(col(backward_link_col).alias("backward"))
 
-        if marker_col in df:
+        if marker_col in df.columns:
             col_list.append(col(marker_col).alias("marker"))
 
         return df.select(col_list)
@@ -105,7 +105,7 @@ def imputation(
         return df
 
     def build_links(df, link_col):
-        if link_col in df:
+        if link_col in df.columns:
             return df
 
         # TODO: link calculation
