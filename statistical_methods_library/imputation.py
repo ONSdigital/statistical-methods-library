@@ -75,7 +75,7 @@ def imputation(
 
         if missing_cols:
             raise ValidationError(
-                f"Missing columns: {', '.join(c for c in missing_cols"
+                f"Missing columns: {', '.join(c for c in missing_cols)}"
             )
         return df
 
