@@ -30,6 +30,11 @@ def imputation(
     backward_link_col=None
 ):
 
+    # --- Validate params ---
+    if not isinstance(input_df, pyspark.sql.DataFrame):
+        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
+
+
     def run(df):
         stages = (
             validate_df,
