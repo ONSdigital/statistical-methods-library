@@ -45,7 +45,7 @@ params = (
 # --- Test type validation on the input dataframe(s) ---
 
 def test_dataframe_not_a_dataframe():
-    with pytest.raises(imputation.ValidationError):
+    with pytest.raises(TypeError):
         imputation.imputation('not_a_dataframe', *params)
 
 
