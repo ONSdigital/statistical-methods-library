@@ -1,3 +1,4 @@
+import pytest
 
 from statistical_methods_library.imputation import imputation
 
@@ -30,6 +31,26 @@ target_col = "target"
 #    constant, you can amend data in the tests without needing new test data.
 # ====================================================================================
 
+
+# --- Test fails with type error if no input ---
+
+
+# --- Test type validation on the input dataframe(s) ---
+
+
+# --- Test type validation on the target column lists(s) ---
+
+
+# --- Test if cols missing from input dataframe(s) ---
+def test_dataframe_column_missing(fxt_spark_session):
+    test_dataframe = fxt_spark_session.read.csv('data/sample_data.csv')
+    bad_dataframe = test_dataframe.drop(strata_col).collect()
+    with pytest.raises(KeyError):
+        ret_val = imputation(bad_dataframe, auxiliary_col, marker_col, output_col,
+                             period_col, reference_col, strata_col, target_col)
+
+
+# --- Test if output is a dataframe (or the expected type)---
 
 # noinspection PyMethodMayBeStatic
 def test_dataframe_returned(fxt_spark_session):
