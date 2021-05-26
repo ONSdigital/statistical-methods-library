@@ -27,8 +27,7 @@ def imputation(
     output_col,
     marker_col,
     forward_link_col=None,
-    backward_link_col=None,
-    construction_filter="true"
+    backward_link_col=None
 ):
 
     def run(df):
@@ -54,15 +53,22 @@ def imputation(
 
     def validate_df(df):
         df_cols = df.columns
-        for check_col in (
+        expected_cols = [
             reference_col,
             period_col,
             strata_col,
             target_col,
             auxiliary_col
-        ):
-            if check_col not in df_cols:
-                raise ValidationError(f"Column {check_col} missing")
+        ]
+        if forward_link_col is not None:
+            expected_cols.append(forward_link_col)
+
+        if backward_link_col is not None:
+            expected_cols.append(backward_link_col)
+
+        for expected_col in expected_cols:
+            if expected_col not in df_cols:
+                raise ValidationError(f"Column {expected_col} missing")
 
         return df
 
