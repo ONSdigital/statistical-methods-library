@@ -53,7 +53,7 @@ params = (
 # --- Test if cols missing from input dataframe(s) ---
 def test_dataframe_column_missing(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv(
-        'tests/imputation/fixture_data/sample_data.csv')
+        'tests/imputation/fixture_data/test_dataframe_returned.csv')
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
         ret_val = imputation.imputation(bad_dataframe, *params)
@@ -65,6 +65,6 @@ def test_dataframe_column_missing(fxt_spark_session):
 # noinspection PyMethodMayBeStatic
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv(
-        'tests/imputation/fixture_data/sample_data.csv')
+        'tests/imputation/fixture_data/test_dataframe_returned.csv')
     ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
