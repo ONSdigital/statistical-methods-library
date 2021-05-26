@@ -39,6 +39,10 @@ params = (
 # 4) If you load the test data in for each test rather than as a module level
 #    constant, you can amend data in the tests without needing new test data.
 # 5) Don't test for python language errors. :)
+
+# We're using double-quotes for strings since SQL requires single-quotes so
+# this helps avoid escaping.
+
 # ====================================================================================
 
 
@@ -53,7 +57,9 @@ def test_dataframe_not_a_dataframe():
 
 def test_dataframe_column_missing(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv(
-        'tests/imputation/fixture_data/test_dataframe_returned.csv')
+        "tests/imputation/fixture_data/test_dataframe_returned.csv",
+        header=True
+    )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
         imputation.imputation(bad_dataframe, *params)
@@ -63,7 +69,9 @@ def test_dataframe_column_missing(fxt_spark_session):
 
 def test_params_blank(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv(
-        'tests/imputation/fixture_data/test_dataframe_returned.csv')
+        "tests/imputation/fixture_data/test_dataframe_returned.csv",
+        header=True
+    )
     bad_params = (
         reference_col,
         period_col,
@@ -81,6 +89,8 @@ def test_params_blank(fxt_spark_session):
 
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv(
-        'tests/imputation/fixture_data/test_dataframe_returned.csv')
+        "tests/imputation/fixture_data/test_dataframe_returned.csv",
+        header=True
+    )
     ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
