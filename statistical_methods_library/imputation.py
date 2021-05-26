@@ -73,9 +73,6 @@ def imputation(
         return df
 
     def prepare_df(df):
-        forward_col = None  # TODO - implement
-        backward_col = None  # TODO - implement
-
         col_list = [
             col(period_col).alias("period"),
             col(strata_col).alias("strata"),
@@ -84,11 +81,11 @@ def imputation(
             col(reference_col).alias("ref"),
         ]
 
-        if forward_col is not None:
-            col_list.append(col(forward_col).alias("forward"))
+        if forward_link_col is not None:
+            col_list.append(col(forward_link_col).alias("forward"))
 
-        if backward_col is not None:
-            col_list.append(col(backward_col).alias("backward"))
+        if backward_link_col is not None:
+            col_list.append(col(backward_link_col).alias("backward"))
 
         if marker_col in df:
             col_list.append(col(marker_col).alias("marker"))
