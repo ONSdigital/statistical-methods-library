@@ -1,6 +1,14 @@
 
 from statistical_methods_library.imputation import imputation
 
+auxiliary_col = "auxiliary"
+marker_col = "marker"
+output_col = "output"
+period_col = "period"
+reference_col = "reference"
+strata_col = "strata"
+target_col = "target"
+
 # ====================================================================================
 # --------------- TESTING TEMPLATE ---------------------------
 # ====================================================================================
@@ -26,5 +34,6 @@ from statistical_methods_library.imputation import imputation
 # noinspection PyMethodMayBeStatic
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = fxt_spark_session.read.csv('data/sample_data.csv')
-    ret_val = imputation(test_dataframe)
+    ret_val = imputation(test_dataframe, auxiliary_col, marker_col, output_col,
+                         period_col, reference_col, strata_col, target_col)
     assert isinstance(ret_val, type(test_dataframe))
