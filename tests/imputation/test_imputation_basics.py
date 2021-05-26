@@ -56,8 +56,7 @@ def test_dataframe_column_missing(fxt_spark_session):
         'tests/imputation/fixture_data/test_dataframe_returned.csv')
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
-        ret_val = imputation.imputation(bad_dataframe, *params)
-
+        imputation.imputation(bad_dataframe, *params)
 
 
 # --- Test if output is a dataframe (or the expected type)---
