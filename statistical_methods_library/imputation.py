@@ -46,10 +46,9 @@ def imputation(
         )
 
         for stage in stages:
+            df = stage(df)
             if df.filter("output IS NULL").count() == 0:
                 return create_output(df)
-
-            df = stage(df)
 
         if df.filter("output IS NULL").count() > 0:
             raise DataIntegrityError("Found null in output after imputation")
