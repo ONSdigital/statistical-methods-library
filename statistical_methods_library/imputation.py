@@ -1,3 +1,4 @@
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Imputation errors ---
@@ -31,7 +32,7 @@ def imputation(
 ):
 
     # --- Validate params ---
-    if not isinstance(input_df, pyspark.sql.DataFrame):
+    if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
 
