@@ -57,24 +57,26 @@ def imputation(
         return create_output(df)
 
     def validate_df(df):
-        df_cols = df.columns
-        expected_cols = [
+        input_cols = set(df.columns)
+        expected_cols = {
             reference_col,
             period_col,
             strata_col,
             target_col,
             auxiliary_col
-        ]
+        }
         if forward_link_col is not None:
-            expected_cols.append(forward_link_col)
+            expected_cols.add(forward_link_col)
 
         if backward_link_col is not None:
-            expected_cols.append(backward_link_col)
+            expected_cols.addbackward_link_col)
 
-        for expected_col in expected_cols:
-            if expected_col not in df_cols:
-                raise ValidationError(f"Column {expected_col} missing")
+        missing_cols = expected_cols - input_cols
 
+        if missing_cols:
+            raise ValidationError(
+                f"Missing columns: {', '.join(c for c in missing_cols"
+            )
         return df
 
     def prepare_df(df):
