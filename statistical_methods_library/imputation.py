@@ -3,15 +3,15 @@ from pyspark.sql.functions import col, lit, when
 
 def imputation(
     input_df,
-    reference_column,
-    period_column,
-    strata_column,
-    target_column,
-    auxiliary_column,
-    output_column,
-    marker_column,
-    forward_link_column=None,
-    backward_link_column=None,
+    reference_col,
+    period_col,
+    strata_col,
+    target_col,
+    auxiliary_col,
+    output_col,
+    marker_col,
+    forward_link_col=None,
+    backward_link_col=None,
     construction_filter="true"
 ):
 
@@ -37,33 +37,33 @@ def imputation(
         return create_output(df)
 
     def validate_df(df):
-        if df.filter(col(auxiliary_column).isNull()).count() > 0:
+        if df.filter(col(auxiliary_col).isNull()).count() > 0:
             raise ValueError(
-                f"Auxiliary column {auxiliary_column} contains null values"
+                f"Auxiliary column {auxiliary_col} contains null values"
             )
 
         return df
 
     def prepare_df(df):
-        forward_column = None  # TODO - implement
-        backward_column = None  # TODO - implement
+        forward_col = None  # TODO - implement
+        backward_col = None  # TODO - implement
 
         col_list = [
-            col(period_column).alias("period"),
-            col(strata_column).alias("strata"),
-            col(target_column).alias("output"),
-            col(auxiliary_column).alias("aux"),
-            col(reference_column).alias("ref"),
+            col(period_col).alias("period"),
+            col(strata_col).alias("strata"),
+            col(target_col).alias("output"),
+            col(auxiliary_col).alias("aux"),
+            col(reference_col).alias("ref"),
         ]
 
-        if forward_column is not None:
-            col_list.append(col(forward_column).alias("forward"))
+        if forward_col is not None:
+            col_list.append(col(forward_col).alias("forward"))
 
-        if backward_column is not None:
-            col_list.append(col(backward_column).alias("backward"))
+        if backward_col is not None:
+            col_list.append(col(backward_col).alias("backward"))
 
-        if marker_column in df:
-            col_list.append(col(marker_column).alias("marker"))
+        if marker_col in df:
+            col_list.append(col(marker_col).alias("marker"))
 
         return df.select(col_list)
 
@@ -71,8 +71,8 @@ def imputation(
         # TODO: implement
         return df
 
-    def build_links(df, link_column):
-        if link_column in df:
+    def build_links(df, link_col):
+        if link_col in df:
             return df
 
         # TODO: link calculation
@@ -92,8 +92,8 @@ def imputation(
             df["marker"],
         )
 
-    def impute(df, link_column, marker):
-        df = build_links(df, link_column)
+    def impute(df, link_col, marker):
+        df = build_links(df, link_col)
 
         # TODO: imputation calculation
         return df
