@@ -1,5 +1,21 @@
 from pyspark.sql.functions import col, lit, when
 
+# --- Imputation errors ---
+
+# Base type for imputation errors
+class ImputationError(Exception):
+    pass
+
+
+# Error raised by dataframe validation
+class ValidationError(ImputationError):
+    pass
+
+
+# Error raised when imputation has failed to impute for data integrity reasons
+class DataIntegrityError(ImputationError):
+    pass
+
 
 def imputation(
     input_df,
@@ -32,15 +48,21 @@ def imputation(
             df = stage(df)
 
         if df.filter("output IS NULL").count() > 0:
-            raise RuntimeError("Found null in output after imputation")
+            raise DataIntegrityError("Found null in output after imputation")
 
         return create_output(df)
 
     def validate_df(df):
-        if df.filter(col(auxiliary_col).isNull()).count() > 0:
-            raise ValueError(
-                f"Auxiliary column {auxiliary_col} contains null values"
-            )
+        df_cols = df.columns
+        for check_col in (
+            reference_col,
+            period_col,
+            strata_col,
+            target_col,
+            auxiliary_col
+        ):
+            if check_col not in df_cols:
+                raise ValidationError(f"Column {check_col} missing")
 
         return df
 
