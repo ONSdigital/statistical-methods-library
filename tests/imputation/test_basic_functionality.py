@@ -103,8 +103,6 @@ def test_params_not_string(fxt_spark_session):
         imputation.imputation(test_dataframe, *bad_params)
 
 
-
-
 # --- Test if output is a dataframe (or the expected type)---
 
 def test_dataframe_returned(fxt_spark_session):
