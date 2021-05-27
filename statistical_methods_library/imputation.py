@@ -51,8 +51,10 @@ def imputation(
             print('---------------')
             print(stage)
             print('---------------')
-            df.show
-            if df.filter(col("output").isNull()).count() == 0:
+            df.show()
+            null_values_df = df.filter(col("output").isNull())
+            null_values_df.show()
+            if null_values_df.count() == 0:
                 return create_output(df)
 
         if df.filter(col("output").isNull()).count() > 0:
