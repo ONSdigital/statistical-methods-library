@@ -111,10 +111,63 @@ def imputation(
         # TODO: implement
         return df
 
+    def calculate_previous_period(period):
+        numeric_period = int(period)
+        if period.endswith("01"):
+            return str(numeric_period - 89)
+
+        else:
+            return str(numeric_period - 1)
+
     def build_links(df):
+        df_list = []
 
+        for strata_row in df.select("strata").distinct().toLocalIterator():
+            strata_df = df.filter(df.strata == strata_row["strata"])
+            strata_df_list = []
+            for period in strata_df.select("period").distinct().toLocalIterator():
+                df1 = strata_df.filter(df.period == period)
+                df2 = strata_df.filter(df.period == calculate_previous_period(period))
+                working_df = df1.join(
+                    df2,
+                    (df1.reference == df2.reference, df1.strata == df2.strata),
+                    'inner'
+                ).select(
+                    df1.strata,
+                    df1.target,
+                    df2.target.alias(other_target))
+                working_df = working_df.groupBy(working_df.strata).agg(
+                    {'target': 'sum', 'other_target': 'sum'})
+                working_df = working_df.withColumn(
+                    "forward",
+                    col("sum(target)")/when(
+                        col("sum(other_target)").isNull(),
+                        1).otherwise(col("sum(other_target)")
+                    )
+                ).withColumn("period", lit(period))
+                strata_df_list.append(working_df)
 
-        # TODO: link calculation
+            strata_union_df = strata_df_list[0]
+            for strata_part_df in strata_df_list[1:]:
+                strata_union_df.unionAll(strata_part_df)
+
+            strata_link_df = strata_union_df.sort(col("period").asc()
+                ).withColumn("backward", col(1/lead(col("forward")))).alias(
+                    "strata_link")
+            df_list.append(strata_link_df)
+
+        union_df = df_list[0]
+        for part_df in df_list:
+            union_df.unionAll(part_df)
+
+        df = df.join(
+            union_df,
+            (df.period == union_df.strata_link_period,
+                df.strata == union_df.strata_link_strata),
+            "inner"
+        ).drop(["strata_link_period", "strata_link_strata"]).withColumnRenamed(
+            "strata_link_forward", "forward").withColumnRenamed(
+            "strata_link_backward", "backward")
         return df
 
     def remove_constructions(df):
