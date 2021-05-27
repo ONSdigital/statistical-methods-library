@@ -111,9 +111,8 @@ def imputation(
         # TODO: implement
         return df
 
-    def build_links(df, link_col):
-        if link_col in df.columns:
-            return df
+    def build_links(df):
+
 
         # TODO: link calculation
         return df
