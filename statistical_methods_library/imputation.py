@@ -48,6 +48,10 @@ def imputation(
 
         for stage in stages:
             df = stage(df)
+            print('---------------')
+            print(stage)
+            print('---------------')
+            df.show
             if df.filter(col("output").isNull()).count() == 0:
                 return create_output(df)
 
