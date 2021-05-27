@@ -3,6 +3,7 @@ from pyspark.sql.functions import col, lit, when
 
 # --- Imputation errors ---
 
+
 # Base type for imputation errors
 class ImputationError(Exception):
     pass
@@ -35,7 +36,6 @@ def imputation(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
-
     def run(df):
         validate_df(df)
         stages = (
@@ -55,7 +55,6 @@ def imputation(
             raise DataIntegrityError("Found null in output after imputation")
 
         return create_output(df)
-
 
     def validate_df(df):
         input_cols = set(df.columns)
@@ -78,7 +77,6 @@ def imputation(
             raise ValidationError(
                 f"Missing columns: {', '.join(c for c in missing_cols)}"
             )
-
 
     def prepare_df(df):
         col_list = [
