@@ -44,7 +44,9 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: test
-        run: poetry run pytest
+        run: |
+          apt-get update && apt-get install -y  openjdk-8-jdk-headless
+          poetry run pytest
   flake8:
     runs-on: ubuntu-latest
     strategy:
