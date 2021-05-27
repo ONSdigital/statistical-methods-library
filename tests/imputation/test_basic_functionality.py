@@ -85,6 +85,24 @@ def test_params_blank(fxt_spark_session):
         imputation.imputation(test_dataframe, *bad_params)
 
 
+def test_params_not_string(fxt_spark_session):
+    test_dataframe = fxt_spark_session.read.csv(
+        "tests/imputation/fixture_data/test_dataframe_returned.csv",
+        header=True
+    )
+    bad_params = (
+        reference_col,
+        period_col,
+        strata_col,
+        ["target_col"],
+        auxiliary_col,
+        output_col,
+        marker_col
+    )
+    with pytest.raises(TypeError):
+        imputation.imputation(test_dataframe, *bad_params)
+
+
 
 
 # --- Test if output is a dataframe (or the expected type)---
