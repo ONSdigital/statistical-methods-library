@@ -119,7 +119,7 @@ def imputation(
         else:
             return str(numeric_period - 1)
 
-    def build_links(df):
+    def calculate_ratios(df):
         df_list = []
 
         for strata_val in df.select("strata").distinct().toLocalIterator():
@@ -191,8 +191,6 @@ def imputation(
         )
 
     def impute(df, link_col, marker):
-        df = build_links(df):
-
         # TODO: imputation calculation
         return df
 
