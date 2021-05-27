@@ -191,7 +191,7 @@ def imputation(
         )
 
     def impute(df, link_col, marker):
-        df = build_links(df, link_col)
+        df = build_links(df):
 
         # TODO: imputation calculation
         return df
