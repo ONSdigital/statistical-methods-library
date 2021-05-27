@@ -71,8 +71,17 @@ def imputation(
         if backward_link_col is not None:
             expected_cols.add(backward_link_col)
 
-        missing_cols = expected_cols - input_cols
+        # Check to see if the col names not blank.
+        for col_name in expected_cols:
+            if not isinstance(col_name, str):
+                msg = "All column names provided in params must be strings."
+                raise TypeError(msg)
+            if col_name == "":
+                msg = "Column name strings provided in params must not be empty."
+                raise ValueError(msg)
 
+        # Check to see if any required columns are missing from dataframe.
+        missing_cols = expected_cols - input_cols
         if missing_cols:
             raise ValidationError(
                 f"Missing columns: {', '.join(c for c in missing_cols)}"

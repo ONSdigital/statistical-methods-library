@@ -81,8 +81,10 @@ def test_params_blank(fxt_spark_session):
         output_col,
         marker_col
     )
-    with pytest.raises(imputation.ValidationError):
+    with pytest.raises(ValueError):
         imputation.imputation(test_dataframe, *bad_params)
+
+
 
 
 # --- Test if output is a dataframe (or the expected type)---
