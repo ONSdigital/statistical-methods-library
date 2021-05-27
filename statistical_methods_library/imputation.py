@@ -147,7 +147,7 @@ def imputation(
                 working_df = working_df.withColumn(
                     "forward",
                     col("sum(target)")/when(
-                        col("sum(other_target)").isNull(),
+                        col("sum(other_target)") == 0,
                         1).otherwise(col("sum(other_target)")
                     )
                 ).withColumn("period", lit(period))
@@ -158,8 +158,10 @@ def imputation(
                 strata_union_df.unionAll(strata_part_df)
 
             strata_link_df = strata_union_df.sort(col("period").asc()
-                ).withColumn("backward", col(1/lead(col("forward")))).alias(
-                    "strata_link")
+                ).withColumn("backward", when(
+                    lead(col("forward")).isNull(), lit(None)).otherwise(
+                    col(1/lead(col("forward"))))).alias("strata_link")
+
             df_list.append(strata_link_df)
 
         union_df = df_list[0]
