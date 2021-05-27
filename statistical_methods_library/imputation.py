@@ -130,6 +130,10 @@ def imputation(
                 df1 = strata_df.filter(df.period == period)
                 df2 = strata_df.filter(
                     df.period == calculate_previous_period(period))
+                if df2.count() == 0:
+                    # No previous period so nothing to do.
+                    continue
+
                 working_df = df1.join(
                     df2,
                     (df1.reference == df2.reference, df1.strata == df2.strata),
