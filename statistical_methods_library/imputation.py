@@ -175,7 +175,7 @@ def imputation(
             "inner"
         ).drop(["strata_link_period", "strata_link_strata"]).withColumnRenamed(
             "strata_link_forward", "forward").withColumnRenamed(
-            "strata_link_backward", "backward")
+            "strata_link_backward", "backward").fillna(1, ["forward", "backward"])
         return df
 
     def remove_constructions(df):
