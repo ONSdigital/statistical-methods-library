@@ -122,12 +122,14 @@ def imputation(
     def build_links(df):
         df_list = []
 
-        for strata_row in df.select("strata").distinct().toLocalIterator():
-            strata_df = df.filter(df.strata == strata_row["strata"])
+        for strata_val in df.select("strata").distinct().toLocalIterator():
+            strata_df = df.filter(df.strata == strata_val["strata"])
             strata_df_list = []
-            for period in strata_df.select("period").distinct().toLocalIterator():
+            for period_val in strata_df.select("period").distinct().toLocalIterator():
+                period = period_val["period"]
                 df1 = strata_df.filter(df.period == period)
-                df2 = strata_df.filter(df.period == calculate_previous_period(period))
+                df2 = strata_df.filter(
+                    df.period == calculate_previous_period(period))
                 working_df = df1.join(
                     df2,
                     (df1.reference == df2.reference, df1.strata == df2.strata),
