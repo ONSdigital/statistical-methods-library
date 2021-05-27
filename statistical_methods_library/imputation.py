@@ -91,7 +91,7 @@ def imputation(
         col_list = [
             col(period_col).alias("period"),
             col(strata_col).alias("strata"),
-            col(target_col).alias("output"),
+            col(target_col).alias("target"),
             col(auxiliary_col).alias("aux"),
             col(reference_col).alias("ref"),
         ]
@@ -136,7 +136,7 @@ def imputation(
 
                 working_df = df1.join(
                     df2,
-                    (df1.reference == df2.reference, df1.strata == df2.strata),
+                    (df1.ref == df2.ref, df1.strata == df2.strata),
                     'inner'
                 ).select(
                     df1.strata,
