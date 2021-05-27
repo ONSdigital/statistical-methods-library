@@ -1,5 +1,5 @@
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, lit, when
+from pyspark.sql.functions import col, lead, lit, when
 
 # --- Imputation errors ---
 
@@ -135,7 +135,7 @@ def imputation(
                 ).select(
                     df1.strata,
                     df1.target,
-                    df2.target.alias(other_target))
+                    df2.target.alias("other_target"))
                 working_df = working_df.groupBy(working_df.strata).agg(
                     {'target': 'sum', 'other_target': 'sum'})
                 working_df = working_df.withColumn(
