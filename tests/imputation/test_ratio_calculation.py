@@ -80,4 +80,4 @@ def test_ratios_as_expected(fxt_spark_session):
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
-    ret_val.display()
+    ret_val.show()
