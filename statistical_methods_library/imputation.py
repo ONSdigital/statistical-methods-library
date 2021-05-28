@@ -128,9 +128,11 @@ def imputation(
             strata_df_list = []
             for period_val in strata_df.select("period").distinct().toLocalIterator():
                 period = period_val["period"]
-                df_current_period = strata_df.filter(df.period == period)
+                df_current_period = strata_df.filter(df.period == period).alias(
+                    "current_")
                 df_previous_period = strata_df.filter(
-                    df.period == calculate_previous_period(period))
+                    df.period == calculate_previous_period(period)).alias(
+                        "prev_")
                 if df_previous_period.count() == 0:
                     # No previous period so nothing to do.
                     continue
@@ -140,13 +142,13 @@ def imputation(
                 # for all contributors in a period as the values now line up.
                 working_df = df_current_period.join(
                     df_previous_period,
-                    (df_current_period.ref == df_previous_period.ref,
-                        df_current_period.strata == df_previous_period.strata),
+                    (col(current.ref) == col(prev.ref)),
                     'inner'
                 ).select(
-                    df_current_period.strata,
-                    df_current_period.output,
-                    df_previous_period.output.alias("other_output"))
+                    col("current.period").alias("period"),
+                    col("current.strata").alias("strata"),
+                    col("current.output").alias("output"),
+                    col("prev.output").alias("other_output"))
                 working_df = working_df.groupBy(working_df.period).agg(
                     {'output': 'sum', 'other_output': 'sum'})
 
@@ -160,7 +162,7 @@ def imputation(
                     )
                 ).withColumn("period", lit(period))
 
-                # Store the dcompleted period.
+                # Store the completed period.
                 strata_df_list.append(working_df)
 
             # Reassemble our completed strata dataframe.
@@ -191,12 +193,12 @@ def imputation(
         # correctly without special-casing for null values.
         ret_df = df.join(
             union_df,
-            (df.period == union_df.strata_ratio_period,
-                df.strata == union_df.strata_ratio_strata),
+            (col("period") == col("strata_ratio.period"),
+                col("strata") == col("strata_ratio.strata")),
             "inner"
-        ).drop("strata_ratio_period", "strata_ratio_strata").withColumnRenamed(
-            "strata_ratio_forward", "forward").withColumnRenamed(
-            "strata_ratio_backward", "backward").fillna(1, ["forward", "backward"])
+        ).drop("strata_ratio.period", "strata_ratio.strata").withColumnRenamed(
+            "strata_ratio.forward", "forward").withColumnRenamed(
+            "strata_ratio.backward", "backward").fillna(1, ["forward", "backward"])
         return ret_df
 
     def remove_constructions(df):
