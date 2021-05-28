@@ -81,5 +81,3 @@ def test_ratios_as_expected(fxt_spark_session):
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
     ret_val.display()
-
-
