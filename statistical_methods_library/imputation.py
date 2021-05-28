@@ -170,7 +170,7 @@ def imputation(
             # Reassemble our completed strata dataframe.
             strata_union_df = strata_df_list[0]
             for strata_part_df in strata_df_list[1:]:
-                strata_union_df.unionAll(strata_part_df)
+                strata_union_df.union(strata_part_df)
 
             strata_ratio_df = strata_union_df.withColumn(
             "strata",
@@ -181,7 +181,7 @@ def imputation(
         # Reassemble all the strata now we have ratios for them.
         ratio_df = ratio_df_list[0]
         for part_df in ratio_df_list[1:]:
-            ratio_df.unionAll(part_df)
+            ratio_df.union(part_df)
 
         # Join the strata ratios onto the input such that each contributor has
         # a forward ratio. Also fill in any nulls with 1 so that imputation
