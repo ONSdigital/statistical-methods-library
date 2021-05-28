@@ -108,4 +108,7 @@ def test_params_not_string(fxt_spark_session):
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation
+    _row_count = ret_val.count()
     assert isinstance(ret_val, type(test_dataframe))
+
