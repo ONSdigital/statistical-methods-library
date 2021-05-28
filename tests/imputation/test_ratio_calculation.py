@@ -66,6 +66,6 @@ def test_dataframe_returned(fxt_spark_session):
 def test_ratios_as_expected(fxt_spark_session):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
-    ret_cols = ret_val.columns()
+    ret_cols = ret_val.columns
     assert "forward" in ret_cols
     assert "backward" in ret_cols
