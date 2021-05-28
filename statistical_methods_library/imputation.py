@@ -135,6 +135,9 @@ def imputation(
                     # No previous period so nothing to do.
                     continue
 
+                # Put the values from the current and previous periods for a
+                # contributor on the same row. Then calculate the sum for both
+                # for all contributors in a period as the values now line up.
                 working_df = df_current_period.join(
                     df_previous_period,
                     (df_current_period.ref == df_previous_period.ref,
@@ -144,8 +147,11 @@ def imputation(
                     df_current_period.strata,
                     df_current_period.output,
                     df_previous_period.output.alias("other_output"))
-                working_df = working_df.groupBy(working_df.strata).agg(
+                working_df = working_df.groupBy(working_df.period).agg(
                     {'output': 'sum', 'other_output': 'sum'})
+
+                # Calculate the forward ratio for every period using 1 in the
+                # case of a 0 denominator.
                 working_df = working_df.withColumn(
                     "forward",
                     col("sum(output)")/when(
@@ -153,23 +159,36 @@ def imputation(
                         1).otherwise(col("sum(other_output)")
                     )
                 ).withColumn("period", lit(period))
+
+                # Store the dcompleted period.
                 strata_df_list.append(working_df)
 
+            # Reassemble our completed strata dataframe.
             strata_union_df = strata_df_list[0]
             for strata_part_df in strata_df_list[1:]:
                 strata_union_df.unionAll(strata_part_df)
 
+            # Now we've calculated our full set of forward ratios, calculate
+            # the backward ones as the reciprocal of the forward ratio for
+            # the next period. Leave as null in the case of the last row
+            # as it doesn't have a next period.
             strata_ratio_df = strata_union_df.sort(col("period").asc()
                 ).withColumn("backward", when(
                     lead(col("forward")).isNull(), lit(None)).otherwise(
                     col(1/lead(col("forward"))))).alias("strata_ratio")
 
+            # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
 
+        # Reassemble all the strata now we have ratios for them.
         union_df = ratio_df_list[0]
         for part_df in ratio_df_list[1:]:
             union_df.unionAll(part_df)
 
+        # Join the strata ratios onto the input such that each contributor has
+        # forward and backward ratios. Fill in any missing ratios with 1 as
+        # per the spec. This filling is needed so that imputation calculations work
+        # correctly without special-casing for null values.
         ret_df = df.join(
             union_df,
             (df.period == union_df.strata_ratio_period,
