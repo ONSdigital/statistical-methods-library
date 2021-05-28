@@ -173,20 +173,9 @@ def imputation(
             for strata_part_df in strata_df_list[1:]:
                 strata_union_df.unionAll(strata_part_df)
 
-            # Now we've calculated our full set of forward ratios, calculate
-            # the backward ones as the reciprocal of the forward ratio for
-            # the next period. Leave as null in the case of the last row
-            # as it doesn't have a next period.
-            strata_ratio_window = Window.orderBy(strata_union_df.period)
             strata_ratio_df = strata_union_df.withColumn(
-                "backward",
-                1/lead(
-                    col("forward"),
-                    1,
-                    1
-                ).over(strata_ratio_window)
-            ).withColumn("strata", lit(strata_val["strata"]))
-
+            "strata",
+            lit(strata_val["strata"]))
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
 
@@ -196,17 +185,25 @@ def imputation(
             ratio_df.unionAll(part_df)
 
         # Join the strata ratios onto the input such that each contributor has
-        # forward and backward ratios. Fill in any missing ratios with 1 as
-        # per the spec. This filling is needed so that imputation calculations work
-        # correctly without special-casing for null values.
+        # a forward ratio. Also fill in any nulls with 1 so that imputation
+        # behaves correctly without having to special-case for null values.
         ret_df = df.join(ratio_df, ["period", "strata"]).select(
             df.ref,
             df.period,
             df.strata,
             df.output,
             df.aux,
-            ratio_df.forward,
-            ratio_df.backward).fillna(1, ["forward", "backward"])
+            ratio_df.forward).fillna(1, "forward")
+
+        # Calculate the backward ratio as the reciprocal of the forward ratio
+        # from the next period for every contributor.
+        ret_df = ret_df.withColumn(
+            "backward",
+            1/lead(
+                ret_df.forward
+            ).over(Window.partitionBy("ref").orderBy("period"))
+        )
+
         return ret_df
 
     def remove_constructions(df):
