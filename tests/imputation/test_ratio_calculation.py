@@ -23,7 +23,7 @@ params = (
 
 def load_test_csv(spark_session, filename):
     path = "tests/imputation/fixture_data/"
-    filepath = os.path.join(path, filename, ".csv")
+    filepath = os.path.join(path, filename)
     test_dataframe = spark_session.read.csv(filepath, header=True)
     return test_dataframe
 
@@ -56,7 +56,7 @@ def load_test_csv(spark_session, filename):
 # --- Test if output is a dataframe (or the expected type)---
 
 def test_dataframe_returned(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation")
+    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
 
@@ -64,9 +64,8 @@ def test_dataframe_returned(fxt_spark_session):
 # --- Test if output contents is as expected, both new columns and data content ---
 
 def test_ratios_as_expected(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation")
+    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     ret_cols = ret_val.columns()
     assert "forward" in ret_cols
     assert "backward" in ret_cols
-    
