@@ -1,6 +1,5 @@
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, lead, lit, when
-from pyspark.sql.window import Window
+from pyspark.sql.functions import col, lit, when
 
 # --- Imputation errors ---
 
@@ -194,16 +193,6 @@ def imputation(
             df.output,
             df.aux,
             ratio_df.forward).fillna(1, "forward")
-
-        # Calculate the backward ratio as the reciprocal of the forward ratio
-        # from the next period for every contributor.
-        ret_df = ret_df.withColumn(
-            "backward",
-            1/lead(
-                ret_df.forward
-            ).over(Window.partitionBy("ref").orderBy("period"))
-        )
-
         return ret_df
 
     def remove_constructions(df):
