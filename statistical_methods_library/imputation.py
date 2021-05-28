@@ -1,5 +1,6 @@
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lead, lit, when
+from pyspark.sql.window import Window
 
 # --- Imputation errors ---
 
@@ -176,13 +177,13 @@ def imputation(
             # the backward ones as the reciprocal of the forward ratio for
             # the next period. Leave as null in the case of the last row
             # as it doesn't have a next period.
-            strata_ratio_df = strata_union_df.sort(
-                col("period").asc()).withColumn(
+            strata_ratio_window = Window.orderBy(strata_union_df.period)
+            strata_ratio_df = strata_union_df.withColumn(
                 "backward",
                 when(
-                    lead(col("forward")).isNull(),
+                    lead(col("forward")).over(strata_ratio_window).isNull(),
                     lit(None)).otherwise(
-                    1/lead(col("forward"))
+                    1/lead(col("forward")).over(strata_ratio_window)
                 )
             ).withColumn("strata", lit(strata_val["strata"]))
 
