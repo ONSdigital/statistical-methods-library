@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from statistical_methods_library import imputation
 
@@ -18,6 +19,14 @@ params = (
     output_col,
     marker_col
 )
+
+
+def load_test_csv(fxt_spark_session, filename):
+    path = "tests/imputation/fixture_data/"
+    filepath = os.path.join(path, filename, ".csv")
+    test_dataframe = fxt_spark_session.read.csv(filepath, header=True)
+    return test_dataframe
+
 
 # ====================================================================================
 # --------------- TESTING TEMPLATE ---------------------------
@@ -56,10 +65,7 @@ def test_dataframe_not_a_dataframe():
 # --- Test if cols missing from input dataframe(s) ---
 
 def test_dataframe_column_missing(fxt_spark_session):
-    test_dataframe = fxt_spark_session.read.csv(
-        "tests/imputation/fixture_data/test_dataframe_returned.csv",
-        header=True
-    )
+    test_dataframe = load_test_csv("test_basic_functionality")
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
         imputation.imputation(bad_dataframe, *params)
@@ -68,10 +74,7 @@ def test_dataframe_column_missing(fxt_spark_session):
 # --- Test if params null ---
 
 def test_params_blank(fxt_spark_session):
-    test_dataframe = fxt_spark_session.read.csv(
-        "tests/imputation/fixture_data/test_dataframe_returned.csv",
-        header=True
-    )
+    test_dataframe = load_test_csv("test_basic_functionality")
     bad_params = (
         reference_col,
         period_col,
@@ -86,10 +89,7 @@ def test_params_blank(fxt_spark_session):
 
 
 def test_params_not_string(fxt_spark_session):
-    test_dataframe = fxt_spark_session.read.csv(
-        "tests/imputation/fixture_data/test_dataframe_returned.csv",
-        header=True
-    )
+    test_dataframe = load_test_csv("test_basic_functionality")
     bad_params = (
         reference_col,
         period_col,
@@ -106,9 +106,6 @@ def test_params_not_string(fxt_spark_session):
 # --- Test if output is a dataframe (or the expected type)---
 
 def test_dataframe_returned(fxt_spark_session):
-    test_dataframe = fxt_spark_session.read.csv(
-        "tests/imputation/fixture_data/test_dataframe_returned.csv",
-        header=True
-    )
+    test_dataframe = load_test_csv("test_basic_functionality")
     ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))

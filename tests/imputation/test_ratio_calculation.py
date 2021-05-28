@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from statistical_methods_library import imputation
 
@@ -19,12 +20,18 @@ params = (
     marker_col
 )
 
+
+def load_test_csv(fxt_spark_session, filename):
+    path = "tests/imputation/fixture_data/"
+    filepath = os.path.join(path, filename, ".csv")
+    test_dataframe = fxt_spark_session.read.csv(filepath, header=True)
+    return test_dataframe
+
+
 # ====================================================================================
 # --------------- TESTING TEMPLATE ---------------------------
 # ====================================================================================
-# --- Test type validation on the input dataframe(s) ---
-# --- Test if cols missing from input dataframe(s) ---
-# --- Test if any run-time params are null ---
+
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents is as expected, both new columns and data content ---
 # --- Test any other error based outputs ---
@@ -44,3 +51,22 @@ params = (
 # this helps avoid escaping.
 
 # ====================================================================================
+
+
+# --- Test if output is a dataframe (or the expected type)---
+
+def test_dataframe_returned(fxt_spark_session):
+    test_dataframe = load_test_csv("test_ratio_calculation")
+    ret_val = imputation.imputation(test_dataframe, *params)
+    assert isinstance(ret_val, type(test_dataframe))
+
+
+# --- Test if output contents is as expected, both new columns and data content ---
+
+def test_ratios_as_expected(fxt_spark_session):
+    test_dataframe = load_test_csv("test_ratio_calculation")
+    ret_val = imputation.imputation(test_dataframe, *params)
+    ret_cols = ret_val.columns()
+    assert "forward" in ret_cols
+    assert "backward" in ret_cols
+    
