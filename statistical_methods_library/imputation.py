@@ -161,8 +161,7 @@ def imputation(
                     "forward",
                     col("sum(output)")/when(
                         col("sum(other_output)") == 0,
-                        1).otherwise(col("sum(other_output)")
-                    )
+                        1).otherwise(col("sum(other_output)"))
                 ).withColumn("period", lit(period))
 
                 # Store the completed period.
@@ -177,11 +176,15 @@ def imputation(
             # the backward ones as the reciprocal of the forward ratio for
             # the next period. Leave as null in the case of the last row
             # as it doesn't have a next period.
-            strata_ratio_df = strata_union_df.sort(col("period").asc()
-                ).withColumn("backward", when(
-                    lead(col("forward")).isNull(), lit(None)).otherwise(
-                    1/lead(col("forward")))).withColumn(
-                    "strata", lit(strata_val["strata"]))
+            strata_ratio_df = strata_union_df.sort(
+                col("period").asc()).withColumn(
+                "backward",
+                when(
+                    lead(col("forward")).isNull(),
+                    lit(None)).otherwise(
+                    1/lead(col("forward"))
+                )
+            ).withColumn("strata", lit(strata_val["strata"]))
 
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
@@ -195,8 +198,7 @@ def imputation(
         # forward and backward ratios. Fill in any missing ratios with 1 as
         # per the spec. This filling is needed so that imputation calculations work
         # correctly without special-casing for null values.
-        ret_df = df.join(ratio_df, ["period", "strata"]
-        ).select(
+        ret_df = df.join(ratio_df, ["period", "strata"]).select(
             df.ref,
             df.period,
             df.strata,
