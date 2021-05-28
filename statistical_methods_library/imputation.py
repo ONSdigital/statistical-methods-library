@@ -180,11 +180,11 @@ def imputation(
             strata_ratio_window = Window.orderBy(strata_union_df.period)
             strata_ratio_df = strata_union_df.withColumn(
                 "backward",
-                when(
-                    lead(col("forward")).over(strata_ratio_window).isNull(),
-                    lit(None)).otherwise(
-                    1/lead(col("forward")).over(strata_ratio_window)
-                )
+                1/lead(
+                    col("forward"),
+                    1,
+                    1
+                ).over(strata_ratio_window)
             ).withColumn("strata", lit(strata_val["strata"]))
 
             # Store the completed ratios for this strata.
