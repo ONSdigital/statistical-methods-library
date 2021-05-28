@@ -177,7 +177,7 @@ def imputation(
             strata_ratio_df = strata_union_df.sort(col("period").asc()
                 ).withColumn("backward", when(
                     lead(col("forward")).isNull(), lit(None)).otherwise(
-                    col(lit(1)/lead(col("forward"))))).alias("strata_ratio")
+                    1/lead(col("forward")))).alias("strata_ratio")
 
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
