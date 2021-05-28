@@ -191,6 +191,7 @@ def imputation(
         # forward and backward ratios. Fill in any missing ratios with 1 as
         # per the spec. This filling is needed so that imputation calculations work
         # correctly without special-casing for null values.
+        union_df = union_df.alias("strata_ratio")
         ret_df = df.join(
             union_df,
             (col("period") == col("strata_ratio.period"),
