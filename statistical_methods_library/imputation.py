@@ -142,7 +142,7 @@ def imputation(
                 # for all contributors in a period as the values now line up.
                 working_df = df_current_period.join(
                     df_previous_period,
-                    (col(current.ref) == col(prev.ref)),
+                    (col("current.ref") == col("prev.ref")),
                     'inner'
                 ).select(
                     col("current.period").alias("period"),
