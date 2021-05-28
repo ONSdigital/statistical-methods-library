@@ -181,7 +181,7 @@ def imputation(
                 ).withColumn("backward", when(
                     lead(col("forward")).isNull(), lit(None)).otherwise(
                     1/lead(col("forward")))).withColumn(
-                    "strata", lit(strata))
+                    "strata", lit(strata_val["strata"]))
 
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
