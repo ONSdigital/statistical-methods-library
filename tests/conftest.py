@@ -7,8 +7,10 @@ def fxt_spark_session():
     """
     Creates a Spark session to be used throughout all tests.
     """
-    yield (SparkSession.builder
+    yield (
+        SparkSession.builder
         .appName("tests")
         .master("local")
         .enableHiveSupport()
-        .getOrCreate())
+        .getOrCreate()
+    )
