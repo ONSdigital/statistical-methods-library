@@ -195,15 +195,14 @@ def imputation(
         # forward and backward ratios. Fill in any missing ratios with 1 as
         # per the spec. This filling is needed so that imputation calculations work
         # correctly without special-casing for null values.
-        ratio_df = ratio_df.alias("ratio")
-        ret_df = df.join(
-            ratio_df,
-            (col("period") == col("ratio.period"),
-                col("strata") == col("ratio.strata")),
-            "inner"
-        ).drop("ratio.period", "ratio.strata").withColumnRenamed(
-            "ratio.forward", "forward").withColumnRenamed(
-            "ratio.backward", "backward").fillna(1, ["forward", "backward"])
+        ret_df = df.join(ratio_df, ("period", "strata")
+        ).select(
+            df.ref,
+            df.period,
+            df.strata,
+            df.output,
+            ratio_df.forward,
+            ratio_df.backward).fillna(1, ["forward", "backward"])
         return ret_df
 
     def remove_constructions(df):
