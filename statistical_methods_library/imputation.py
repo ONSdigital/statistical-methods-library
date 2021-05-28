@@ -40,6 +40,7 @@ def imputation(
         validate_df(df)
         stages = (
             prepare_df,
+            calculate_ratios,
             forward_impute_from_response,
             backward_impute,
             construct_values,
