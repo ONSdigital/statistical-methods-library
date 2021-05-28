@@ -129,10 +129,10 @@ def imputation(
             for period_val in strata_df.select("period").distinct().toLocalIterator():
                 period = period_val["period"]
                 df_current_period = strata_df.filter(df.period == period).alias(
-                    "current_")
+                    "current")
                 df_previous_period = strata_df.filter(
                     df.period == calculate_previous_period(period)).alias(
-                        "prev_")
+                        "prev")
                 if df_previous_period.count() == 0:
                     # No previous period so nothing to do.
                     continue
