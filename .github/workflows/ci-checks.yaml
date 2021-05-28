@@ -54,7 +54,12 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: test
-        run: poetry run pytest
+        run: poetry run pytest > test-output.log 2>&1
+      - name: Archive test output
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-output-log
+          path: test-output.log
   flake8:
     runs-on: ubuntu-latest
     strategy:
