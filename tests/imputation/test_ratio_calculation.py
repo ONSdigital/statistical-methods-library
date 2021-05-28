@@ -74,6 +74,4 @@ def test_new_columns_created(fxt_spark_session):
 def test_ratios_as_expected(fxt_spark_session):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
-    ret_val.show()
-    assert isinstance(ret_val, type(test_dataframe))
-
+    ret_val.select("*").show()
