@@ -91,7 +91,7 @@ def imputation(
         col_list = [
             col(period_col).alias("period"),
             col(strata_col).alias("strata"),
-            col(target_col).alias("target"),
+            col(target_col).alias("output"),
             col(auxiliary_col).alias("aux"),
             col(reference_col).alias("ref"),
         ]
@@ -140,15 +140,15 @@ def imputation(
                     'inner'
                 ).select(
                     df1.strata,
-                    df1.target,
-                    df2.target.alias("other_target"))
+                    df1.output,
+                    df2.output.alias("other_output"))
                 working_df = working_df.groupBy(working_df.strata).agg(
-                    {'target': 'sum', 'other_target': 'sum'})
+                    {'output': 'sum', 'other_output': 'sum'})
                 working_df = working_df.withColumn(
                     "forward",
-                    col("sum(target)")/when(
-                        col("sum(other_target)") == 0,
-                        1).otherwise(col("sum(other_target)")
+                    col("sum(output)")/when(
+                        col("sum(other_output)") == 0,
+                        1).otherwise(col("sum(other_output)")
                     )
                 ).withColumn("period", lit(period))
                 strata_df_list.append(working_df)
@@ -173,7 +173,7 @@ def imputation(
             (df.period == union_df.strata_link_period,
                 df.strata == union_df.strata_link_strata),
             "inner"
-        ).drop(["strata_link_period", "strata_link_strata"]).withColumnRenamed(
+        ).drop("strata_link_period", "strata_link_strata").withColumnRenamed(
             "strata_link_forward", "forward").withColumnRenamed(
             "strata_link_backward", "backward").fillna(1, ["forward", "backward"])
         return df
