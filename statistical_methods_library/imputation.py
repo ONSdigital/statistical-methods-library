@@ -124,7 +124,11 @@ def imputation(
         ratio_df_list = []
 
         for strata_val in df.select("strata").distinct().toLocalIterator():
-            strata_df = df.filter(df.strata == strata_val["strata"])
+            strata_df = df.filter(df.strata == strata_val["strata"]).select(
+                "ref",
+                "period",
+                "output"
+            )
             strata_df_list = []
             for period_val in strata_df.select("period").distinct().toLocalIterator():
                 period = period_val["period"]
@@ -146,7 +150,6 @@ def imputation(
                     'inner'
                 ).select(
                     col("current.period").alias("period"),
-                    col("current.strata").alias("strata"),
                     col("current.output").alias("output"),
                     col("prev.output").alias("other_output"))
                 working_df = working_df.groupBy(working_df.period).agg(
@@ -177,29 +180,30 @@ def imputation(
             strata_ratio_df = strata_union_df.sort(col("period").asc()
                 ).withColumn("backward", when(
                     lead(col("forward")).isNull(), lit(None)).otherwise(
-                    1/lead(col("forward")))).alias("strata_ratio")
+                    1/lead(col("forward")))).withColumn(
+                    "strata", lit(strata))
 
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
 
         # Reassemble all the strata now we have ratios for them.
-        union_df = ratio_df_list[0]
+        ratio_df = ratio_df_list[0]
         for part_df in ratio_df_list[1:]:
-            union_df.unionAll(part_df)
+            ratio_df.unionAll(part_df)
 
         # Join the strata ratios onto the input such that each contributor has
         # forward and backward ratios. Fill in any missing ratios with 1 as
         # per the spec. This filling is needed so that imputation calculations work
         # correctly without special-casing for null values.
-        union_df = union_df.alias("strata_ratio")
+        ratio_df = ratio_df.alias("ratio")
         ret_df = df.join(
-            union_df,
-            (col("period") == col("strata_ratio.period"),
-                col("strata") == col("strata_ratio.strata")),
+            ratio_df,
+            (col("period") == col("ratio.period"),
+                col("strata") == col("ratio.strata")),
             "inner"
-        ).drop("strata_ratio.period", "strata_ratio.strata").withColumnRenamed(
-            "strata_ratio.forward", "forward").withColumnRenamed(
-            "strata_ratio.backward", "backward").fillna(1, ["forward", "backward"])
+        ).drop("ratio.period", "ratio.strata").withColumnRenamed(
+            "ratio.forward", "forward").withColumnRenamed(
+            "ratio.backward", "backward").fillna(1, ["forward", "backward"])
         return ret_df
 
     def remove_constructions(df):
