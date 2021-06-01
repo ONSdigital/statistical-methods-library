@@ -124,7 +124,7 @@ def imputation(
             return str(numeric_period + 1)
 
     def calculate_ratios(df):
-        ratio_df_list = []
+        ratio_union_df = None
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
@@ -246,20 +246,18 @@ def imputation(
             ).fillna(1.0, "backward")
             strata_ratio_df = strata_joined_df.withColumn(
                 "strata",
-                lit(strata_val["strata"])).persist()
+                lit(strata_val["strata"]))
 
             # Store the completed ratios for this strata.
-            ratio_df_list.append(strata_ratio_df)
-
-        # Reassemble all the strata now we have ratios for them.
-        ratio_df = ratio_df_list[0]
-        for part_df in ratio_df_list[1:]:
-            ratio_df.union(part_df)
+            if ratio_union_df is None:
+                ratio_union_df = strata_ratio_df.persist()
+            else:
+                ratio_union_df = ratio_union_df.union(strata_ratio_df).persist()
 
         # Join the strata ratios onto the input such that each contributor has
         # a forward ratio. Also fill in any nulls with 1 so that imputation
         # behaves correctly without having to special-case for null values.
-        ret_df = df.join(ratio_df, ["period", "strata"]).select(
+        ret_df = df.join(ratio_union_df, ["period", "strata"]).select(
             df.ref,
             df.period,
             df.strata,
