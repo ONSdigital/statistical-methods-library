@@ -90,6 +90,6 @@ def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
         exp_val.show()
         print("---------- RETURNED ----------")
         ret_val.show()
-        
+
         assert_df_equality(ret_val, exp_val)
 
