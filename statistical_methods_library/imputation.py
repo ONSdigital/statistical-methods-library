@@ -157,11 +157,11 @@ def imputation(
                     (col("current.ref") == col("prev.ref")),
                     'inner'
                 ).select(
-                    col("current.period").alias("period"),
                     col("current.output").alias("output"),
                     col("prev.output").alias("other_output"))
                 working_df = working_df.agg(
-                    {'output': 'sum', 'other_output': 'sum'})
+                    {'output': 'sum', 'other_output': 'sum'}
+                ).withColumn("period", lit(period))
 
                 # Calculate the forward ratio for every period using 1 in the
                 # case of a 0 denominator.
