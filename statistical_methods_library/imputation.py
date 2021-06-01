@@ -160,7 +160,7 @@ def imputation(
                     col("current.period").alias("period"),
                     col("current.output").alias("output"),
                     col("prev.output").alias("other_output"))
-                working_df = working_df.groupBy(working_df.period).agg(
+                working_df = working_df.agg(
                     {'output': 'sum', 'other_output': 'sum'})
 
                 # Calculate the forward ratio for every period using 1 in the
@@ -169,8 +169,7 @@ def imputation(
                     "forward",
                     col("sum(output)")/when(
                         col("sum(other_output)") == 0,
-                        1).otherwise(col("sum(other_output)"))
-                ).withColumn("period", lit(period))
+                        1.0).otherwise(col("sum(other_output)")))
 
                 # Store the completed period.
                 working_df = working_df.select("period", "forward")
@@ -190,8 +189,6 @@ def imputation(
                 strata_forward_union_df.forward
             ).fillna(1.0, "forward")
 
-            print("--- forward joined df ---")
-            strata_forward_joined_df.show()
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
             for period_val in period_df.toLocalIterator():
@@ -207,7 +204,6 @@ def imputation(
                 df_next_period.show()
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
-                    print("--- Defaulting working df ---")
                     working_df = df_current_period.withColumn(
                         "backward",
                         lit(1.0))
