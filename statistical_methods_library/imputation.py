@@ -209,14 +209,18 @@ def imputation(
                 df_next_period.printSchema()
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
-                    working_df = df_current_period.withColumn(
-                        "backward",
-                        lit(1.0))
+                    working_df = df_current_period.select(
+                        col("period"),
+                        col("forward"),
+                        col(lit(1.0)).alias("backward")
+                    )
 
                 else:
-                    working_df = df_current_period.withColumn(
-                        "backward",
-                        lit(1.0)/df_next_period.forward)
+                    working_df = df_current_period.select(
+                        col("period"),
+                        col("forward"),
+                        col(1.0/df_next_period.forward).alias("backward")
+                    )
 
                 print("--- working_df ---")
                 working_df.show()
