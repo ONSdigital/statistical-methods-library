@@ -234,7 +234,9 @@ def imputation(
             df.strata,
             df.output,
             df.aux,
-            ratio_df.forward).fillna(1)
+            ratio_df.forward,
+            ratio_df.backward
+        )
         return ret_df
 
     def remove_constructions(df):
