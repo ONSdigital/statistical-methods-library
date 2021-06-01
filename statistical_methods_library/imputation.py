@@ -113,7 +113,6 @@ def imputation(
         numeric_period = int(period)
         if period.endswith("01"):
             return str(numeric_period - 89)
-
         else:
             return str(numeric_period - 1)
 
@@ -121,7 +120,6 @@ def imputation(
         numeric_period = int(period)
         if period.endswith("12"):
             return str(numeric_period + 89)
-
         else:
             return str(numeric_period + 1)
 
@@ -133,11 +131,11 @@ def imputation(
         filtered_df = df.filter(~df.output.isNull())
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]
-            ).select(
-                "ref",
-                "period",
-                "output"
-            )
+                ).select(
+                    "ref",
+                    "period",
+                    "output"
+                )
             period_df = strata_df.select('period').distinct()
             strata_union_df = None
             for period_val in period_df.toLocalIterator():
@@ -178,7 +176,6 @@ def imputation(
                 working_df = working_df.select("period", "forward")
                 if strata_union_df is None:
                     strata_union_df = working_df
-
                 else:
                     strata_union_df = strata_union_df.union(working_df)
 
@@ -191,8 +188,8 @@ def imputation(
                 strata_union_df.forward
             ).fillna(1, "forward")
             strata_ratio_df = strata_joined_df.withColumn(
-            "strata",
-            lit(strata_val["strata"]))
+                "strata",
+                lit(strata_val["strata"]))
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
 

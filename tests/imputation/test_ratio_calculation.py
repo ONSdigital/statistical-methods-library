@@ -56,7 +56,7 @@ def load_test_csv(spark_session, filename):
 # --- Test if output is a dataframe (or the expected type)---
 
 def test_dataframe_returned(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
+    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
@@ -66,17 +66,17 @@ def test_dataframe_returned(fxt_spark_session):
 # --- Test if output contents is as expected, both new columns and data content ---
 
 def test_new_columns_created(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
+    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
     ret_cols = ret_val.columns
     assert "forward" in ret_cols
-    # assert "backward" in ret_cols
+    assert "backward" in ret_cols
 
 
-def test_ratios_as_expected(fxt_spark_session, capsys):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation.csv")
+def test_fwd_ratios_as_expected(fxt_spark_session, capsys):
+    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     assert ret_val.count() > 0
@@ -84,3 +84,5 @@ def test_ratios_as_expected(fxt_spark_session, capsys):
     # dataframe
     with capsys.disabled():
         ret_val.show()
+
+
