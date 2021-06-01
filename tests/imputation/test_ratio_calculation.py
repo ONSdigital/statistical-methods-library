@@ -1,6 +1,8 @@
 import pytest
 import os
 
+from chispa.dataframe_comparer import assert_df_equality
+
 from statistical_methods_library import imputation
 
 auxiliary_col = "auxiliary"
@@ -77,11 +79,17 @@ def test_new_columns_created(fxt_spark_session):
 
 def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
+    exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
+    # Disable output capturing so we can see stdout for debugging etc
     with capsys.disabled():
         ret_val = imputation.imputation(test_dataframe, *params)
         # perform action on the dataframe to trigger lazy evaluation
         assert ret_val.count() > 0
-        # Disable output capturing so we can see the contents of the
-        # returned dataframe
+
+        print("---------- EXPECTED ----------")
+        exp_val.show()
+        print("---------- RETURNED ----------")
         ret_val.show()
+        
+        assert_df_equality(ret_val, exp_val)
 
