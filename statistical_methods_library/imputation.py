@@ -127,9 +127,13 @@ def imputation(
 
     def calculate_ratios(df):
         ratio_df_list = []
-
-        for strata_val in df.select("strata").distinct().toLocalIterator():
-            strata_df = df.filter(df.strata == strata_val["strata"]).select(
+        # Since we're going to join on to the main df at the end filtering for
+        # nulls won't cause us to lose strata as they'll just be filled with
+        # default ratios.
+        filtered_df = df.filter(~df.output.isNull())
+        for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
+            strata_df = filtered_df.filter(df.strata == strata_val["strata"]
+            ).select(
                 "ref",
                 "period",
                 "output"
@@ -206,7 +210,7 @@ def imputation(
             df.strata,
             df.output,
             df.aux,
-            ratio_df.forward)
+            ratio_df.forward).fillna(1)
         return ret_df
 
     def remove_constructions(df):
