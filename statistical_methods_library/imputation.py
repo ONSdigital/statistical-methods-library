@@ -216,10 +216,20 @@ def imputation(
                     )
 
                 else:
-                    working_df = df_current_period.select(
-                        col("period"),
-                        col("forward"),
-                        (lit(1.0)/df_next_period.forward).alias("backward")
+                    # We need to do a subselect to calculate the ratio correctly
+                    df_next_period.createOrReplaceTempView(
+                        "calculate_ratios_backward_next"
+                    )
+                    working_df = df_current_period.selectExpr(
+                        "period",
+                        "forward",
+                        """
+                            (
+                                SELECT 1/forward
+                                FROM calculate_ratios_backward_next
+                            )
+                            AS backward
+                        """
                     )
 
                 print("--- working_df ---")
