@@ -213,6 +213,8 @@ def imputation(
                     working_df = df_current_period.withColumn(
                         "backward", 1/df_next_period.forward)
 
+                print("--- working_df ---")
+                working_df.show()
                 if strata_backward_union_df is None:
                     strata_backward_union_df = working_df
 
@@ -220,6 +222,8 @@ def imputation(
                     strata_backward_union_df = strata_backward_union_df.union(
                         working_df)
 
+            print("--- strata_backward_union_df ---")
+            strata_backward_union_df.show()
             strata_joined_df = period_df.join(
                 strata_backward_union_df,
                 "period",
@@ -232,6 +236,8 @@ def imputation(
             strata_ratio_df = strata_joined_df.withColumn(
                 "strata",
                 lit(strata_val["strata"]))
+            print("--- strata_ratio_df ---")
+            strata_ratio_df.show()
             # Store the completed ratios for this strata.
             ratio_df_list.append(strata_ratio_df)
 
@@ -240,6 +246,8 @@ def imputation(
         for part_df in ratio_df_list[1:]:
             ratio_df.union(part_df)
 
+        print("--- ratio_df ---")
+        ratio_df.show()
         # Join the strata ratios onto the input such that each contributor has
         # a forward ratio. Also fill in any nulls with 1 so that imputation
         # behaves correctly without having to special-case for null values.
