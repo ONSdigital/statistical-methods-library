@@ -144,7 +144,7 @@ def imputation(
                     "current")
                 df_previous_period = strata_df.filter(
                     strata_df.period == calculate_previous_period(period)
-                ).alias("prev").filter(~col("output").isNull())
+                ).alias("prev")
                 if df_previous_period.count() == 0:
                     # No previous period so nothing to do.
                     continue
