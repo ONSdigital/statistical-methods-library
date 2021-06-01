@@ -48,7 +48,7 @@ def imputation(
         )
 
         for stage in stages:
-            df = stage(df)
+            df = stage(df).persist()
             if df.filter(col("output").isNull()).count() == 0:
                 return create_output(df)
 
