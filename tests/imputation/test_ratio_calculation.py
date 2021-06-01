@@ -75,7 +75,7 @@ def test_new_columns_created(fxt_spark_session):
     assert "backward" in ret_cols
 
 
-def test_fwd_ratios_as_expected(fxt_spark_session, capsys):
+def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
@@ -85,15 +85,5 @@ def test_fwd_ratios_as_expected(fxt_spark_session, capsys):
     with capsys.disabled():
         ret_val.show()
 
-
-def test_bck_ratios_as_expected(fxt_spark_session, capsys):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    assert ret_val.count() > 0
-    # Disable output capturing so we can see the contents of the returned
-    # dataframe
-    with capsys.disabled():
-        ret_val.show()
 
 
