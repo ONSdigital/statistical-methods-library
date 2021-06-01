@@ -117,6 +117,14 @@ def imputation(
         else:
             return str(numeric_period - 1)
 
+    def calculate_next_period(period):
+        numeric_period = int(period)
+        if period.endswith("12"):
+            return str(numeric_period + 89)
+
+        else:
+            return str(numeric_period + 1)
+
     def calculate_ratios(df):
         ratio_df_list = []
 
