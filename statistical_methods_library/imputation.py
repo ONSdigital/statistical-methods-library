@@ -87,11 +87,12 @@ def imputation(
 
     def prepare_df(df):
         col_list = [
+            col(reference_col).alias("ref"),
             col(period_col).alias("period"),
             col(strata_col).alias("strata"),
-            col(target_col).alias("output"),
+            col(target_col).alias("target"),
             col(auxiliary_col).alias("aux"),
-            col(reference_col).alias("ref"),
+            col(target_col).alias("output"),
         ]
 
         if forward_link_col is not None:
@@ -286,9 +287,22 @@ def imputation(
         return impute(reorder_df(df, "asc"), "forward", "fic")
 
     def create_output(df):
-        input_df.createOrReplaceTempView("input")
-        df.createOrReplaceTempView("output")
-        # TODO: select columns and join on input df
+        if forward_link_col is None:
+            forward_link_col = "fo4rward"
+
+        if backward_link_col is None:
+            backward_link_col = "backward"
+
+        df.select(
+            col("ref").alias(reference_col),
+            col("period").alias(period_col),
+            col("strata").alias(strata_col),
+            col("target").alias(target_col),
+            col("aux").alias(auxiliary_col),
+            col("output").alias(output_col),
+            col("forward").alias(forward_link_col),
+            col("backward").alias(backward_link_col)
+        )
         return df
 
     # ----------
