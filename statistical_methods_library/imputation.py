@@ -128,23 +128,23 @@ def imputation(
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = df.filter(~df.output.isNull())
+        filtered_df = df.filter(~df.output.isNull()).persist()
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]
                 ).select(
                     "ref",
                     "period",
                     "output"
-                )
-            period_df = strata_df.select('period').distinct()
+                ).persist()
+            period_df = strata_df.select('period').distinct().persist()
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
                 df_current_period = strata_df.filter(strata_df.period == period).alias(
-                    "current")
+                    "current").persist()
                 df_previous_period = strata_df.filter(
                     strata_df.period == calculate_previous_period(period)
-                ).alias("prev")
+                ).alias("prev").persist()
                 if df_previous_period.count() == 0:
                     # No previous period so nothing to do.
                     continue
@@ -175,10 +175,11 @@ def imputation(
                 working_df = working_df.select("period", "forward")
 
                 if strata_forward_union_df is None:
-                    strata_forward_union_df = working_df
+                    strata_forward_union_df = working_df.persist()
 
                 else:
-                    strata_forward_union_df = strata_forward_union_df.union(working_df)
+                    strata_forward_union_df = strata_forward_union_df.union(
+                        working_df).persist()
 
             strata_forward_joined_df = period_df.join(
                 strata_forward_union_df,
@@ -187,7 +188,7 @@ def imputation(
             ).select(
                 period_df.period,
                 strata_forward_union_df.forward
-            ).fillna(1.0, "forward")
+            ).fillna(1.0, "forward").persist()
 
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
