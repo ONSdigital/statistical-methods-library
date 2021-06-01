@@ -34,6 +34,7 @@ dataframe_types = {
 }
 params = dataframe_columns
 
+
 def load_test_csv(spark_session, filename):
     path = "tests/imputation/fixture_data/"
     filepath = os.path.join(path, filename)
@@ -42,7 +43,7 @@ def load_test_csv(spark_session, filename):
     for dataframe_col in dataframe_columns:
         if dataframe_col in test_dataframe.columns:
             select_col_list.append(
-                col(data_frame_col).cast(dataframe_types[dataframe_col])
+                col(dataframe_col).cast(dataframe_types[dataframe_col])
             )
 
     return test_dataframe.select(select_col_list)
