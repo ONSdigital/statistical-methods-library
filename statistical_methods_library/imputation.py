@@ -169,7 +169,7 @@ def imputation(
                     "forward",
                     col("sum(output)")/when(
                         col("sum(other_output)") == 0,
-                        1.0).otherwise(col("sum(other_output)")))
+                        lit(1.0)).otherwise(col("sum(other_output)")))
 
                 # Store the completed period.
                 working_df = working_df.select("period", "forward")
@@ -211,7 +211,7 @@ def imputation(
                 else:
                     working_df = df_current_period.withColumn(
                         "backward",
-                        1.0/df_next_period.forward)
+                        lit(1.0)/df_next_period.forward)
 
                 print("--- working_df ---")
                 working_df.show()
