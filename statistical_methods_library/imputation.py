@@ -188,7 +188,7 @@ def imputation(
             ).select(
                 period_df.period,
                 strata_forward_union_df.forward
-            ).fillna(1, "forward")
+            ).fillna(1.0, "forward")
 
             print("--- forward joined df ---")
             strata_forward_joined_df.show()
@@ -236,7 +236,7 @@ def imputation(
                 period_df.period,
                 strata_backward_union_df.forward,
                 strata_backward_union_df.backward
-            ).fillna(1, "backward")
+            ).fillna(1.0, "backward")
             strata_ratio_df = strata_joined_df.withColumn(
                 "strata",
                 lit(strata_val["strata"]))
