@@ -6,6 +6,8 @@ from chispa.dataframe_comparer import assert_df_equality
 from statistical_methods_library import imputation
 
 auxiliary_col = "auxiliary"
+backward_col = "backward"
+forward_col = "forward"
 marker_col = "marker"
 output_col = "output"
 period_col = "period"
@@ -13,6 +15,8 @@ reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
 
+# Columns we expect in either our input or output test dataframes and their
+# respective types
 dataframe_columns = (
     reference_col,
     period_col,
@@ -20,7 +24,9 @@ dataframe_columns = (
     target_col,
     auxiliary_col,
     output_col,
-    marker_col
+    marker_col,
+    backward_col,
+    forward_col
 )
 
 dataframe_types = {
@@ -30,9 +36,21 @@ dataframe_types = {
     target_col: "double",
     auxiliary_col: "double",
     output_col: "double",
-    marker_col: "string"
+    marker_col: "string",
+    backward_col: "double",
+    forward_col: "double"
 }
-params = dataframe_columns
+
+# Params used when calling imputation
+params = (
+    reference_col,
+    period_col,
+    strata_col,
+    target_col,
+    auxiliary_col,
+    output_col,
+    marker_col
+)
 
 
 def load_test_csv(spark_session, filename):
