@@ -226,11 +226,11 @@ def imputation(
                     )
 
                 if strata_backward_union_df is None:
-                    strata_backward_union_df = working_df
+                    strata_backward_union_df = working_df.persist()
 
                 else:
                     strata_backward_union_df = strata_backward_union_df.union(
-                        working_df)
+                        working_df).persist()
 
             strata_joined_df = period_df.join(
                 strata_backward_union_df,
