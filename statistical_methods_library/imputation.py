@@ -197,11 +197,15 @@ def imputation(
                 df_current_period = strata_forward_joined_df.filter(
                     strata_forward_joined_df.period == period)
                 df_current_period.show()
+                print("--- df_current_period schema ---")
+                df_current_period.printSchema()
                 print("--- df_next_period ---")
                 df_next_period = strata_forward_joined_df.filter(
                     strata_forward_joined_df.period == calculate_next_period(
                         period))
                 df_next_period.show()
+                print("--- df_next_period schema ---")
+                df_next_period.printSchema()
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
                     working_df = df_current_period.withColumn(
@@ -215,6 +219,8 @@ def imputation(
 
                 print("--- working_df ---")
                 working_df.show()
+                print("--- working_df schema ---")
+                working_df.printSchema()
                 if strata_backward_union_df is None:
                     strata_backward_union_df = working_df
 
