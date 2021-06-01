@@ -212,7 +212,7 @@ def imputation(
                     working_df = df_current_period.select(
                         col("period"),
                         col("forward"),
-                        col(lit(1.0)).alias("backward")
+                        lit(1.0).alias("backward")
                     )
 
                 else:
