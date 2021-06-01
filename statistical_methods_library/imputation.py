@@ -52,9 +52,6 @@ def imputation(
             if df.filter(col("output").isNull()).count() == 0:
                 return create_output(df)
 
-        if df.filter(col("output").isNull()).count() > 0:
-            raise DataIntegrityError("Found null in output after imputation")
-
         return create_output(df)
 
     def validate_df(df):
@@ -129,14 +126,15 @@ def imputation(
                 "period",
                 "output"
             )
-            strata_df_list = []
-            for period_val in strata_df.select("period").distinct().toLocalIterator():
+            period_df = strata_df.select('period').distinct()
+            strata_union_df = None
+            for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
-                df_current_period = strata_df.filter(df.period == period).alias(
+                df_current_period = strata_df.filter(strata_df.period == period).alias(
                     "current")
                 df_previous_period = strata_df.filter(
-                    df.period == calculate_previous_period(period)).alias(
-                        "prev")
+                    strata_df.period == calculate_previous_period(period)
+                ).alias("prev").filter(~col("output").isNull())
                 if df_previous_period.count() == 0:
                     # No previous period so nothing to do.
                     continue
@@ -165,14 +163,22 @@ def imputation(
                 ).withColumn("period", lit(period))
 
                 # Store the completed period.
-                strata_df_list.append(working_df)
+                working_df = working_df.select("period", "forward")
+                if strata_union_df is None:
+                    strata_union_df = working_df
 
-            # Reassemble our completed strata dataframe.
-            strata_union_df = strata_df_list[0]
-            for strata_part_df in strata_df_list[1:]:
-                strata_union_df.union(strata_part_df)
+                else:
+                    strata_union_df = strata_union_df.union(working_df)
 
-            strata_ratio_df = strata_union_df.withColumn(
+            strata_joined_df = period_df.join(
+                strata_union_df,
+                "period",
+                "leftouter"
+            ).select(
+                period_df.period,
+                strata_union_df.forward
+            ).fillna(1, "forward")
+            strata_ratio_df = strata_joined_df.withColumn(
             "strata",
             lit(strata_val["strata"]))
             # Store the completed ratios for this strata.
@@ -192,22 +198,11 @@ def imputation(
             df.strata,
             df.output,
             df.aux,
-            ratio_df.forward).fillna(1, "forward")
+            ratio_df.forward)
         return ret_df
 
     def remove_constructions(df):
-        return df.select(
-            df["period"],
-            df["strata"],
-            when(df["marker"].endswith("C"), lit(None))
-            .otherwise(df["output"])
-            .alias("output"),
-            df["aux"],
-            df["ref"],
-            df["forward"],
-            df["backward"],
-            df["marker"],
-        )
+        return df
 
     def impute(df, link_col, marker):
         # TODO: imputation calculation
