@@ -1,6 +1,6 @@
 import pytest
 import os
-
+from pyspark.sql.functions import col
 from chispa.dataframe_comparer import assert_df_equality
 
 from statistical_methods_library import imputation
@@ -12,7 +12,8 @@ period_col = "period"
 reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
-params = (
+
+dataframe_columns = (
     reference_col,
     period_col,
     strata_col,
@@ -22,12 +23,29 @@ params = (
     marker_col
 )
 
+dataframe_types = {
+    reference_col: "string",
+    period_col: "string",
+    strata_col: "string",
+    target_col: "double",
+    auxiliary_col: "double",
+    output_col: "double",
+    marker_col: "string"
+}
+params = dataframe_columns
 
 def load_test_csv(spark_session, filename):
     path = "tests/imputation/fixture_data/"
     filepath = os.path.join(path, filename)
     test_dataframe = spark_session.read.csv(filepath, header=True)
-    return test_dataframe
+    select_col_list = []
+    for dataframe_col in dataframe_columns:
+        if dataframe_col in test_dataframe.columns:
+            select_col_list.append(
+                col(data_frame_col).cast(dataframe_types[dataframe_col])
+            )
+
+    return test_dataframe.select(select_col_list)
 
 
 # ====================================================================================
