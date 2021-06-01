@@ -50,7 +50,7 @@ def imputation(
         for stage in stages:
             df = stage(df).persist()
             if df.filter(col("output").isNull()).count() == 0:
-                return create_output(df)
+                break
 
         return create_output(df)
 
@@ -105,6 +105,26 @@ def imputation(
             col_list.append(col(marker_col).alias("marker"))
 
         return df.select(col_list)
+
+    def create_output(df):
+        nonlocal forward_link_col
+        if forward_link_col is None:
+            forward_link_col = "forward"
+
+        nonlocal backward_link_col
+        if backward_link_col is None:
+            backward_link_col = "backward"
+
+        return df.select(
+            col("ref").alias(reference_col),
+            col("period").alias(period_col),
+            col("strata").alias(strata_col),
+            col("target").alias(target_col),
+            col("aux").alias(auxiliary_col),
+            col("output").alias(output_col),
+            col("forward").alias(forward_link_col),
+            col("backward").alias(backward_link_col)
+        )
 
     def reorder_df(df, order):
         # TODO: implement
@@ -256,11 +276,7 @@ def imputation(
         # a forward ratio. Also fill in any nulls with 1 so that imputation
         # behaves correctly without having to special-case for null values.
         ret_df = df.join(ratio_union_df, ["period", "strata"]).select(
-            df.ref,
-            df.period,
-            df.strata,
-            df.output,
-            df.aux,
+            "*",
             ratio_union_df.forward,
             ratio_union_df.backward
         )
@@ -274,35 +290,16 @@ def imputation(
         return df
 
     def forward_impute_from_response(df):
-        return impute(reorder_df(df, "asc"), "forward", "fir")
+        return df
 
     def backward_impute(df):
-        return impute(reorder_df(remove_constructions(df), "desc"), "backward", "bi")
+        return df
 
     def construct_values(df):
         # TODO: construction calculation
         return df
 
     def forward_impute_from_construction(df):
-        return impute(reorder_df(df, "asc"), "forward", "fic")
-
-    def create_output(df):
-        if forward_link_col is None:
-            forward_link_col = "forward"
-
-        if backward_link_col is None:
-            backward_link_col = "backward"
-
-        df.select(
-            col("ref").alias(reference_col),
-            col("period").alias(period_col),
-            col("strata").alias(strata_col),
-            col("target").alias(target_col),
-            col("aux").alias(auxiliary_col),
-            col("output").alias(output_col),
-            col("forward").alias(forward_link_col),
-            col("backward").alias(backward_link_col)
-        )
         return df
 
     # ----------
