@@ -263,8 +263,8 @@ def imputation(
             df.strata,
             df.output,
             df.aux,
-            ratio_df.forward,
-            ratio_df.backward
+            ratio_union_df.forward,
+            ratio_union_df.backward
         )
         return ret_df
 
