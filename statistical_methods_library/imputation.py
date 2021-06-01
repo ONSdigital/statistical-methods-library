@@ -288,7 +288,7 @@ def imputation(
 
     def create_output(df):
         if forward_link_col is None:
-            forward_link_col = "fo4rward"
+            forward_link_col = "forward"
 
         if backward_link_col is None:
             backward_link_col = "backward"
