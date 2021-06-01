@@ -190,15 +190,21 @@ def imputation(
                 strata_forward_union_df.forward
             ).fillna(1, "forward")
 
+            print("--- forward joined df ---")
+            strata_forward_joined_df.show()
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
+                print("--- df_current_period ---")
                 df_current_period = strata_forward_joined_df.filter(
                     strata_forward_joined_df.period == period)
+                df_current_period.show()
+                print("--- df_next_period ---")
                 df_next_period = strata_forward_joined_df.filter(
                     strata_forward_joined_df.period == calculate_next_period(
                         period))
+                df_next_period.show()
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
                     working_df = df_current_period.withColumn("backward", lit(1))
