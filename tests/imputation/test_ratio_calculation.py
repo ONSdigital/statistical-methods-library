@@ -1,5 +1,5 @@
-import pytest
 import os
+
 from pyspark.sql.functions import col
 from chispa.dataframe_comparer import assert_approx_df_equality
 
@@ -80,14 +80,13 @@ def load_test_csv(spark_session, filename):
 #    branches to ensure that each assert is actually being performed.
 # 2) Do not test internal structure of functions, it may be refactored. Stick
 #    to the inputs and outputs.
-# 3) Avoid referring to specific rows of test data where possible, they may change.
-#    Instead, follow the existing templates to add conditional tests.
-# 4) If you load the test data in for each test rather than as a module level
+# 3) If you load the test data in for each test rather than as a module level
 #    constant, you can amend data in the tests without needing new test data.
+# 4) Avoid referring to specific rows of test data where possible, they may change.
 # 5) Don't test for python language errors. :)
 
-# We're using double-quotes for strings since SQL requires single-quotes so
-# this helps avoid escaping.
+# We're using double-quotes for strings since SQL requires single-quotes;  this helps
+# avoid having to use escape characters.
 
 # ====================================================================================
 
@@ -117,12 +116,17 @@ def test_new_columns_created(fxt_spark_session):
 def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("forward", "backward"),
-        exp_val.sort(sort_col_list).select("forward", "backward"),
-        0.0001,
-        ignore_nullable=True
-    )
+    with capsys.disabled():
+        ret_val = imputation.imputation(test_dataframe, *params)
+        sort_col_list = ["reference", "period"]
+        ret_val.sort(sort_col_list).show()
+        assert_approx_df_equality(
+            ret_val.sort(sort_col_list).select("forward", "backward"),
+            exp_val.sort(sort_col_list).select("forward", "backward"),
+            0.0001,
+            ignore_nullable=True
+        )
 
+# --- Test any other error based outputs ---
+
+# No error based outputs to test at this time
