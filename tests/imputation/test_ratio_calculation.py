@@ -128,5 +128,8 @@ def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
         print("---------- RETURNED ----------")
         ret_val.show()
 
-        assert_df_equality(ret_val, exp_val)
+        assert_df_equality(ret_val, exp_val,
+                           ignore_row_order=True,
+                           ignore_column_order=True,
+                           ignore_nullable=True)
 
