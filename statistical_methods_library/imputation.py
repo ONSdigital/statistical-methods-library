@@ -298,7 +298,7 @@ def imputation(
     def remove_constructions(df):
         return df
 
-    def impute(df, link_col, marker, other_period_cb):
+    def impute(df, link_col, marker, other_period_cb, ascending):
         # Avoid having to care about the name of our link column by selecting
         # it as a fixed name here.
         working_df = df.select(
@@ -320,7 +320,8 @@ def imputation(
                 (col("ref") == ref_val["ref"])
                 & (col("output").isNull())
             )
-            for period_val in ref_df.select("period").distinct().toLocalIterator():
+            for period_val in ref_df.select("period").distinct(
+        ).sort("period", ascending).toLocalIterator():
                 # Get the already present value for the other period if any.
                 # At this point we don't care if it's a response, imputation
                 # or construction only that it isn't null.
@@ -365,7 +366,8 @@ def imputation(
             df,
             "forward",
             MARKER_FORWARD_IMPUTE_FROM_RESPONSE,
-            calculate_previous_period
+            calculate_previous_period,
+            True
         )
 
     def backward_impute(df):
