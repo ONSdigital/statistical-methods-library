@@ -1,7 +1,6 @@
 import pytest
 import os
 from pyspark.sql.functions import col
-from chispa.dataframe_comparer import assert_df_equality
 from chispa.dataframe_comparer import assert_approx_df_equality
 
 from statistical_methods_library import imputation
@@ -121,9 +120,9 @@ def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     ret_val = imputation.imputation(test_dataframe, *params)
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list),
-        exp_val.sort(sort_col_list),
-        5,
+        ret_val.sort(sort_col_list).select("forward", "backward"),
+        exp_val.sort(sort_col_list).select("forward", "backward"),
+        0.0001,
         ignore_nullable=True
     )
 
