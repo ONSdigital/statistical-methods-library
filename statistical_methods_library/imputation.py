@@ -291,9 +291,77 @@ def imputation(
     def remove_constructions(df):
         return df
 
-    def impute(df, link_col, marker):
-        # TODO: imputation calculation
-        return df
+    def impute(df, link_col, marker, other_period_cb):
+        # Avoid having to care about the name of our link column by selecting
+        # it as a fixed name here.
+        working_df = df.select(
+            col("ref"),
+            col("period"),
+            col(link_col).alias("link"),
+            col("output"),
+            col("marker")
+        )
+        # Anything which isn't null is already imputed or a response and thus
+        # can be imputed from.
+        imputed_df = working_df.filter(~col("output").isNull()).persist()
+        # Any refs which have no values at all can't be imputed from so we
+        # don't care about them here.
+        for ref_val in imputed_df.select("ref").distinct().toLocalIterator():
+            # Get all the periods and links for this ref where the output is
+            # null since they're the periods we care about.
+            ref_df = working_df.filter(
+                (col("ref") == ref_val["ref"])
+                & (col("output").isNull())
+            )
+            if ref_df.count() == 0:
+                # No nulls so nothing to impute. Note that this means that
+                # this ref is also already in imputed_df.
+                continue
+
+            for period_val in ref_df.select("period").distinct().toLocalIterator():
+                # Get the already present value for the other period if any.
+                # At this point we don't care if it's a response, imputation
+                # or construction only that it isn't null.
+                other_value_df = imputed_df.filter(
+                    (col("ref") == ref_val["ref"])
+                    & (col("period") == other_period_cb(period_val["period"]))
+                )
+                if other_value_df.count() == 0:
+                    # We either have a gap or no value to impute from,
+                    # either way nothing to do.
+                    continue
+
+                # Join the other value into this period so that we can
+                # multiply by the link. We only need the ref column in both to
+                # do the join.
+                calculation_df = ref_df.filter(
+                    col("period") == period_val["period"]).select(
+                    "ref",
+                    "period",
+                    "link"
+                ).join(
+                    other_value_df.select(
+                        col("ref"),
+                        col("output").alias("other_output")
+                    ),
+                    "ref"
+                ).select(
+                    col("ref"),
+                    col("period"),
+                    col("link"),
+                    (col("link") * col("other_output")).alias("output"),
+                    lit(marker).alias("marker")
+                )
+                # Store the imputed period for this ref in our imputed
+                # dataframe so that it can be referenced by another period.
+                imputed_df = imputed_df.union(calculation_df).persist()
+
+        # We should now have an output column which is as fully populated as
+        # this phase of imputation can manage. As such replace the existing
+        # output column with our one. Same goes for the marker column.
+        return df.drop("output", "marker").join(
+            imputed_df.drop("link"),
+            ["ref", "period"])
 
     def forward_impute_from_response(df):
         return df
