@@ -369,7 +369,9 @@ def imputation(
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
             imputed_df.drop("link"),
-            ["ref", "period"])
+            ["ref", "period"],
+            "leftouter"
+        )
 
     def forward_impute_from_response(df):
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
