@@ -313,8 +313,7 @@ def imputation(
         imputed_df = working_df.filter(~col("output").isNull()).persist()
         # Any refs which have no values at all can't be imputed from so we
         # don't care about them here.
-        for ref_val in imputed_df.filter(col("output").isNull()).select(
-            "ref").distinct().toLocalIterator():
+        for ref_val in imputed_df.select("ref").distinct().toLocalIterator():
             # Get all the periods and links for this ref where the output is
             # null since they're the periods we care about.
             ref_df = working_df.filter(
