@@ -2,6 +2,7 @@ import pytest
 import os
 from pyspark.sql.functions import col
 from chispa.dataframe_comparer import assert_df_equality
+from chispa.dataframe_comparer import assert_approx_df_equality
 
 from statistical_methods_library import imputation
 
