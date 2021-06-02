@@ -117,19 +117,12 @@ def test_new_columns_created(fxt_spark_session):
 def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
-    # Disable output capturing so we can see stdout for debugging etc
-    with capsys.disabled():
-        ret_val = imputation.imputation(test_dataframe, *params)
-        # perform action on the dataframe to trigger lazy evaluation
-        assert ret_val.count() > 0
-
-        print("---------- EXPECTED ----------")
-        exp_val.show()
-        print("---------- RETURNED ----------")
-        ret_val.show()
-
-        assert_df_equality(ret_val, exp_val,
-                           ignore_row_order=True,
-                           ignore_column_order=True,
-                           ignore_nullable=True)
+    ret_val = imputation.imputation(test_dataframe, *params)
+    sort_col_list = ["reference", "period"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list),
+        exp_val.sort(sort_col_list),
+        5,
+        ignore_nullable=True
+    )
 
