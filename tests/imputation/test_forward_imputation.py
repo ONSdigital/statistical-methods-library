@@ -103,24 +103,14 @@ def test_dataframe_returned(fxt_spark_session):
 
 # --- Test if output contents is as expected, both new columns and data content ---
 
-def test_new_columns_created(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    _row_count = ret_val.count()
-    ret_cols = ret_val.columns
-    assert "forward" in ret_cols
-    assert "backward" in ret_cols
-
-
 def test_imputed_values_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
     exp_val = load_test_csv(fxt_spark_session, "test_forward_imputation_output.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("forward", "backward"),
-        exp_val.sort(sort_col_list).select("forward", "backward"),
+        ret_val.sort(sort_col_list).select("output", "marker"),
+        exp_val.sort(sort_col_list).select("output", "marker"),
         0.0001,
         ignore_nullable=True
     )
