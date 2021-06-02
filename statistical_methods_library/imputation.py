@@ -314,7 +314,7 @@ def imputation(
             col(link_col).alias("link"),
             col("output"),
             col("marker")
-        )
+        ).persist()
         # Anything which isn't null is already imputed or a response and thus
         # can be imputed from.
         imputed_df = working_df.filter(~col("output").isNull()).persist()
@@ -326,18 +326,19 @@ def imputation(
             ref_df = working_df.filter(
                 (col("ref") == ref_val["ref"])
                 & (col("output").isNull())
-            )
+            ).persist()
             # Make sure the periods are in the correct order so that we have
             # the other period we need to impute from where possible.
             for period_val in ref_df.select("period").distinct(
-        ).sort("period", ascending=direction).toLocalIterator():
+            ).sort("period", ascending=direction).toLocalIterator():
                 # Get the already present value for the other period if any.
                 # At this point we don't care if it's a response, imputation
                 # or construction only that it isn't null.
                 other_value_df = imputed_df.filter(
                     (col("ref") == ref_val["ref"])
                     & (col("period") == other_period_cb(period_val["period"]))
-                ).select(col("ref"), col("output").alias("other_output"))
+                ).select(col("ref"), col("output").alias("other_output")
+                ).persist()
                 if other_value_df.count() == 0:
                     # We either have a gap or no value to impute from,
                     # either way nothing to do.
