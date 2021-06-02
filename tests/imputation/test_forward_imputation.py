@@ -93,12 +93,12 @@ def load_test_csv(spark_session, filename):
 
 # --- Test if output is a dataframe (or the expected type)---
 
-def test_dataframe_returned(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    _row_count = ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
+# def test_dataframe_returned(fxt_spark_session):
+#     test_dataframe = load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
+#     ret_val = imputation.imputation(test_dataframe, *params)
+#     # perform action on the dataframe to trigger lazy evaluation
+#     _row_count = ret_val.count()
+#     assert isinstance(ret_val, type(test_dataframe))
 
 
 # --- Test if output contents is as expected, both new columns and data content ---
@@ -108,6 +108,7 @@ def test_imputed_values_as_expected(fxt_spark_session, capsys):
     exp_val = load_test_csv(fxt_spark_session, "test_forward_imputation_output.csv")
     with capsys.disabled():
         ret_val = imputation.imputation(test_dataframe, *params)
+        assert isinstance(ret_val, type(test_dataframe))
         sort_col_list = ["reference", "period"]
         ret_val.sort(sort_col_list).show(25)
         assert_approx_df_equality(
