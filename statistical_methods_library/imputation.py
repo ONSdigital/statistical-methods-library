@@ -5,6 +5,7 @@ from pyspark.sql.functions import col, lit, when
 # --- Marker constants ---
 MARKER_RESPONSE = "R"
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
+MARKER_BACKWARD_IMPUTE = "BI"
 
 # --- Imputation errors ---
 
@@ -377,7 +378,7 @@ def imputation(
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df):
-        return df
+        return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
         # TODO: construction calculation
