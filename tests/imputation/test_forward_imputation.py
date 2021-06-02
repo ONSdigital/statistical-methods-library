@@ -112,8 +112,8 @@ def test_imputed_values_as_expected(fxt_spark_session, capsys):
         sort_col_list = ["reference", "period"]
         ret_val.sort(sort_col_list).show(25)
         assert_approx_df_equality(
-            ret_val.sort(sort_col_list).select("output", "marker"),
-            exp_val.sort(sort_col_list).select("output", "marker"),
+            ret_val.sort(sort_col_list).select("reference", "period", "output", "marker"),
+            exp_val.sort(sort_col_list).select("reference", "period", "output", "marker"),
             0.0001,
             ignore_nullable=True
         )
