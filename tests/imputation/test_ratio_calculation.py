@@ -116,16 +116,14 @@ def test_new_columns_created(fxt_spark_session):
 def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
     exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
-    with capsys.disabled():
-        ret_val = imputation.imputation(test_dataframe, *params)
-        sort_col_list = ["reference", "period"]
-        ret_val.sort(sort_col_list).show(25)
-        assert_approx_df_equality(
-            ret_val.sort(sort_col_list).select("forward", "backward"),
-            exp_val.sort(sort_col_list).select("forward", "backward"),
-            0.0001,
-            ignore_nullable=True
-        )
+    ret_val = imputation.imputation(test_dataframe, *params)
+    sort_col_list = ["reference", "period"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list).select("forward", "backward"),
+        exp_val.sort(sort_col_list).select("forward", "backward"),
+        0.0001,
+        ignore_nullable=True
+    )
 
 # --- Test any other error based outputs ---
 

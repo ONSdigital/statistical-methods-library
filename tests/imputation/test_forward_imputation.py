@@ -106,14 +106,16 @@ def test_dataframe_returned(fxt_spark_session):
 def test_imputed_values_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
     exp_val = load_test_csv(fxt_spark_session, "test_forward_imputation_output.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("output", "marker"),
-        exp_val.sort(sort_col_list).select("output", "marker"),
-        0.0001,
-        ignore_nullable=True
-    )
+    with capsys.disabled():
+        ret_val = imputation.imputation(test_dataframe, *params)
+        sort_col_list = ["reference", "period"]
+        ret_val.sort(sort_col_list).show(25)
+        assert_approx_df_equality(
+            ret_val.sort(sort_col_list).select("output", "marker"),
+            exp_val.sort(sort_col_list).select("output", "marker"),
+            0.0001,
+            ignore_nullable=True
+        )
 
 # --- Test any other error based outputs ---
 
