@@ -1,6 +1,10 @@
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, when
 
+
+# --- Marker constants ---
+MARKER_RESPONSE = "R"
+
 # --- Imputation errors ---
 
 
@@ -101,10 +105,11 @@ def imputation(
         if backward_link_col is not None:
             col_list.append(col(backward_link_col).alias("backward"))
 
-        if marker_col in df.columns:
-            col_list.append(col(marker_col).alias("marker"))
-
-        return df.select(col_list)
+        prepared_df = df.select(col_list)
+        return prepared_df.withColumn(
+            "marker",
+            when(~col("output").isNull(), MARKER_RESPONSE)
+        )
 
     def create_output(df):
         nonlocal forward_link_col
@@ -121,7 +126,8 @@ def imputation(
             col("strata").alias(strata_col),
             col("target").alias(target_col),
             col("aux").alias(auxiliary_col),
-            col("output").alias(output_col)
+            col("output").alias(output_col),
+            col("marker").alias(marker_col)
         ]
         if "forward" in df.columns:
             # If we've done forward link we know we've done backward also
