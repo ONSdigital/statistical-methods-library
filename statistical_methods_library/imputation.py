@@ -115,16 +115,22 @@ def imputation(
         if backward_link_col is None:
             backward_link_col = "backward"
 
-        return df.select(
+        select_col_list = [
             col("ref").alias(reference_col),
             col("period").alias(period_col),
             col("strata").alias(strata_col),
             col("target").alias(target_col),
             col("aux").alias(auxiliary_col),
-            col("output").alias(output_col),
-            col("forward").alias(forward_link_col),
-            col("backward").alias(backward_link_col)
-        )
+            col("output").alias(output_col)
+        ]
+        if "forward" in df.columns:
+            # If we've done forward link we know we've done backward also
+            select_col_list += [
+                col("forward").alias(forward_link_col),
+                col("backward").alias(backward_link_col)
+            ]
+
+        return df.select(select_col_list)
 
     def reorder_df(df, order):
         # TODO: implement
