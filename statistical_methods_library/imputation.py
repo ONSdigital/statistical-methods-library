@@ -332,7 +332,7 @@ def imputation(
                 other_value_df = imputed_df.filter(
                     (col("ref") == ref_val["ref"])
                     & (col("period") == other_period_cb(period_val["period"]))
-                )
+                ).select(col("ref"), col("output").alias("other_output"))
                 if other_value_df.count() == 0:
                     # We either have a gap or no value to impute from,
                     # either way nothing to do.
@@ -346,12 +346,7 @@ def imputation(
                     "ref",
                     "period",
                     "link"
-                ).join(
-                    other_value_df.select(
-                        col("ref"),
-                        col("output").alias("other_output")
-                    ),
-                    "ref"
+                ).join(other_value_df, "ref"
                 ).select(
                     col("ref"),
                     col("period"),
