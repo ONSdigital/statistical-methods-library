@@ -25,8 +25,8 @@ dataframe_columns = (
     auxiliary_col,
     output_col,
     marker_col,
-    backward_col,
-    forward_col
+    forward_col,
+    backward_col
 )
 
 dataframe_types = {
