@@ -313,18 +313,14 @@ def imputation(
         imputed_df = working_df.filter(~col("output").isNull()).persist()
         # Any refs which have no values at all can't be imputed from so we
         # don't care about them here.
-        for ref_val in imputed_df.select("ref").distinct().toLocalIterator():
+        for ref_val in imputed_df.filter(col("output").isNull()).select(
+            "ref").distinct().toLocalIterator():
             # Get all the periods and links for this ref where the output is
             # null since they're the periods we care about.
             ref_df = working_df.filter(
                 (col("ref") == ref_val["ref"])
                 & (col("output").isNull())
             )
-            if ref_df.count() == 0:
-                # No nulls so nothing to impute. Note that this means that
-                # this ref is also already in imputed_df.
-                continue
-
             for period_val in ref_df.select("period").distinct().toLocalIterator():
                 # Get the already present value for the other period if any.
                 # At this point we don't care if it's a response, imputation
