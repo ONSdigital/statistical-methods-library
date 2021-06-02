@@ -119,7 +119,7 @@ def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
     with capsys.disabled():
         ret_val = imputation.imputation(test_dataframe, *params)
         sort_col_list = ["reference", "period"]
-        ret_val.sort(sort_col_list).show()
+        ret_val.sort(sort_col_list).show(25)
         assert_approx_df_equality(
             ret_val.sort(sort_col_list).select("forward", "backward"),
             exp_val.sort(sort_col_list).select("forward", "backward"),
