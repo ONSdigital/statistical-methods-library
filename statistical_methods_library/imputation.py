@@ -149,10 +149,6 @@ def imputation(
 
         return df.select(select_col_list)
 
-    def reorder_df(df, order):
-        # TODO: implement
-        return df
-
     def calculate_previous_period(period):
         numeric_period = int(period)
         if period.endswith("01"):
