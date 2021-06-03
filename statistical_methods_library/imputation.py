@@ -7,6 +7,7 @@ MARKER_RESPONSE = "R"
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
 MARKER_BACKWARD_IMPUTE = "BI"
 MARKER_CONSTRUCTED = "C"
+MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
 
 # --- Imputation errors ---
 
@@ -437,7 +438,7 @@ def imputation(
         )
 
     def forward_impute_from_construction(df):
-        return df
+        return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
 
     # ----------
 
