@@ -189,17 +189,13 @@ def imputation(
                 df_previous_period = strata_df.filter(
                     strata_df.period == calculate_previous_period(period)
                 ).alias("prev").persist()
-                if df_previous_period.count() == 0:
-                    # No previous period so nothing to do.
-                    continue
-
                 # Put the values from the current and previous periods for a
                 # contributor on the same row. Then calculate the sum for both
                 # for all contributors in a period as the values now line up.
                 working_df = df_current_period.join(
                     df_previous_period,
                     (col("current.ref") == col("prev.ref")),
-                    'inner'
+                    'leftouter'
                 ).select(
                     col("current.output").alias("output"),
                     col("current.aux").alias("aux"),
@@ -236,15 +232,10 @@ def imputation(
                     strata_forward_union_df = strata_forward_union_df.union(
                         working_df).persist()
 
-            strata_forward_joined_df = period_df.join(
-                strata_forward_union_df,
-                "period",
-                "leftouter"
-            ).select(
-                period_df.period,
-                strata_forward_union_df.forward,
-                strata_forward_union_df.construction
-            ).fillna(1.0, ["forward", "construction"]).persist()
+            strata_forward_union_df = strata_forward_union_df.fillna(
+                1.0,
+                ["forward", "construction"]).persist(
+            )
 
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
@@ -401,8 +392,30 @@ def imputation(
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
-        # TODO: construction calculation
-        return df
+        construction_df = df.filter(df.output.isNull()).select(
+            "ref",
+            "period",
+            "aux",
+            "construction"
+        ).groupBy("ref").orderBy("period", "asc").agg(
+            {"aux": "first", "construction": "first"}).withColumn(
+            "constructed_output",
+            when(~col("aux").isNull(),
+                col("construction") * col("aux")
+            )
+        )
+
+        return df.withColumnRenamed("output", "existing_output").join(
+            construction_df,
+            ["ref", "period"],
+            "leftouter"
+        ).select(
+            "*",
+            when(col("existing_output").isNull(), col("constructed_output")
+            ).otherwise(col("existing_output").alias("output"))).drop(
+            "existing_output",
+            "constructed_output"
+        )
 
     def forward_impute_from_construction(df):
         return df
