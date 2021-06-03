@@ -235,7 +235,8 @@ def imputation(
                 "leftouter"
             ).select(
                 period_df.period,
-                strata_forward_union_df.forward
+                strata_forward_union_df.forward,
+                strata_forward_union_df.construction
             ).fillna(1.0, ["forward", "construction"]).persist()
 
             # Calculate backward ratio as 1/forward for the next period.
