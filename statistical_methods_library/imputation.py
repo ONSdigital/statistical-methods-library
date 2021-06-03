@@ -163,14 +163,15 @@ def imputation(
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = df.filter(~df.output.isNull()).persist()
+        filtered_df = df.filter(~df.output.isNull()).select(
+            "ref",
+            "period",
+            "output",
+            "aux"
+        ).persist()
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]
-                ).select(
-                    "ref",
-                    "period",
-                    "output"
-                ).persist()
+            ).persist()
             period_df = strata_df.select('period').distinct().persist()
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
