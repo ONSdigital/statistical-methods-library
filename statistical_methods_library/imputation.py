@@ -394,21 +394,43 @@ def imputation(
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
-        construction_df = df.filter(df.output.isNull()).select(
+        filtered_df = df.filter(df.output.isNull()).select(
             "ref",
             "period",
             "aux",
             "construction"
-        ).groupBy("ref").orderBy("period", "asc").agg(
-            {"aux": "first", "construction": "first"}).withColumn(
-            "constructed_output",
-            when(~col("aux").isNull(),
-                col("construction") * col("aux")
-            )
-        ).withColumn("marker", lit(MARKER_CONSTRUCTED))
+        ).persist()
+        period_df = filtered_df.select("period").distinct()
+        ref_df = filtered_df.select("ref").distinct().persist()
+        construction_union_df = None
+        for period_val in period_df.toLocalIterator():
+            for ref_val in ref_df.toLocalIterator():
+                if filtered_df.filter(
+                    col("ref") == ref_val["ref"]
+                    & col("period") == calculate_previous_period(period_val["period"])
+                ).count() > 0:
+                    # We have a previous period so don't construct.
+                    continue
+
+                calculation_df = filtered_df.filter(
+                    col("ref") == ref_val["ref"]
+                    & col("period") == period_val["period"]
+                ).withColumn(
+                    "constructed_output",
+                    col("aux") * col("construction")
+                ).withColumn(
+                    "constructed_marker", lit(MARKER_CONSTRUCTED)
+                )
+                if construction_union_df is None:
+                    construction_union_df = calculation_df.persist()
+                else:
+                    construction_union_df = construction_union_df.union(
+                        calculation_df
+                    ).persist()
+
         return df.withColumnRenamed("output", "existing_output"
         ).withColumnRenamed("marker", "existing_marker").join(
-            construction_df,
+            construction_union_df,
             ["ref", "period"],
             "leftouter"
         ).select(
