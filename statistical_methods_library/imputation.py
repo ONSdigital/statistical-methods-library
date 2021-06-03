@@ -1,7 +1,6 @@
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, when
 
-
 # --- Marker constants ---
 MARKER_RESPONSE = "R"
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
@@ -38,7 +37,7 @@ def imputation(
     marker_col,
     forward_link_col=None,
     backward_link_col=None,
-    construction_link_col=None
+    construction_link_col=None,
 ):
 
     # --- Validate params ---
@@ -70,7 +69,7 @@ def imputation(
             period_col,
             strata_col,
             target_col,
-            auxiliary_col
+            auxiliary_col,
         }
         if forward_link_col is not None:
             expected_cols.add(forward_link_col)
@@ -108,13 +107,12 @@ def imputation(
             col_list += [
                 col(forward_link_col).alias("forward"),
                 col(backward_link_col).alias("backward"),
-                col(construction_link_col).alias("construction")
+                col(construction_link_col).alias("construction"),
             ]
 
         prepared_df = df.select(col_list)
         return prepared_df.withColumn(
-            "marker",
-            when(~col("output").isNull(), MARKER_RESPONSE)
+            "marker", when(~col("output").isNull(), MARKER_RESPONSE)
         )
 
     def create_output(df):
@@ -137,14 +135,14 @@ def imputation(
             col("target").alias(target_col),
             col("aux").alias(auxiliary_col),
             col("output").alias(output_col),
-            col("marker").alias(marker_col)
+            col("marker").alias(marker_col),
         ]
         if "forward" in df.columns:
             # If we've done forward link we know we've done backward also
             select_col_list += [
                 col("forward").alias(forward_link_col),
                 col("backward").alias(backward_link_col),
-                col("construction").alias(construction_link_col)
+                col("construction").alias(construction_link_col),
             ]
 
         return df.select(select_col_list)
@@ -168,45 +166,50 @@ def imputation(
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = df.filter(~df.output.isNull()).select(
-            "ref",
-            "period",
-            "strata",
-            "output",
-            "aux"
-        ).persist()
+        filtered_df = (
+            df.filter(~df.output.isNull())
+            .select("ref", "period", "strata", "output", "aux")
+            .persist()
+        )
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
-            strata_df = filtered_df.filter(df.strata == strata_val["strata"]
-            ).persist()
-            period_df = strata_df.select('period').distinct().persist()
+            strata_df = filtered_df.filter(df.strata == strata_val["strata"]).persist()
+            period_df = strata_df.select("period").distinct().persist()
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
-                df_current_period = strata_df.filter(strata_df.period == period).alias(
-                    "current").persist()
-                df_previous_period = strata_df.filter(
-                    strata_df.period == calculate_previous_period(period)
-                ).alias("prev").persist()
+                df_current_period = (
+                    strata_df.filter(strata_df.period == period)
+                    .alias("current")
+                    .persist()
+                )
+                df_previous_period = (
+                    strata_df.filter(
+                        strata_df.period == calculate_previous_period(period)
+                    )
+                    .alias("prev")
+                    .persist()
+                )
                 # Put the values from the current and previous periods for a
                 # contributor on the same row. Then calculate the sum for both
                 # for all contributors in a period as the values now line up.
                 working_df = df_current_period.join(
                     df_previous_period,
                     (col("current.ref") == col("prev.ref")),
-                    'leftouter'
+                    "leftouter",
                 ).select(
-                    when(~col("prev.output").isNull(),col("current.output")
-                    ).alias("output"),
+                    when(~col("prev.output").isNull(), col("current.output")).alias(
+                        "output"
+                    ),
                     col("current.aux").alias("aux"),
                     col("prev.output").alias("other_output"),
-                    col("current.output").alias("output_for_construction")
+                    col("current.output").alias("output_for_construction"),
                 )
                 working_df = working_df.agg(
                     {
                         "output": "sum",
                         "other_output": "sum",
                         "aux": "sum",
-                        "output_for_construction": "sum"
+                        "output_for_construction": "sum",
                     }
                 ).withColumn("period", lit(period))
 
@@ -215,17 +218,17 @@ def imputation(
                 # links at the same time for efficiency reasons. This shares
                 # the same behaviour of defaulting to a 1 in the case of a 0
                 # denominator.
-                working_df = working_df    .withColumn(
+                working_df = working_df.withColumn(
                     "forward",
-                    col("sum(output)")/when(
-                        col("sum(other_output)") == 0,
-                        lit(1.0)).otherwise(col("sum(other_output)"))
-                    ).withColumn(
+                    col("sum(output)")
+                    / when(col("sum(other_output)") == 0, lit(1.0)).otherwise(
+                        col("sum(other_output)")
+                    ),
+                ).withColumn(
                     "construction",
-                    col("sum(output_for_construction)")/when(
-                        col("sum(aux)") == 0,
-                        lit(1.0)).otherwise(col("sum(aux)"))
-                    )
+                    col("sum(output_for_construction)")
+                    / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
+                )
 
                 # Store the completed period.
                 working_df = working_df.select("period", "forward", "construction")
@@ -235,29 +238,27 @@ def imputation(
 
                 else:
                     strata_forward_union_df = strata_forward_union_df.union(
-                        working_df).persist()
+                        working_df
+                    ).persist()
 
             strata_forward_union_df = strata_forward_union_df.fillna(
-                1.0,
-                ["forward", "construction"]).persist(
-            )
+                1.0, ["forward", "construction"]
+            ).persist()
 
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
                 df_current_period = strata_forward_union_df.filter(
-                    strata_forward_union_df.period == period)
+                    strata_forward_union_df.period == period
+                )
                 df_next_period = strata_forward_union_df.filter(
-                    strata_forward_union_df.period == calculate_next_period(
-                        period))
+                    strata_forward_union_df.period == calculate_next_period(period)
+                )
 
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
-                    working_df = df_current_period.withColumn(
-                        "backward",
-                        lit(1.0)
-                    )
+                    working_df = df_current_period.withColumn("backward", lit(1.0))
 
                 else:
                     # We need to do a subselect to calculate the ratio correctly
@@ -272,7 +273,7 @@ def imputation(
                                 FROM calculate_ratios_backward_next
                             )
                             AS backward
-                        """
+                        """,
                     )
 
                 if strata_backward_union_df is None:
@@ -280,21 +281,22 @@ def imputation(
 
                 else:
                     strata_backward_union_df = strata_backward_union_df.union(
-                        working_df).persist()
+                        working_df
+                    ).persist()
 
-            strata_joined_df = period_df.join(
-                strata_backward_union_df,
-                "period",
-                "leftouter"
-            ).select(
-                period_df.period,
-                strata_backward_union_df.forward,
-                strata_backward_union_df.backward,
-                strata_backward_union_df.construction
-            ).fillna(1.0, "backward")
+            strata_joined_df = (
+                period_df.join(strata_backward_union_df, "period", "leftouter")
+                .select(
+                    period_df.period,
+                    strata_backward_union_df.forward,
+                    strata_backward_union_df.backward,
+                    strata_backward_union_df.construction,
+                )
+                .fillna(1.0, "backward")
+            )
             strata_ratio_df = strata_joined_df.withColumn(
-                "strata",
-                lit(strata_val["strata"]))
+                "strata", lit(strata_val["strata"])
+            )
 
             # Store the completed ratios for this strata.
             if ratio_union_df is None:
@@ -308,7 +310,7 @@ def imputation(
             "*",
             ratio_union_df.forward,
             ratio_union_df.backward,
-            ratio_union_df.construction
+            ratio_union_df.construction,
         )
         return ret_df
 
@@ -327,7 +329,7 @@ def imputation(
             col("period"),
             col(link_col).alias("link"),
             col("output"),
-            col("marker")
+            col("marker"),
         ).persist()
         # Anything which isn't null is already imputed or a response and thus
         # can be imputed from.
@@ -338,21 +340,27 @@ def imputation(
             # Get all the periods and links for this ref where the output is
             # null since they're the periods we care about.
             ref_df = working_df.filter(
-                (col("ref") == ref_val["ref"])
-                & (col("output").isNull())
+                (col("ref") == ref_val["ref"]) & (col("output").isNull())
             ).persist()
             # Make sure the periods are in the correct order so that we have
             # the other period we need to impute from where possible.
-            for period_val in ref_df.select("period").distinct(
-            ).sort("period", ascending=direction).toLocalIterator():
+            for period_val in (
+                ref_df.select("period")
+                .distinct()
+                .sort("period", ascending=direction)
+                .toLocalIterator()
+            ):
                 # Get the already present value for the other period if any.
                 # At this point we don't care if it's a response, imputation
                 # or construction only that it isn't null.
-                other_value_df = imputed_df.filter(
-                    (col("ref") == ref_val["ref"])
-                    & (col("period") == other_period_cb(period_val["period"]))
-                ).select(col("ref"), col("output").alias("other_output")
-                ).persist()
+                other_value_df = (
+                    imputed_df.filter(
+                        (col("ref") == ref_val["ref"])
+                        & (col("period") == other_period_cb(period_val["period"]))
+                    )
+                    .select(col("ref"), col("output").alias("other_output"))
+                    .persist()
+                )
                 if other_value_df.count() == 0:
                     # We either have a gap or no value to impute from,
                     # either way nothing to do.
@@ -361,18 +369,17 @@ def imputation(
                 # Join the other value into this period so that we can
                 # multiply by the link. We only need the ref column in both to
                 # do the join.
-                calculation_df = ref_df.filter(
-                    col("period") == period_val["period"]).select(
-                    "ref",
-                    "period",
-                    "link"
-                ).join(other_value_df, "ref"
-                ).select(
-                    col("ref"),
-                    col("period"),
-                    col("link"),
-                    (col("link") * col("other_output")).alias("output"),
-                    lit(marker).alias("marker")
+                calculation_df = (
+                    ref_df.filter(col("period") == period_val["period"])
+                    .select("ref", "period", "link")
+                    .join(other_value_df, "ref")
+                    .select(
+                        col("ref"),
+                        col("period"),
+                        col("link"),
+                        (col("link") * col("other_output")).alias("output"),
+                        lit(marker).alias("marker"),
+                    )
                 )
                 # Store the imputed period for this ref in our imputed
                 # dataframe so that it can be referenced by another period.
@@ -382,9 +389,7 @@ def imputation(
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
-            imputed_df.drop("link"),
-            ["ref", "period"],
-            "leftouter"
+            imputed_df.drop("link"), ["ref", "period"], "leftouter"
         )
 
     def forward_impute_from_response(df):
@@ -394,34 +399,33 @@ def imputation(
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
-        filtered_df = df.filter(df.output.isNull()).select(
-            "ref",
-            "period",
-            "aux",
-            "construction"
-        ).persist()
+        filtered_df = (
+            df.filter(df.output.isNull())
+            .select("ref", "period", "aux", "construction")
+            .persist()
+        )
         period_df = filtered_df.select("period").distinct()
         ref_df = filtered_df.select("ref").distinct().persist()
         construction_union_df = None
         for ref_val in ref_df.toLocalIterator():
-            ref_filtered_df = filtered_df.filter(col("ref") == ref_val["ref"]
-            ).persist()
+            ref_filtered_df = filtered_df.filter(col("ref") == ref_val["ref"]).persist()
             for period_val in period_df.toLocalIterator():
-                if ref_filtered_df.filter(
-                    (col("period") == calculate_previous_period(
-                        period_val["period"])
-                    )
-                ).count() > 0:
+                if (
+                    ref_filtered_df.filter(
+                        (
+                            col("period")
+                            == calculate_previous_period(period_val["period"])
+                        )
+                    ).count()
+                    > 0
+                ):
                     # We have a previous period so don't construct.
                     continue
 
-                calculation_df = ref_filtered_df.filter(
-                    col("period") == period_val["period"]
-                ).withColumn(
-                    "constructed_output",
-                    col("aux") * col("construction")
-                ).withColumn(
-                    "constructed_marker", lit(MARKER_CONSTRUCTED)
+                calculation_df = (
+                    ref_filtered_df.filter(col("period") == period_val["period"])
+                    .withColumn("constructed_output", col("aux") * col("construction"))
+                    .withColumn("constructed_marker", lit(MARKER_CONSTRUCTED))
                 )
 
                 if construction_union_df is None:
@@ -431,28 +435,24 @@ def imputation(
                         calculation_df
                     ).persist()
 
-        return df.withColumnRenamed("output", "existing_output"
-        ).withColumnRenamed("marker", "existing_marker").join(
-            construction_union_df.drop("aux", "construction"),
-            ["ref", "period"],
-            "leftouter"
-        ).select(
-            "*",
-            when(
-                col("existing_output").isNull(),
-                col("constructed_output")
-            ).otherwise(
-                col("existing_output")
-            ).alias("output"),
-            when(
-                col("existing_marker").isNull(),
-                col("constructed_marker")
-            ).otherwise(
-                col("existing_marker")
-            ).alias("marker")
-        ).drop(
-            "existing_output",
-            "constructed_output"
+        return (
+            df.withColumnRenamed("output", "existing_output")
+            .withColumnRenamed("marker", "existing_marker")
+            .join(
+                construction_union_df.drop("aux", "construction"),
+                ["ref", "period"],
+                "leftouter",
+            )
+            .select(
+                "*",
+                when(col("existing_output").isNull(), col("constructed_output"))
+                .otherwise(col("existing_output"))
+                .alias("output"),
+                when(col("existing_marker").isNull(), col("constructed_marker"))
+                .otherwise(col("existing_marker"))
+                .alias("marker"),
+            )
+            .drop("existing_output", "constructed_output")
         )
 
     def forward_impute_from_construction(df):
