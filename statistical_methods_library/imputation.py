@@ -441,7 +441,7 @@ def imputation(
                 col("constructed_output")
             ).otherwise(
                 col("existing_output")
-            ),
+            ).alias("output"),
             when(
                 col("existing_marker").isNull(),
                 col("constructed_marker")
