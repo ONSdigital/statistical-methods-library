@@ -6,6 +6,7 @@ from pyspark.sql.functions import col, lit, when
 MARKER_RESPONSE = "R"
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
 MARKER_BACKWARD_IMPUTE = "BI"
+MARKER_CONSTRUCTED = "C"
 
 # --- Imputation errors ---
 
@@ -410,16 +411,27 @@ def imputation(
             when(~col("aux").isNull(),
                 col("construction") * col("aux")
             )
-        )
-
-        return df.withColumnRenamed("output", "existing_output").join(
+        ).withColumn("marker", lit(MARKER_CONSTRUCTED))
+        return df.withColumnRenamed("output", "existing_output"
+        ).withColumnRenamed("marker", "existing_marker").join(
             construction_df,
             ["ref", "period"],
             "leftouter"
         ).select(
             "*",
-            when(col("existing_output").isNull(), col("constructed_output")
-            ).otherwise(col("existing_output").alias("output"))).drop(
+            when(
+                col("existing_output").isNull(),
+                col("constructed_output")
+            ).otherwise(
+                col("existing_output")
+            ),
+            when(
+                col("existing_marker").isNull(),
+                col("constructed_marker")
+            ).otherwise(
+                col("existing_marker")
+            ).alias("marker")
+        ).drop(
             "existing_output",
             "constructed_output"
         )
