@@ -201,7 +201,7 @@ def imputation(
                     ).alias("output"),
                     col("current.aux").alias("aux"),
                     col("prev.output").alias("other_output"),
-                    col("current_output").alias("output_for_construction")
+                    col("current.output").alias("output_for_construction")
                 )
                 working_df = working_df.agg(
                     {
