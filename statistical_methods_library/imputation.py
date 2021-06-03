@@ -431,7 +431,7 @@ def imputation(
 
         return df.withColumnRenamed("output", "existing_output"
         ).withColumnRenamed("marker", "existing_marker").join(
-            construction_union_df,
+            construction_union_df.drop("aux", "construction"),
             ["ref", "period"],
             "leftouter"
         ).select(
