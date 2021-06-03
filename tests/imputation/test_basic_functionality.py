@@ -104,6 +104,7 @@ def test_params_not_string(fxt_spark_session):
 
 
 # --- Test if output is a dataframe (or the expected type)---
+# --- Test if output contents is as expected, both new columns and data content ---
 
 def test_dataframe_returned(fxt_spark_session):
     test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
@@ -114,16 +115,3 @@ def test_dataframe_returned(fxt_spark_session):
     ret_cols = ret_val.columns
     assert "output" in ret_cols
     assert "marker" in ret_cols
-
-
-# --- Test if output contents is as expected, both new columns and data content ---
-
-# def test_new_columns_created(fxt_spark_session):
-#     test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
-#     ret_val = imputation.imputation(test_dataframe, *params)
-#     # perform action on the dataframe to trigger lazy evaluation
-#     _row_count = ret_val.count()
-#     ret_cols = ret_val.columns
-#     assert "output" in ret_cols
-#     assert "marker" in ret_cols
-

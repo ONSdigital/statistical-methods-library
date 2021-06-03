@@ -92,6 +92,7 @@ def load_test_csv(spark_session, filename):
 
 
 # --- Test if output is a dataframe (or the expected type)---
+# --- Test if output contents is as expected, both new columns and data content ---
 
 def test_dataframe_returned_as_expected(fxt_spark_session):
     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
@@ -111,30 +112,6 @@ def test_dataframe_returned_as_expected(fxt_spark_session):
         ignore_nullable=True
     )
 
-
-# --- Test if output contents is as expected, both new columns and data content ---
-
-# def test_new_columns_created(fxt_spark_session):
-#     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
-#     ret_val = imputation.imputation(test_dataframe, *params)
-#     # perform action on the dataframe to trigger lazy evaluation
-#     _row_count = ret_val.count()
-#     ret_cols = ret_val.columns
-#     assert "forward" in ret_cols
-#     assert "backward" in ret_cols
-#
-#
-# def test_calculated_ratios_as_expected(fxt_spark_session, capsys):
-#     test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
-#     exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
-#     ret_val = imputation.imputation(test_dataframe, *params)
-#     sort_col_list = ["reference", "period"]
-#     assert_approx_df_equality(
-#         ret_val.sort(sort_col_list).select("forward", "backward"),
-#         exp_val.sort(sort_col_list).select("forward", "backward"),
-#         0.0001,
-#         ignore_nullable=True
-#     )
 
 # --- Test any other error based outputs ---
 
