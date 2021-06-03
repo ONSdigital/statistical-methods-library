@@ -103,7 +103,6 @@ def test_imputed_values_as_expected(fxt_spark_session, capsys):
         ret_val = imputation.imputation(test_dataframe, *params)
         assert isinstance(ret_val, type(test_dataframe))
         sort_col_list = ["reference", "period"]
-        ret_val.sort(sort_col_list).show(25)
         assert_approx_df_equality(
             ret_val.sort(sort_col_list).select("output", "marker"),
             exp_val.sort(sort_col_list).select("output", "marker"),
