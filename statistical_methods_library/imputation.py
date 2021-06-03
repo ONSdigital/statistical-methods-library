@@ -35,7 +35,8 @@ def imputation(
     output_col,
     marker_col,
     forward_link_col=None,
-    backward_link_col=None
+    backward_link_col=None,
+    construction_link_col=None
 ):
 
     # --- Validate params ---
@@ -102,10 +103,11 @@ def imputation(
         ]
 
         if forward_link_col is not None:
-            col_list.append(col(forward_link_col).alias("forward"))
-
-        if backward_link_col is not None:
-            col_list.append(col(backward_link_col).alias("backward"))
+            col_list += [
+                col(forward_link_col).alias("forward"),
+                col(backward_link_col).alias("backward"),
+                col(construction_link_col).alias("construction")
+            ]
 
         prepared_df = df.select(col_list)
         return prepared_df.withColumn(
@@ -122,6 +124,10 @@ def imputation(
         if backward_link_col is None:
             backward_link_col = "backward"
 
+        nonlocal construction_link_col
+        if construction_link_col is None:
+            construction_link_col = "construction"
+
         select_col_list = [
             col("ref").alias(reference_col),
             col("period").alias(period_col),
@@ -135,7 +141,8 @@ def imputation(
             # If we've done forward link we know we've done backward also
             select_col_list += [
                 col("forward").alias(forward_link_col),
-                col("backward").alias(backward_link_col)
+                col("backward").alias(backward_link_col),
+                col("construction").alias(construction_link_col)
             ]
 
         return df.select(select_col_list)
