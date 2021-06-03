@@ -110,7 +110,6 @@ def test_dataframe_returned_as_expected(fxt_spark_session, capsys):
         assert "backward" in ret_cols
         assert "construction" in ret_cols
         sort_col_list = ["reference", "period"]
-        ret_val.sort(sort_col_list).show(25)
         assert_approx_df_equality(
             ret_val.sort(sort_col_list).select("forward", "backward", "construction"),
             exp_val.sort(sort_col_list).select("forward", "backward", "construction"),
