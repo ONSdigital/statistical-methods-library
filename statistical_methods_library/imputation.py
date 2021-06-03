@@ -241,10 +241,10 @@ def imputation(
             strata_backward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
-                df_current_period = strata_forward_joined_df.filter(
-                    strata_forward_joined_df.period == period)
-                df_next_period = strata_forward_joined_df.filter(
-                    strata_forward_joined_df.period == calculate_next_period(
+                df_current_period = strata_forward_union_df.filter(
+                    strata_forward_union_df.period == period)
+                df_next_period = strata_forward_union_df.filter(
+                    strata_forward_union_df.period == calculate_next_period(
                         period))
 
                 if df_next_period.count() == 0:
