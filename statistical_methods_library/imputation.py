@@ -406,15 +406,16 @@ def imputation(
         for period_val in period_df.toLocalIterator():
             for ref_val in ref_df.toLocalIterator():
                 if filtered_df.filter(
-                    col("ref") == ref_val["ref"]
-                    & col("period") == calculate_previous_period(period_val["period"])
+                    (col("ref") == ref_val["ref"])
+                    & (col("period") == calculate_previous_period(
+                        period_val["period"]))
                 ).count() > 0:
                     # We have a previous period so don't construct.
                     continue
 
                 calculation_df = filtered_df.filter(
-                    col("ref") == ref_val["ref"]
-                    & col("period") == period_val["period"]
+                    (col("ref") == ref_val["ref"])
+                    & (col("period") == period_val["period"])
                 ).withColumn(
                     "constructed_output",
                     col("aux") * col("construction")
