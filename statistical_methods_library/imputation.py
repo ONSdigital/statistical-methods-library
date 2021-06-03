@@ -166,6 +166,7 @@ def imputation(
         filtered_df = df.filter(~df.output.isNull()).select(
             "ref",
             "period",
+            "strata",
             "output",
             "aux"
         ).persist()
