@@ -102,14 +102,14 @@ def test_imputed_values_as_expected(fxt_spark_session, capsys):
     test_dataframe = load_test_csv(fxt_spark_session,
                                    "test_construction_input.csv")
     exp_val = load_test_csv(fxt_spark_session,
-                            "test_backward_imputation_output.csv")
+                            "test_construction_output.csv")
     with capsys.disabled():
         ret_val = imputation.imputation(test_dataframe, *params)
         assert isinstance(ret_val, type(test_dataframe))
         sort_col_list = ["reference", "period"]
         assert_approx_df_equality(
             ret_val.sort(sort_col_list).select("output", "marker", "construction"),
-            exp_val.sort(sort_col_list).select("output", "marker"),
+            exp_val.sort(sort_col_list).select("output", "marker", "construction"),
             0.0001,
             ignore_nullable=True
         )
