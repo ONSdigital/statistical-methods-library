@@ -316,9 +316,6 @@ def imputation(
         )
         return ret_df
 
-    def remove_constructions(df):
-        return df
-
     def impute(df, link_col, marker, direction):
         if direction:
             # Forward imputation
