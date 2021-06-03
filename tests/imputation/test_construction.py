@@ -94,3 +94,26 @@ def load_test_csv(spark_session, filename):
 # this helps avoid escaping.
 
 # ====================================================================================
+
+# --- Test if output is a dataframe (or the expected type)---
+# --- Test if output contents is as expected, both new columns and data content ---
+
+def test_imputed_values_as_expected(fxt_spark_session, capsys):
+    test_dataframe = load_test_csv(fxt_spark_session,
+                                   "test_construction_input.csv")
+    exp_val = load_test_csv(fxt_spark_session,
+                            "test_backward_imputation_output.csv")
+    with capsys.disabled():
+        ret_val = imputation.imputation(test_dataframe, *params)
+        assert isinstance(ret_val, type(test_dataframe))
+        sort_col_list = ["reference", "period"]
+        assert_approx_df_equality(
+            ret_val.sort(sort_col_list).select("output", "marker", "construction"),
+            exp_val.sort(sort_col_list).select("output", "marker"),
+            0.0001,
+            ignore_nullable=True
+        )
+
+# --- Test any other error based outputs ---
+
+# No error based outputs to test at this time
