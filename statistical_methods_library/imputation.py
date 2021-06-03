@@ -197,7 +197,7 @@ def imputation(
                     (col("current.ref") == col("prev.ref")),
                     'leftouter'
                 ).select(
-                    when(~col("current.output").isNull(),col("current.output")
+                    when(~col("prev.output").isNull(),col("current.output")
                     ).alias("output"),
                     col("current.aux").alias("aux"),
                     col("prev.output").alias("other_output")
