@@ -193,21 +193,32 @@ def imputation(
                     'inner'
                 ).select(
                     col("current.output").alias("output"),
-                    col("prev.output").alias("other_output"))
+                    col("current.aux").alias("aux"),
+                    col("prev.output").alias("other_output")
+                )
                 working_df = working_df.agg(
-                    {'output': 'sum', 'other_output': 'sum'}
+                    {"output": "sum", "other_output": "sum", "aux": "sum"}
                 ).withColumn("period", lit(period))
 
                 # Calculate the forward ratio for every period using 1 in the
-                # case of a 0 denominator.
-                working_df = working_df.withColumn(
+                # case of a 0 denominator. We also calculate construction
+                # links at the same time for efficiency reasons. This shares
+                # the same behaviour of defaulting to a 1 in the case of a 0
+                # denominator.
+                working_df = working_df    .withColumn(
                     "forward",
                     col("sum(output)")/when(
                         col("sum(other_output)") == 0,
-                        lit(1.0)).otherwise(col("sum(other_output)")))
+                        lit(1.0)).otherwise(col("sum(other_output)"))
+                    ).withColumn(
+                    "construction",
+                    col("sum(output)")/when(
+                        col("sum(aux)") == 0,
+                        lit(1.0)).otherwise(col("sum(aux)"))
+                    )
 
                 # Store the completed period.
-                working_df = working_df.select("period", "forward")
+                working_df = working_df.select("period", "forward", "construction")
 
                 if strata_forward_union_df is None:
                     strata_forward_union_df = working_df.persist()
@@ -223,7 +234,7 @@ def imputation(
             ).select(
                 period_df.period,
                 strata_forward_union_df.forward
-            ).fillna(1.0, "forward").persist()
+            ).fillna(1.0, ["forward", "construction"]).persist()
 
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_union_df = None
@@ -237,10 +248,9 @@ def imputation(
 
                 if df_next_period.count() == 0:
                     # No next period so just add the default backward ratio.
-                    working_df = df_current_period.select(
-                        col("period"),
-                        col("forward"),
-                        lit(1.0).alias("backward")
+                    working_df = df_current_period.withColumn(
+                        "backward",
+                        lit(1.0)
                     )
 
                 else:
@@ -249,8 +259,7 @@ def imputation(
                         "calculate_ratios_backward_next"
                     )
                     working_df = df_current_period.selectExpr(
-                        "period",
-                        "forward",
+                        "*",
                         """
                             (
                                 SELECT 1/forward
@@ -274,7 +283,8 @@ def imputation(
             ).select(
                 period_df.period,
                 strata_backward_union_df.forward,
-                strata_backward_union_df.backward
+                strata_backward_union_df.backward,
+                strata_backward_union_df.construction
             ).fillna(1.0, "backward")
             strata_ratio_df = strata_joined_df.withColumn(
                 "strata",
@@ -287,12 +297,12 @@ def imputation(
                 ratio_union_df = ratio_union_df.union(strata_ratio_df).persist()
 
         # Join the strata ratios onto the input such that each contributor has
-        # a forward ratio. Also fill in any nulls with 1 so that imputation
-        # behaves correctly without having to special-case for null values.
+        # a set of ratios.
         ret_df = df.join(ratio_union_df, ["period", "strata"]).select(
             "*",
             ratio_union_df.forward,
-            ratio_union_df.backward
+            ratio_union_df.backward,
+            ratio_union_df.construction
         )
         return ret_df
 
