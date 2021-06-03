@@ -14,6 +14,7 @@ period_col = "period"
 reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
+construction_col = "construction"
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -26,7 +27,8 @@ dataframe_columns = (
     output_col,
     marker_col,
     forward_col,
-    backward_col
+    backward_col,
+    construction_col
 )
 
 dataframe_types = {
@@ -38,7 +40,8 @@ dataframe_types = {
     output_col: "double",
     marker_col: "string",
     backward_col: "double",
-    forward_col: "double"
+    forward_col: "double",
+    construction_col: "double"
 }
 
 # Params used when calling imputation
