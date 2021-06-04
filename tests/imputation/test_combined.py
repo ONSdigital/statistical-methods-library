@@ -79,63 +79,6 @@ params = (
 
 # ====================================================================================
 
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-
-def test_backward_imputation(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_backward_imputation_input.csv"
-    )
-    exp_val = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_backward_imputation_output.csv"
-    )
-
-    ret_val = imputation.imputation(test_dataframe, *params)
-    assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("output", "marker"),
-        exp_val.sort(sort_col_list).select("output", "marker"),
-        0.0001,
-        ignore_nullable=True
-    )
-
-# --- Test any other error based outputs ---
-
-# No error based outputs to test at this time
-import pytest
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-# --- Test type validation on the input dataframe(s) ---
-# --- Test if cols missing from input dataframe(s) ---
-# --- Test if any run-time params are null ---
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) Avoid referring to specific rows of test data where possible, they may change.
-#    Instead, follow the existing templates to add conditional tests.
-# 4) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes so
-# this helps avoid escaping.
-
-# ====================================================================================
-
-
 # --- Test type validation on the input dataframe(s) ---
 
 def test_dataframe_not_a_dataframe():
@@ -186,7 +129,6 @@ def test_params_not_string(fxt_spark_session, fxt_load_test_csv):
 
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents is as expected, both new columns and data content ---
-
 def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv("test_basic_functionality.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
@@ -196,205 +138,40 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     ret_cols = ret_val.columns
     assert "output" in ret_cols
     assert "marker" in ret_cols
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-# --- Test type validation on the input dataframe(s) ---
-# --- Test if cols missing from input dataframe(s) ---
-# --- Test if any run-time params are null ---
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) Avoid referring to specific rows of test data where possible, they may change.
-#    Instead, follow the existing templates to add conditional tests.
-# 4) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes so
-# this helps avoid escaping.
-
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-
-def test_imputed_values_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(fxt_spark_session,
-                                   "test_construction_imputation_input.csv")
-    exp_val = fxt_load_test_csv(fxt_spark_session,
-                            "test_construction_imputation_output.csv")
-
-    ret_val = imputation.imputation(test_dataframe, *params)
-    assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("output", "marker"),
-        exp_val.sort(sort_col_list).select("output", "marker"),
-        0.0001,
-        ignore_nullable=True
-    )
-
-# --- Test any other error based outputs ---
-
-# No error based outputs to test at this time
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-# --- Test type validation on the input dataframe(s) ---
-# --- Test if cols missing from input dataframe(s) ---
-# --- Test if any run-time params are null ---
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) Avoid referring to specific rows of test data where possible, they may change.
-#    Instead, follow the existing templates to add conditional tests.
-# 4) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes so
-# this helps avoid escaping.
-
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-
-def test_imputed_values_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(fxt_spark_session,
-                                   "test_construction_input.csv")
-    exp_val = fxt_load_test_csv(fxt_spark_session,
-                            "test_construction_output.csv")
-# --- Test any other error based outputs ---
-
-# No error based outputs to test at this time
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-# --- Test type validation on the input dataframe(s) ---
-# --- Test if cols missing from input dataframe(s) ---
-# --- Test if any run-time params are null ---
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) Avoid referring to specific rows of test data where possible, they may change.
-#    Instead, follow the existing templates to add conditional tests.
-# 4) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes so
-# this helps avoid escaping.
-
-# ====================================================================================
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 4) Avoid referring to specific rows of test data where possible, they may change.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes;  this helps
-# avoid having to use escape characters.
-
-# ====================================================================================
-
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-
-def test_imputed_values_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv("test_forward_imputation_input.csv")
-    exp_val = fxt_load_test_csv("test_forward_imputation_output.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("output", "marker"),
-        exp_val.sort(sort_col_list).select("output", "marker"),
-        0.0001,
-        ignore_nullable=True
-    )
-
-# --- Test any other error based outputs ---
-
-# No error based outputs to test at this time
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 4) Avoid referring to specific rows of test data where possible, they may change.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes;  this helps
-# avoid having to use escape characters.
-
-# ====================================================================================
-
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-
-def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv("test_ratio_calculation_input.csv")
-    exp_val = fxt_load_test_csv("test_ratio_calculation_output.csv")
-    ret_val = imputation.imputation(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    _row_count = ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
-    ret_cols = ret_val.columns
     assert "forward" in ret_cols
     assert "backward" in ret_cols
     assert "construction" in ret_cols
+
+# --- Test if output is a dataframe (or the expected type)---
+# --- Test if output contents is as expected, both new columns and data content ---
+
+@pytest.mark.parametrize("scenario, selection",[
+    ("ratio_calculation",["forward", "backward", "construction"]),
+    ("forward_imputation",["output", "marker"]),
+    ("backward_imputation",["output", "marker"]),
+    ("construction",["output", "marker"]),
+    ("construction_imputation",["output", "marker"]))
+def test_calculations(fxt_load_test_csv, scenario, selection):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "test_" + scenario + "_input.csv"
+    )
+    exp_val = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "test_" + scenario + "_output.csv"
+    )
+
+    ret_val = imputation.imputation(test_dataframe, *params)
+    assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select("forward", "backward", "construction"),
-        exp_val.sort(sort_col_list).select("forward", "backward", "construction"),
+        ret_val.sort(sort_col_list).select(selection),
+        exp_val.sort(sort_col_list).select(selection),
         0.0001,
         ignore_nullable=True
     )
-
 
 # --- Test any other error based outputs ---
 
