@@ -136,14 +136,17 @@ def imputation(
             col("aux").alias(auxiliary_col),
             col("output").alias(output_col),
             col("marker").alias(marker_col),
+            col("forward").alias(forward_link_col),
+            col("backward").alias(backward_link_col),
+            col("construction").alias(construction_link_col),
         ]
-        if "forward" in df.columns:
-            # If we've done forward link we know we've done backward also
-            select_col_list += [
-                col("forward").alias(forward_link_col),
-                col("backward").alias(backward_link_col),
-                col("construction").alias(construction_link_col),
-            ]
+        if "forward" not in df.columns:
+            # If we haven't calculated forward ratio we've not calculated any
+            df = (df
+                .withColumn("forward", lit(1.0))
+                .withColumn("backward", lit(1.0))
+                .withColumn("construction", lit(1.0))
+            )
 
         return df.select(select_col_list)
 
