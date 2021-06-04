@@ -78,6 +78,7 @@ params = (
 
 # --- Test type validation on the input dataframe(s) ---
 
+
 @pytest.mark.dependency()
 def test_dataframe_not_a_dataframe():
     with pytest.raises(TypeError):
@@ -86,12 +87,11 @@ def test_dataframe_not_a_dataframe():
 
 # --- Test if cols missing from input dataframe(s) ---
 
+
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_basic_functionality.csv"
+        dataframe_columns, dataframe_types, "test_basic_functionality.csv"
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
@@ -100,12 +100,11 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 
 # --- Test if params null ---
 
+
 @pytest.mark.dependency()
 def test_params_blank(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_basic_functionality.csv"
+        dataframe_columns, dataframe_types, "test_basic_functionality.csv"
     )
     bad_params = (
         reference_col,
@@ -119,12 +118,11 @@ def test_params_blank(fxt_load_test_csv):
     with pytest.raises(ValueError):
         imputation.imputation(test_dataframe, *bad_params)
 
+
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_basic_functionality.csv"
+        dataframe_columns, dataframe_types, "test_basic_functionality.csv"
     )
     bad_params = (
         reference_col,
@@ -144,9 +142,7 @@ def test_params_not_string(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_basic_functionality.csv"
+        dataframe_columns, dataframe_types, "test_basic_functionality.csv"
     )
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
@@ -163,6 +159,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents are as expected, both new columns and data ---
 
+
 @pytest.mark.parametrize(
     "scenario, selection",
     [
@@ -173,7 +170,15 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
         ("construction_imputation", ["output", "marker"]),
     ],
 )
-@pytest.mark.dependency(depends=["test_dataframe_returned","test_params_not_string","test_params_blank","test_dataframe_column_missing","test_dataframe_not_a_dataframe"])
+@pytest.mark.dependency(
+    depends=[
+        "test_dataframe_returned",
+        "test_params_not_string",
+        "test_params_blank",
+        "test_dataframe_column_missing",
+        "test_dataframe_not_a_dataframe",
+    ]
+)
 def test_calculations(fxt_load_test_csv, scenario, selection):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "test_" + scenario + "_input.csv"
