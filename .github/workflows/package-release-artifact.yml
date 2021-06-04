@@ -1,9 +1,7 @@
 name: Release code
 
-# on:
-#   push: [tags]
-
-on: [push]
+on:
+  push: [tags]
 
 jobs:
   build:
@@ -35,8 +33,6 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          name: 'test3'
-          tag_name: 'test3'
           files: |
             dist/*.whl
             dist/*.tar.gz
