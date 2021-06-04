@@ -150,7 +150,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     ("forward_imputation",["output", "marker"]),
     ("backward_imputation",["output", "marker"]),
     ("construction",["output", "marker"]),
-    ("construction_imputation",["output", "marker"]))
+    ("construction_imputation",["output", "marker"])])
 def test_calculations(fxt_load_test_csv, scenario, selection):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
