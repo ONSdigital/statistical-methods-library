@@ -1,7 +1,9 @@
 name: Release code
 
 on:
-  push: [tags]
+  push:
+    tags:
+     - "*"
 
 jobs:
   build-and-release:
