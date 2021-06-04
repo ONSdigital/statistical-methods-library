@@ -1,5 +1,4 @@
 import pytest
-
 from chispa.dataframe_comparer import assert_approx_df_equality
 
 from statistical_methods_library import imputation
@@ -27,7 +26,7 @@ dataframe_columns = (
     marker_col,
     forward_col,
     backward_col,
-    construction_col
+    construction_col,
 )
 
 dataframe_types = {
@@ -40,7 +39,7 @@ dataframe_types = {
     marker_col: "string",
     backward_col: "double",
     forward_col: "double",
-    construction_col: "double"
+    construction_col: "double",
 }
 
 # Params used when calling imputation
@@ -51,7 +50,7 @@ params = (
     target_col,
     auxiliary_col,
     output_col,
-    marker_col
+    marker_col,
 )
 
 # ====================================================================================
@@ -79,12 +78,14 @@ params = (
 
 # --- Test type validation on the input dataframe(s) ---
 
+
 def test_dataframe_not_a_dataframe():
     with pytest.raises(TypeError):
-        imputation.imputation('not_a_dataframe', *params)
+        imputation.imputation("not_a_dataframe", *params)
 
 
 # --- Test if cols missing from input dataframe(s) ---
+
 
 def test_dataframe_column_missing(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv("test_basic_functionality.csv")
@@ -95,6 +96,7 @@ def test_dataframe_column_missing(fxt_spark_session, fxt_load_test_csv):
 
 # --- Test if params null ---
 
+
 def test_params_blank(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv("test_basic_functionality.csv")
     bad_params = (
@@ -104,7 +106,7 @@ def test_params_blank(fxt_spark_session, fxt_load_test_csv):
         "",
         auxiliary_col,
         output_col,
-        marker_col
+        marker_col,
     )
     with pytest.raises(ValueError):
         imputation.imputation(test_dataframe, *bad_params)
@@ -119,7 +121,7 @@ def test_params_not_string(fxt_spark_session, fxt_load_test_csv):
         ["target_col"],
         auxiliary_col,
         output_col,
-        marker_col
+        marker_col,
     )
     with pytest.raises(TypeError):
         imputation.imputation(test_dataframe, *bad_params)
@@ -140,25 +142,27 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     assert "backward" in ret_cols
     assert "construction" in ret_cols
 
+
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents is as expected, both new columns and data content ---
 
-@pytest.mark.parametrize("scenario, selection",[
-    ("ratio_calculation",["forward", "backward", "construction"]),
-    ("forward_imputation",["output", "marker"]),
-    ("backward_imputation",["output", "marker"]),
-    ("construction",["output", "marker"]),
-    ("construction_imputation",["output", "marker"])])
+
+@pytest.mark.parametrize(
+    "scenario, selection",
+    [
+        ("ratio_calculation", ["forward", "backward", "construction"]),
+        ("forward_imputation", ["output", "marker"]),
+        ("backward_imputation", ["output", "marker"]),
+        ("construction", ["output", "marker"]),
+        ("construction_imputation", ["output", "marker"]),
+    ],
+)
 def test_calculations(fxt_load_test_csv, scenario, selection):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_" + scenario + "_input.csv"
+        dataframe_columns, dataframe_types, "test_" + scenario + "_input.csv"
     )
     exp_val = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "test_" + scenario + "_output.csv"
+        dataframe_columns, dataframe_types, "test_" + scenario + "_output.csv"
     )
 
     ret_val = imputation.imputation(test_dataframe, *params)
@@ -168,8 +172,9 @@ def test_calculations(fxt_load_test_csv, scenario, selection):
         ret_val.sort(sort_col_list).select(selection),
         exp_val.sort(sort_col_list).select(selection),
         0.0001,
-        ignore_nullable=True
+        ignore_nullable=True,
     )
+
 
 # --- Test any other error based outputs ---
 

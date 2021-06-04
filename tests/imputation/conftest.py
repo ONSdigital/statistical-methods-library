@@ -1,7 +1,9 @@
 import os
+
 import pytest
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
 
 @pytest.fixture
 def fxt_load_test_csv(fxt_spark_session):
@@ -16,22 +18,20 @@ def fxt_load_test_csv(fxt_spark_session):
         select_col_list = []
         for dataframe_col in columns:
             if dataframe_col in test_dataframe.columns:
-                select_col_list.append(
-                    col(dataframe_col).cast(types[dataframe_col])
-                )
+                select_col_list.append(col(dataframe_col).cast(types[dataframe_col]))
 
         return test_dataframe.select(select_col_list)
 
     return load
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def fxt_spark_session():
     """
     Creates a Spark session to be used throughout all tests.
     """
     yield (
-        SparkSession.builder
-        .appName("tests")
+        SparkSession.builder.appName("tests")
         .master("local")
         .enableHiveSupport()
         .getOrCreate()
