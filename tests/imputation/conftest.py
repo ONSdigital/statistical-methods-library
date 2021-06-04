@@ -1,5 +1,10 @@
 import os
+import pytest
+from chispa.dataframe_comparer import assert_approx_df_equality
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+from statistical_methods_library import imputation
 
 auxiliary_col = "auxiliary"
 backward_col = "backward"
@@ -64,3 +69,16 @@ def load_test_csv(spark_session, filename):
             )
 
     return test_dataframe.select(select_col_list)
+
+@pytest.fixture(scope='session')
+def fxt_spark_session():
+    """
+    Creates a Spark session to be used throughout all tests.
+    """
+    yield (
+        SparkSession.builder
+        .appName("tests")
+        .master("local")
+        .enableHiveSupport()
+        .getOrCreate()
+    )
