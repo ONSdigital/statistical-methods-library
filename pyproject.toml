@@ -6,8 +6,8 @@ authors = ["Your Name <you@example.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "3.7"
-pyspark = "2.4.3"
+python = "^3.7"
+pyspark = "^2.4.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
