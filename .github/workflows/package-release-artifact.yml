@@ -32,17 +32,11 @@ jobs:
         run: poetry install --no-dev
       - name: build
         run: poetry build
-  create-release:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@master
-      - run: ls -la
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          name: 'test2'
-          tag_name: 'test2'
+          name: 'test3'
+          tag_name: 'test3'
           files: |
             dist/*.whl
             dist/*.tar.gz
