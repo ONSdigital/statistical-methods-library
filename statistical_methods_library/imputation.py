@@ -142,8 +142,8 @@ def imputation(
         ]
         if "forward" not in df.columns:
             # If we haven't calculated forward ratio we've not calculated any
-            df = (df
-                .withColumn("forward", lit(1.0))
+            df = (
+                df.withColumn("forward", lit(1.0))
                 .withColumn("backward", lit(1.0))
                 .withColumn("construction", lit(1.0))
             )
