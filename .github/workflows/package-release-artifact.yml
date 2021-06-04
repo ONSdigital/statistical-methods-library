@@ -4,7 +4,8 @@ on:
   push: [tags]
 
 jobs:
-  build:
+  build-and-release:
+    name: Build and release artifact
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
