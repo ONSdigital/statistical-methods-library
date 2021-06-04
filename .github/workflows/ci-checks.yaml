@@ -80,7 +80,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: run flake8
-        run: poetry run flake8 statistical_methods_library
+        run: poetry run flake8 statistical_methods_library tests
   isort:
     runs-on: ubuntu-latest
     strategy:
@@ -106,7 +106,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: run isort
-        run: poetry run isort --check-only statistical_methods_library
+        run: poetry run isort --check-only statistical_methods_library tests
   black:
     runs-on: ubuntu-latest
     strategy:
@@ -132,4 +132,4 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: run black
-        run: poetry run black --check --diff statistical_methods_library
+        run: poetry run black --check --diff statistical_methods_library tests
