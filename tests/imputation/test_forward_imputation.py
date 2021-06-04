@@ -26,8 +26,8 @@
 # --- Test if output contents is as expected, both new columns and data content ---
 
 def test_imputed_values_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_forward_imputation_input.csv")
-    exp_val = fxt_load_test_csv(fxt_spark_session, "test_forward_imputation_output.csv")
+    test_dataframe = fxt_load_test_csv("test_forward_imputation_input.csv")
+    exp_val = fxt_load_test_csv("test_forward_imputation_output.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]

@@ -57,10 +57,10 @@ params = (
 )
 
 @pytest.fixture
-def fxt_load_test_csv(spark_session, filename):
+def fxt_load_test_csv(fxt_spark_session, filename):
     path = "tests/imputation/fixture_data/"
     filepath = os.path.join(path, filename)
-    test_dataframe = spark_session.read.csv(filepath, header=True)
+    test_dataframe = fxt_spark_session.read.csv(filepath, header=True)
     select_col_list = []
     for dataframe_col in dataframe_columns:
         if dataframe_col in test_dataframe.columns:
@@ -68,7 +68,7 @@ def fxt_load_test_csv(spark_session, filename):
                 col(dataframe_col).cast(dataframe_types[dataframe_col])
             )
 
-    return test_dataframe.select(select_col_list)
+    yield test_dataframe.select(select_col_list)
 
 @pytest.fixture(scope='session')
 def fxt_spark_session():

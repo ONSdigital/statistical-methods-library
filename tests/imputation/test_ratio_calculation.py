@@ -26,8 +26,8 @@
 # --- Test if output contents is as expected, both new columns and data content ---
 
 def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
-    exp_val = fxt_load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
+    test_dataframe = fxt_load_test_csv("test_ratio_calculation_input.csv")
+    exp_val = fxt_load_test_csv("test_ratio_calculation_output.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
