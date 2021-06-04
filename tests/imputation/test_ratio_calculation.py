@@ -25,25 +25,24 @@
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents is as expected, both new columns and data content ---
 
-def test_dataframe_returned_as_expected(fxt_spark_session, capsys):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
-    exp_val = load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
-    with capsys.disabled():
-        ret_val = imputation.imputation(test_dataframe, *params)
-        # perform action on the dataframe to trigger lazy evaluation
-        _row_count = ret_val.count()
-        assert isinstance(ret_val, type(test_dataframe))
-        ret_cols = ret_val.columns
-        assert "forward" in ret_cols
-        assert "backward" in ret_cols
-        assert "construction" in ret_cols
-        sort_col_list = ["reference", "period"]
-        assert_approx_df_equality(
-            ret_val.sort(sort_col_list).select("forward", "backward", "construction"),
-            exp_val.sort(sort_col_list).select("forward", "backward", "construction"),
-            0.0001,
-            ignore_nullable=True
-        )
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_ratio_calculation_input.csv")
+    exp_val = fxt_load_test_csv(fxt_spark_session, "test_ratio_calculation_output.csv")
+    ret_val = imputation.imputation(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation
+    _row_count = ret_val.count()
+    assert isinstance(ret_val, type(test_dataframe))
+    ret_cols = ret_val.columns
+    assert "forward" in ret_cols
+    assert "backward" in ret_cols
+    assert "construction" in ret_cols
+    sort_col_list = ["reference", "period"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list).select("forward", "backward", "construction"),
+        exp_val.sort(sort_col_list).select("forward", "backward", "construction"),
+        0.0001,
+        ignore_nullable=True
+    )
 
 
 # --- Test any other error based outputs ---

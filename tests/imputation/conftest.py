@@ -56,8 +56,8 @@ params = (
     marker_col
 )
 
-
-def load_test_csv(spark_session, filename):
+@pytest.fixture
+def fxt_load_test_csv(spark_session, filename):
     path = "tests/imputation/fixture_data/"
     filepath = os.path.join(path, filename)
     test_dataframe = spark_session.read.csv(filepath, header=True)

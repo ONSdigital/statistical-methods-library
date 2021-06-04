@@ -34,8 +34,8 @@ def test_dataframe_not_a_dataframe():
 
 # --- Test if cols missing from input dataframe(s) ---
 
-def test_dataframe_column_missing(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
+def test_dataframe_column_missing(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
         imputation.imputation(bad_dataframe, *params)
@@ -43,8 +43,8 @@ def test_dataframe_column_missing(fxt_spark_session):
 
 # --- Test if params null ---
 
-def test_params_blank(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
+def test_params_blank(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
     bad_params = (
         reference_col,
         period_col,
@@ -58,8 +58,8 @@ def test_params_blank(fxt_spark_session):
         imputation.imputation(test_dataframe, *bad_params)
 
 
-def test_params_not_string(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
+def test_params_not_string(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
     bad_params = (
         reference_col,
         period_col,
@@ -76,8 +76,8 @@ def test_params_not_string(fxt_spark_session):
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents is as expected, both new columns and data content ---
 
-def test_dataframe_returned(fxt_spark_session):
-    test_dataframe = load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
+def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(fxt_spark_session, "test_basic_functionality.csv")
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     _row_count = ret_val.count()
