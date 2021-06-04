@@ -1,8 +1,6 @@
 import pytest
 
 from chispa.dataframe_comparer import assert_approx_df_equality
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
 
 from statistical_methods_library import imputation
 

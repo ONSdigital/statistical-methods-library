@@ -1,5 +1,7 @@
 import os
 import pytest
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 
 @pytest.fixture
 def fxt_load_test_csv(fxt_spark_session):
