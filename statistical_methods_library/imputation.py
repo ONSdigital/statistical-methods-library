@@ -145,11 +145,18 @@ def imputation(
             target_col,
             auxiliary_col,
         }
+
+        link_cols = [link_col is not None
+            for link_col in [forward_link_col, backward_link_col, construction_link_col
+        ]]
+
+        if any(link_cols) and not all(link_cols):
+            raise TypeError("Either all or no link columns must be specified")
+
         if forward_link_col is not None:
             expected_cols.add(forward_link_col)
-
-        if backward_link_col is not None:
             expected_cols.add(backward_link_col)
+            expected_cols.add(construction_link_col)
 
         # Check to see if the col names are not blank.
         for col_name in expected_cols:
