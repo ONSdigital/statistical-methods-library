@@ -2,15 +2,20 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
+# The value is a resonse.
 MARKER_RESPONSE = "R"
+# The value has been forward imputed from a response.
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
+# The value has been backward imputed from a response, backward imputation
+# from construction is not permitted.
 MARKER_BACKWARD_IMPUTE = "BI"
+# The value is constructed.
 MARKER_CONSTRUCTED = "C"
+# The value has been forward imputed from a constructed value.
 MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
 
+
 # --- Imputation errors ---
-
-
 # Base type for imputation errors
 class ImputationError(Exception):
     pass
@@ -91,28 +96,22 @@ def imputation(
     other required input data.
 
     Notes:
-    The existance of <output_col> and <marker_col> in the input data is
+    The existence of <output_col> and <marker_col> in the input data is
     an error.
 
     All or none of <forward_link_col>, <backward_link_col> and
     <construction_link_col> must be specified.
 
-    <marker_col> will contain one of:
-    * MARKER_FORWARD_IMPUTE_FROM_RESPONSE - the value was forward imputed
-      based on a response or a forward impute from a response.
-    * MARKER_BACKWARD_IMPUTE - The value was backward imputed from a
-      response or another backward impute. Note that backward imputation
-      can only ever happen from responses.
-    * MARKER_CONSTRUCTED - The value was constructed.
-    * MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION - The value was forward
-      imputed from a constructed value or from a forward impute from a
-      constructed value.
+    <marker_col> will contain one of the marker constants defined in this
+    module.
 
-    As implied in the above, in this method imputed values chain together until
-    either a return is present or the contributor is not present in the
-    sample. Values either side of such a gap do not interact (i.e. ratios
-    and imputes will not take into account values for a contributor from
-    before or after periods where they were dropped from the sample).
+    This method implements rolling imputation, that is imputed values chain
+    together until either a return is present or the contributor is not present
+    in the sample. Values either side of such a gap do not interact (i.e.
+    ratios and imputes will not take into account values for a contributor
+    from before or after periods where they were dropped from the sample). In
+    the case of rolling imputation, the markers will be the same for chains of
+    imputed values.
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
@@ -146,9 +145,12 @@ def imputation(
             auxiliary_col,
         }
 
-        link_cols = [link_col is not None
-            for link_col in [forward_link_col, backward_link_col, construction_link_col
-        ]]
+        link_cols = [
+            link_col is not None
+            for link_col in [
+                forward_link_col, backward_link_col, construction_link_col
+            ]
+        ]
 
         if any(link_cols) and not all(link_cols):
             raise TypeError("Either all or no link columns must be specified")
