@@ -120,6 +120,18 @@ def test_params_blank(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
+def test_missing_link_col(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "test_basic_functionality.csv"
+    )
+    with pytest.raises(TypeError):
+        imputation.imputation(
+            test_dataframe,
+            *params,
+            construction_link_col=construction_col)
+
+
+@pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "test_basic_functionality.csv"
