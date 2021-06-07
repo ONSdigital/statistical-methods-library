@@ -39,7 +39,81 @@ def imputation(
     backward_link_col=None,
     construction_link_col=None,
 ):
+    """
+    Perform Ratio of means (also known as Ratio of Sums) imputation on a
+    dataframe.
 
+    :param input_df: The input dataframe - an instance of pyspark.sql.Dataframe
+    :param reference_col: The name of the column to reference a unique
+    contributor - str
+    :param period_col: The name of the column containing the period
+    information for the contributor - str
+    :param strata_col: The Name of the column containing the strata information
+    for the contributor - str
+    :param target_col: The name of the column containing the target
+    variable - str
+    :param auxiliary_col: The name of the column containing the auxiliary
+    variable - str
+    :param output_col: The name of the column which will contain the
+    output - str
+    :param marker_col: The name of the column which will contain the marker
+    information for a given value - str
+    :param forward_link_col: If specified, the name of an existing column
+    containing forward ratio (or link) information - str or None
+    Defaults to None which means that a default column name of "forward" will
+    be created and the forward ratios will be calculated
+    :param backward_link_col: If specified, the name of an existing column
+    containing backward ratio (or link) information - str or None
+    Defaults to None which means that a default column name of "backward"
+    will be created and the backward ratios will be calculated
+    :param construction_link_col: If specified, the name of an existing column
+    containing construction ratio (or link) information - str or None
+    Defaults to None which means that a default column name of "construction"
+    will be created and the construction ratios will be calculated.
+
+    Returns:
+    A new dataframe containing:
+    * <reference_col>
+    * <period_col>
+    * <strata_col>
+    * <target_col>
+    * <auxiliary_col>
+    * <output_col>
+    * <marker_col>
+    * <forward_col>
+    * <backward_col>
+    * <construction_col>
+
+    Where the <...> refer to the provided column names or the respective
+    defaults. No other columns are created. In particular, no other columns
+    will be passed through from the input since it is expected that the
+    information in the output dataframe will be sufficient to join on any
+    other required input data.
+
+    Notes:
+    The existance of <output_col> and <marker_col> in the input data is
+    an error.
+
+    All or none of <forward_link_col>, <backward_link_col> and
+    <construction_link_col> must be specified.
+
+    <marker_col> will contain one of:
+    * MARKER_FORWARD_IMPUTE_FROM_RESPONSE - the value was forward imputed
+      based on a response or a forward impute from a response.
+    * MARKER_BACKWARD_IMPUTE - The value was backward imputed from a
+      response or another backward impute. Note that backward imputation
+      can only ever happen from responses.
+    * MARKER_CONSTRUCTED - The value was constructed.
+    * MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION - The value was forward
+      imputed from a constructed value or from a forward impute from a
+      constructed value.
+
+    As implied in the above, in this method imputed values chain together until
+    either a return is present or the contributor is not present in the
+    sample. Values either side of such a gap do not interact (i.e. ratios
+    and imputes will not take into account values for a contributor from
+    before or after periods where they were dropped from the sample).
+    """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
