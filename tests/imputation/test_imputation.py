@@ -120,7 +120,7 @@ def test_params_blank(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_missing_link_col(fxt_load_test_csv):
+def test_missing_link_column(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "test_basic_functionality.csv"
     )
@@ -187,6 +187,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_returned",
         "test_params_not_string",
         "test_params_blank",
+        "test_missing_link_column",
         "test_dataframe_column_missing",
         "test_dataframe_not_a_dataframe",
     ]
