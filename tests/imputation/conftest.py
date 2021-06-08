@@ -32,7 +32,7 @@ def fxt_spark_session():
     """
     yield (
         SparkSession.builder.appName("tests")
-        .master("local")
+        .master("local[*]")
         .enableHiveSupport()
         .getOrCreate()
     )
