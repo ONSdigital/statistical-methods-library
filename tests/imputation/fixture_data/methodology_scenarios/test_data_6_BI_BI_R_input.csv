@@ -1,4 +1,4 @@
-reference,period,imputationClass,targetColumn,auxiliaryColumn
+reference,period,strata,target,auxiliary
 60001,202001,100,5077,15
 60001,202002,100,7830,15
 60001,202003,100,1046,15
