@@ -266,7 +266,7 @@ def imputation(
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]).persist()
             period_df = (
-                strata_df.select("period", "previous_period").distinct().persist()
+                strata_df.select("period", "previous_period", "next_period").distinct().persist()
             )
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
