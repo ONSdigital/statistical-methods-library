@@ -174,18 +174,19 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 # --- Test if output contents are as expected, both new columns and data ---
 
 test_scenarios = [("unit/ratio_calculation", ["forward", "backward", "construction"])]
-for file_name in glob.iglob(
-    "tests/imputation/fixture_data/methodology_scenarios/*_input.csv"
-):
-    test_scenarios.append(
-        (
-            os.path.join(
-                "methodology_scenarios",
-                os.path.basename(file_name).replace("_input.csv", ""),
-            ),
-            ["output", "marker"],
+for scenario_type in ('dev', 'methodology'):
+    for file_name in glob.iglob(
+        f"tests/imputation/fixture_data/{scenario_type}_scenarios/*_input.csv"
+    ):
+        test_scenarios.append(
+            (
+                os.path.join(
+                    f"{scenario_type}_scenarios",
+                    os.path.basename(file_name).replace("_input.csv", ""),
+                ),
+                ["output", "marker"],
+            )
         )
-    )
 
 
 @pytest.mark.parametrize("scenario, selection", test_scenarios)
