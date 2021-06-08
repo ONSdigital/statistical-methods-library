@@ -126,9 +126,8 @@ def test_missing_link_column(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         imputation.imputation(
-            test_dataframe,
-            *params,
-            construction_link_col=construction_col)
+            test_dataframe, *params, construction_link_col=construction_col
+        )
 
 
 @pytest.mark.dependency()
