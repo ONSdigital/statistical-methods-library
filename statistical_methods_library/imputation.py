@@ -192,8 +192,10 @@ def imputation(
             ]
 
         prepared_df = df.select(col_list)
-        return prepared_df.withColumn(
-            "marker", when(~col("output").isNull(), MARKER_RESPONSE)
+        return (prepared_df
+            .withColumn("marker", when(~col("output").isNull(), MARKER_RESPONSE))
+            .withColumn("previous_period", calculate_previous_period(col("period")))
+            .withColumn("next_period", calculate_next_period(col("period")))
         )
 
     def create_output(df):
@@ -231,19 +233,15 @@ def imputation(
 
         return df.select(select_col_list)
 
-    def calculate_previous_period(period):
-        numeric_period = int(period)
-        if period.endswith("01"):
-            return str(numeric_period - 89)
-        else:
-            return str(numeric_period - 1)
+    def calculate_previous_period(period_col):
+        return when(
+            period_col.endswith("01"), (period_col.cast("int") - 89).cast("string")
+        ).otherwise((period_col.cast("int") - 1).cast("string"))
 
-    def calculate_next_period(period):
-        numeric_period = int(period)
-        if period.endswith("12"):
-            return str(numeric_period + 89)
-        else:
-            return str(numeric_period + 1)
+    def calculate_next_period(period_col):
+        return when(
+            period_col.endswith("12"), (period_col.cast("int") + 89).cast("string")
+        ).otherwise((period_col.cast("int") - 1).cast("string"))
 
     def calculate_ratios(df):
         ratio_union_df = None
@@ -252,24 +250,31 @@ def imputation(
         # default ratios.
         filtered_df = (
             df.filter(~df.output.isNull())
-            .select("ref", "period", "strata", "output", "aux")
+            .select(
+                "ref",
+                "period",
+                "strata",
+                "output",
+                "aux",
+                "previous_period",
+                "next_period"
+            )
             .persist()
         )
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]).persist()
-            period_df = strata_df.select("period").distinct().persist()
+            period_df = strata_df.select("period", "previous_period").distinct().persist()
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
+                previous_period = period_val["previous_period"]
                 df_current_period = (
                     strata_df.filter(strata_df.period == period)
                     .alias("current")
                     .persist()
                 )
                 df_previous_period = (
-                    strata_df.filter(
-                        strata_df.period == calculate_previous_period(period)
-                    )
+                    strata_df.filter(strata_df.period == previous_period)
                     .alias("prev")
                     .persist()
                 )
@@ -333,11 +338,12 @@ def imputation(
             strata_backward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
+                next_period = period_val["next_period"]
                 df_current_period = strata_forward_union_df.filter(
                     strata_forward_union_df.period == period
                 )
                 df_next_period = strata_forward_union_df.filter(
-                    strata_forward_union_df.period == calculate_next_period(period)
+                    strata_forward_union_df.period == next_period
                 )
 
                 if df_next_period.count() == 0:
@@ -401,10 +407,10 @@ def imputation(
     def impute(df, link_col, marker, direction):
         if direction:
             # Forward imputation
-            other_period_cb = calculate_previous_period
+            other_period_col = "previous_period"
         else:
             # Backward imputation
-            other_period_cb = calculate_next_period
+            other_period_col = "next_period"
 
         # Avoid having to care about the name of our link column by selecting
         # it as a fixed name here.
@@ -414,6 +420,8 @@ def imputation(
             col(link_col).alias("link"),
             col("output"),
             col("marker"),
+            col("previous_period"),
+            col("next_period"),
         ).persist()
         # Anything which isn't null is already imputed or a response and thus
         # can be imputed from.
@@ -429,7 +437,7 @@ def imputation(
             # Make sure the periods are in the correct order so that we have
             # the other period we need to impute from where possible.
             for period_val in (
-                ref_df.select("period")
+                ref_df.select("period", other_period_col)
                 .distinct()
                 .sort("period", ascending=direction)
                 .toLocalIterator()
@@ -440,8 +448,7 @@ def imputation(
                 other_value_df = (
                     imputed_df.filter(
                         (col("ref") == ref_val["ref"])
-                        & (col("period") == other_period_cb(period_val["period"]))
-                    )
+                        & (col("period") == period_val[other_period_col]))
                     .select(col("ref"), col("output").alias("other_output"))
                     .persist()
                 )
@@ -488,7 +495,7 @@ def imputation(
             .select("ref", "period", "aux", "construction")
             .persist()
         )
-        period_df = filtered_df.select("period").distinct()
+        period_df = filtered_df.select("period", "previous_period").distinct()
         ref_df = filtered_df.select("ref").distinct().persist()
         construction_union_df = None
         for ref_val in ref_df.toLocalIterator():
@@ -496,10 +503,7 @@ def imputation(
             for period_val in period_df.toLocalIterator():
                 if (
                     ref_filtered_df.filter(
-                        (
-                            col("period")
-                            == calculate_previous_period(period_val["period"])
-                        )
+                        col("period") == period_val["previous_period"]
                     ).count()
                     > 0
                 ):
