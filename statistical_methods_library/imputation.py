@@ -147,9 +147,7 @@ def imputation(
 
         link_cols = [
             link_col is not None
-            for link_col in [
-                forward_link_col, backward_link_col, construction_link_col
-            ]
+            for link_col in [forward_link_col, backward_link_col, construction_link_col]
         ]
 
         if any(link_cols) and not all(link_cols):
