@@ -1,3 +1,5 @@
+import glob
+import os
 import pytest
 from chispa.dataframe_comparer import assert_approx_df_equality
 
@@ -170,17 +172,22 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 # --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents are as expected, both new columns and data ---
 
+test_scenarios = [("unit/ratio_calculation", ["forward", "backward", "construction"])]
+for file_name in glob.iglob(
+    "tests/imputation/fixture_data/methodology_scenarios/*_input.csv"
+):
+    test_scenarios.append(
+        (
+            os.path.join(
+                "methodology_scenarios",
+                os.path.basename(file_name).replace("_input.csv", ""),
+            ),
+            ["output", "marker"],
+        )
+    )
 
-@pytest.mark.parametrize(
-    "scenario, selection",
-    [
-        ("unit/ratio_calculation", ["forward", "backward", "construction"]),
-        ("forward_imputation", ["output", "marker"]),
-        ("backward_imputation", ["output", "marker"]),
-        ("construction", ["output", "marker"]),
-        ("construction_imputation", ["output", "marker"]),
-    ],
-)
+
+@pytest.mark.parametrize("scenario, selection", test_scenarios)
 @pytest.mark.dependency(
     depends=[
         "test_dataframe_returned",
