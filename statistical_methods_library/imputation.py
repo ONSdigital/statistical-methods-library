@@ -192,8 +192,10 @@ def imputation(
             ]
 
         prepared_df = df.select(col_list)
-        return (prepared_df
-            .withColumn("marker", when(~col("output").isNull(), MARKER_RESPONSE))
+        return (
+            prepared_df.withColumn(
+                "marker", when(~col("output").isNull(), MARKER_RESPONSE)
+            )
             .withColumn("previous_period", calculate_previous_period(col("period")))
             .withColumn("next_period", calculate_next_period(col("period")))
         )
@@ -257,13 +259,15 @@ def imputation(
                 "output",
                 "aux",
                 "previous_period",
-                "next_period"
+                "next_period",
             )
             .persist()
         )
         for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
             strata_df = filtered_df.filter(df.strata == strata_val["strata"]).persist()
-            period_df = strata_df.select("period", "previous_period").distinct().persist()
+            period_df = (
+                strata_df.select("period", "previous_period").distinct().persist()
+            )
             strata_forward_union_df = None
             for period_val in period_df.toLocalIterator():
                 period = period_val["period"]
@@ -448,7 +452,8 @@ def imputation(
                 other_value_df = (
                     imputed_df.filter(
                         (col("ref") == ref_val["ref"])
-                        & (col("period") == period_val[other_period_col]))
+                        & (col("period") == period_val[other_period_col])
+                    )
                     .select(col("ref"), col("output").alias("other_output"))
                     .persist()
                 )
