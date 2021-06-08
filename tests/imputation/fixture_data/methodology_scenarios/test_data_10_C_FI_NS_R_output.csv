@@ -1,4 +1,4 @@
-reference,period,imputationClass,targetColumn,auxiliaryColumn,outputColumn,markerColumn,imputation_link,fwdLink,bwdLink,conLink
+reference,period,strata,target,auxiliary,output,marker,imputation_link,forward,backward,construction
 100001,202001,100,3074,26,3074,R,,,1.046156805,179.3296703
 100001,202002,100,9529,26,9529,R,,0.95587965,4.022434244,171.4175824
 100001,202003,100,615,26,615,R,,0.24860568,0.330267416,42.61538462
