@@ -506,11 +506,15 @@ def imputation(
             .select("ref", "period", "aux", "construction", "previous_period")
             .persist()
         )
-        period_df = filtered_df.select("period", "previous_period").distinct()
         ref_df = filtered_df.select("ref").distinct().persist()
         construction_union_df = None
         for ref_val in ref_df.toLocalIterator():
-            ref_filtered_df = filtered_df.filter(col("ref") == ref_val["ref"]).persist()
+            ref_filtered_df = (
+                filtered_df.filter(col("ref") == ref_val["ref"])
+                .select("ref", "period", "aux", "construction")
+                .persist()
+            )
+            period_df = ref_filtered_df.select("period", "previous_period").distinct()
             for period_val in period_df.toLocalIterator():
                 if (
                     ref_filtered_df.filter(
