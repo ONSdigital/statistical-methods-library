@@ -433,7 +433,7 @@ def imputation(
         # can be imputed from.
         imputed_df = (
             working_df.filter(~col("output").isNull())
-            .select("ref", "period", "link", "output", "marker"),
+            .select("ref", "period", "link", "output", "marker")
             .persist()
         )
         # Any refs which have no values at all can't be imputed from so we
