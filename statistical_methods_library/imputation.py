@@ -503,7 +503,7 @@ def imputation(
     def construct_values(df):
         filtered_df = (
             df.filter(df.output.isNull())
-            .select("ref", "period", "aux", "construction")
+            .select("ref", "period", "aux", "construction", "previous_period")
             .persist()
         )
         period_df = filtered_df.select("period", "previous_period").distinct()
