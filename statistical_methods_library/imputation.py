@@ -330,7 +330,9 @@ def imputation(
                 )
 
                 # Store the completed period.
-                working_df = working_df.select("period", "forward", "construction")
+                working_df = working_df.select(
+                    "period", "forward", "construction", "next_period"
+                )
 
                 if strata_forward_union_df is None:
                     strata_forward_union_df = working_df.persist()
