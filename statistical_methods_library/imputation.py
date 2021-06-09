@@ -480,20 +480,17 @@ def imputation(
         prev_df = construction_df.select("ref", "previous_period").alias("prev")
 
         construction_df = construction_df.alias("cur")
-        construction_df = (
-            construction_df.join(
-                prev_df,
-                [
-                    col("cur.ref") == col("prev.ref"),
-                    col("cur.period") != col("prev.previous_period"),
-                ],
-            )
-            .select(
-                col("cur.ref").alias("ref"),
-                col("cur.period").alias("period"),
-                (col("aux") * col("construction")).alias("constructed_output"),
-                lit(MARKER_CONSTRUCTED).alias("constructed_marker")
-            )
+        construction_df = construction_df.join(
+            prev_df,
+            [
+                col("cur.ref") == col("prev.ref"),
+                col("cur.period") != col("prev.previous_period"),
+            ],
+        ).select(
+            col("cur.ref").alias("ref"),
+            col("cur.period").alias("period"),
+            (col("aux") * col("construction")).alias("constructed_output"),
+            lit(MARKER_CONSTRUCTED).alias("constructed_marker"),
         )
 
         return (
