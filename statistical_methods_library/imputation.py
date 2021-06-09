@@ -346,6 +346,17 @@ def imputation(
                 1.0, ["forward", "construction"]
             ).persist()
 
+            strata_forward_union_df = (
+                period_df.select("period", "next_period")
+                .join(strata_forward_union_df, "period", "leftouter")
+                .select(
+                    period_df.period,
+                    period_df.next_period,
+                    strata_forward_union_df,
+                    forward,
+                    strata_forward_union_df.construction,
+                )
+            )
             # Calculate backward ratio as 1/forward for the next period.
             strata_backward_df = (
                 strata_forward_union_df.join(
