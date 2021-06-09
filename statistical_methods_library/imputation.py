@@ -477,13 +477,15 @@ def imputation(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "aux", "construction", "previous_period"
         )
+        prev_df = construction_df.select("ref", "previous_period").alias("prev")
 
+        construction_df = construction_df.alias("cur")
         construction_df = (
             construction_df.join(
-                construction_df.select("ref", "previous_period").alias("prev"),
+                prev_df,
                 [
-                    construction_df.ref == col("prev.ref"),
-                    construction_df.period != col("prev.previous_period"),
+                    col("cur.ref") == col("prev.ref"),
+                    col("cur.period") != col("prev.previous_period"),
                 ],
             )
             .withColumn("constructed_output", col("aux") * col("construction"))
