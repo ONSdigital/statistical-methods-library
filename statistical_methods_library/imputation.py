@@ -346,18 +346,8 @@ def imputation(
                 1.0, ["forward", "construction"]
             ).persist()
 
-            strata_forward_union_df = (
-                period_df.select("period", "next_period")
-                .join(strata_forward_union_df, "period", "leftouter")
-                .select(
-                    period_df.period,
-                    period_df.next_period,
-                    strata_forward_union_df.forward,
-                    strata_forward_union_df.construction,
-                )
-            )
             # Calculate backward ratio as 1/forward for the next period.
-            strata_backward_df = (
+            strata_ratio_df = (
                 strata_forward_union_df.join(
                     strata_forward_union_df.select(
                         col("next_period").alias("period"),
@@ -366,16 +356,13 @@ def imputation(
                     "period",
                     "leftouter",
                 )
-                .select("*", (lit(1.0) / col("next_forward")).alias("backward"))
-                .select("period", "forward", "backward", "construction")
-            )
-            strata_joined_df = (
-                period_df.join(strata_backward_df, "period", "leftouter")
-                .select("period", "forward", "backward", "construction")
+                .select(
+                    lit(strata_val["strata"]).alias("strata"),
+                    col("forward"),
+                    (lit(1.0) / col("next_forward")).alias("backward"),
+                    col("construction"),
+                )
                 .fillna(1.0, "backward")
-            )
-            strata_ratio_df = strata_joined_df.withColumn(
-                "strata", lit(strata_val["strata"])
             )
 
             # Store the completed ratios for this strata.
