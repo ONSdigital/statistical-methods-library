@@ -426,8 +426,7 @@ def imputation(
             col(link_col).alias("link"),
             col("output"),
             col("marker"),
-            col("previous_period"),
-            col("next_period"),
+            col(other_period_col).alias("other_period"),
         ).persist()
         # Anything which isn't null is already imputed or a response and thus
         # can be imputed from.
@@ -447,7 +446,7 @@ def imputation(
             # Make sure the periods are in the correct order so that we have
             # the other period we need to impute from where possible.
             for period_val in (
-                ref_df.select("period", other_period_col)
+                ref_df.select("period", "other_period")
                 .distinct()
                 .sort("period", ascending=direction)
                 .toLocalIterator()
@@ -458,7 +457,7 @@ def imputation(
                 other_value_df = (
                     imputed_df.filter(
                         (col("ref") == ref_val["ref"])
-                        & (col("period") == period_val[other_period_col])
+                        & (col("period") == period_val["other_period"])
                     )
                     .select(col("ref"), col("output").alias("other_output"))
                     .persist()
@@ -542,7 +541,7 @@ def imputation(
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
             .join(
-                construction_union_df.drop("aux", "construction"),
+                construction_union_df.drop("aux", "construction", "previous_period"),
                 ["ref", "period"],
                 "leftouter",
             )
