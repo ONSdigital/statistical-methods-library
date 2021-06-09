@@ -297,12 +297,35 @@ python-versions = "*"
 pytest = ">=3.6.0"
 
 [[package]]
+name = "pytest-tap"
+version = "3.2"
+description = "Test Anything Protocol (TAP) reporting plugin for pytest"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pytest = ">=3.0"
+"tap.py" = ">=3.0,<4.0"
+
+[[package]]
 name = "regex"
 version = "2021.4.4"
 description = "Alternative regular expression module, to replace re."
 category = "dev"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "tap.py"
+version = "3.0"
+description = "Test Anything Protocol (TAP) tools"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.extras]
+yaml = ["more-itertools", "PyYAML (>=5.1)"]
 
 [[package]]
 name = "toml"
@@ -343,7 +366,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "7ec6df28931b02c5a75a136f5201e180812806c4a586447443efdd4815f49ff9"
+content-hash = "d05542c7c8e3738d6ae03ab0dbd6f79ae638a5d2a580b8f5040b932b6a1c9e78"
 
 [metadata.files]
 appdirs = [
@@ -498,6 +521,10 @@ pytest-cov = [
 pytest-dependency = [
     {file = "pytest-dependency-0.5.1.tar.gz", hash = "sha256:c2a892906192663f85030a6ab91304e508e546cddfe557d692d61ec57a1d946b"},
 ]
+pytest-tap = [
+    {file = "pytest-tap-3.2.tar.gz", hash = "sha256:1b585c4a636458dbd958d136381bbabb1752c5877d05fac7d6a6001a8a9ddc29"},
+    {file = "pytest_tap-3.2-py3-none-any.whl", hash = "sha256:18f59047f8bc68247d37f807fae7f2f8897d2c7397aea2fd2870f0421dc566cb"},
+]
 regex = [
     {file = "regex-2021.4.4-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:619d71c59a78b84d7f18891fe914446d07edd48dc8328c8e149cbe0929b4e000"},
     {file = "regex-2021.4.4-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:47bf5bf60cf04d72bf6055ae5927a0bd9016096bf3d742fa50d9bf9f45aa0711"},
@@ -540,6 +567,10 @@ regex = [
     {file = "regex-2021.4.4-cp39-cp39-win32.whl", hash = "sha256:fa4537fb4a98fe8fde99626e4681cc644bdcf2a795038533f9f711513a862ae6"},
     {file = "regex-2021.4.4-cp39-cp39-win_amd64.whl", hash = "sha256:97f29f57d5b84e73fbaf99ab3e26134e6687348e95ef6b48cfd2c06807005a07"},
     {file = "regex-2021.4.4.tar.gz", hash = "sha256:52ba3d3f9b942c49d7e4bc105bb28551c44065f139a65062ab7912bef10c9afb"},
+]
+"tap.py" = [
+    {file = "tap.py-3.0-py2.py3-none-any.whl", hash = "sha256:a598bfaa2e224d71f2e86147c2ef822c18ff2e1b8ef006397e5056b08f92f699"},
+    {file = "tap.py-3.0.tar.gz", hash = "sha256:f5eeeeebfd64e53d32661752bb4c288589a3babbb96db3f391a4ec29f1359c70"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
