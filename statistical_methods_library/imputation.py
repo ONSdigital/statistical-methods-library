@@ -346,8 +346,6 @@ def imputation(
                 1.0, ["forward", "construction"]
             ).persist()
 
-            print("--- strata_forward_union_df ---")
-            strata_forward_union_df.show()
             # Calculate backward ratio as 1/forward for the next period.
             strata_ratio_df = (
                 strata_forward_union_df.join(
@@ -367,6 +365,8 @@ def imputation(
                 )
                 .fillna(1.0, "backward")
             )
+            print("--- strata_ratio_df ---")
+            strata_ratio_df.show()
 
             # Store the completed ratios for this strata.
             if ratio_union_df is None:
