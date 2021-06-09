@@ -200,15 +200,16 @@ for scenario_type in ("dev", "methodology"):
         "test_dataframe_not_a_dataframe",
     ]
 )
-def test_calculations(fxt_load_test_csv, scenario, selection):
+def test_calculations(fxt_load_test_csv, capsys, scenario, selection):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, f"{scenario}_input.csv"
     )
     exp_val = fxt_load_test_csv(
         dataframe_columns, dataframe_types, f"{scenario}_output.csv"
     )
+    with capsys.disabled():
+        ret_val = imputation.imputation(test_dataframe, *params)
 
-    ret_val = imputation.imputation(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
