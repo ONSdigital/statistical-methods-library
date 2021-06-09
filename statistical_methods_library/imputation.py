@@ -341,47 +341,20 @@ def imputation(
             ).persist()
 
             # Calculate backward ratio as 1/forward for the next period.
-            strata_backward_union_df = None
-            for period_val in period_df.toLocalIterator():
-                period = period_val["period"]
-                next_period = period_val["next_period"]
-                df_current_period = strata_forward_union_df.filter(
-                    strata_forward_union_df.period == period
+            strata_backward_df = (
+                strata_forward_union_df.join(
+                    strata_forward_union_df.select(
+                        col("next_period").alias("period"),
+                        col("forward").alias("next_forward"),
+                    ),
+                    "period",
+                    "leftouter",
                 )
-                df_next_period = strata_forward_union_df.filter(
-                    strata_forward_union_df.period == next_period
-                )
-
-                if df_next_period.count() == 0:
-                    # No next period so just add the default backward ratio.
-                    working_df = df_current_period.withColumn("backward", lit(1.0))
-
-                else:
-                    # We need to do a subselect to calculate the ratio correctly
-                    df_next_period.createOrReplaceTempView(
-                        "calculate_ratios_backward_next"
-                    )
-                    working_df = df_current_period.selectExpr(
-                        "*",
-                        """
-                            (
-                                SELECT 1/forward
-                                FROM calculate_ratios_backward_next
-                            )
-                            AS backward
-                        """,
-                    )
-
-                if strata_backward_union_df is None:
-                    strata_backward_union_df = working_df.persist()
-
-                else:
-                    strata_backward_union_df = strata_backward_union_df.union(
-                        working_df
-                    ).persist()
-
+                .select("*", lit(1.0) / col("next_forward").alias("backward"))
+                .drop("next_forward")
+            )
             strata_joined_df = (
-                period_df.join(strata_backward_union_df, "period", "leftouter")
+                period_df.join(strata_backward_df, "period", "leftouter")
                 .select(
                     period_df.period,
                     strata_backward_union_df.forward,
