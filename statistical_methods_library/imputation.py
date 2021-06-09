@@ -243,7 +243,7 @@ def imputation(
     def calculate_next_period(period):
         return when(
             period.endswith("12"), (period.cast("int") + 89).cast("string")
-        ).otherwise((period.cast("int") - 1).cast("string"))
+        ).otherwise((period.cast("int") + 1).cast("string"))
 
     def calculate_ratios(df):
         ratio_union_df = None
