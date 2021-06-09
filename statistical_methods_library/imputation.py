@@ -488,15 +488,19 @@ def imputation(
                     col("cur.period") != col("prev.previous_period"),
                 ],
             )
-            .withColumn("constructed_output", col("aux") * col("construction"))
-            .withColumn("constructed_marker", lit(MARKER_CONSTRUCTED))
+            .select(
+                col("cur.ref").alias("ref"),
+                col("cur.period").alias("period"),
+                (col("aux") * col("construction")).alias("constructed_output"),
+                lit(MARKER_CONSTRUCTED).alias("constructed_marker")
+            )
         )
 
         return (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
             .join(
-                construction_df.drop("aux", "construction", "previous_period"),
+                construction_df,
                 ["ref", "period"],
                 "leftouter",
             )
@@ -509,7 +513,7 @@ def imputation(
                 .otherwise(col("existing_marker"))
                 .alias("marker"),
             )
-            .drop("existing_output", "constructed_output")
+            .drop("existing_output", "constructed_output", "constructed_marker")
         )
 
     def forward_impute_from_construction(df):
