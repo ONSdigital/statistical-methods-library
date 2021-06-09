@@ -357,16 +357,11 @@ def imputation(
                     "leftouter",
                 )
                 .select("*", lit(1.0) / col("next_forward").alias("backward"))
-                .drop("next_forward")
+                .select("period", "forward", "backward", "construction")
             )
             strata_joined_df = (
                 period_df.join(strata_backward_df, "period", "leftouter")
-                .select(
-                    period_df.period,
-                    strata_backward_df.forward,
-                    strata_backward_df.backward,
-                    strata_backward_df.construction,
-                )
+                .select("period", "forward", "backward", "construction")
                 .fillna(1.0, "backward")
             )
             strata_ratio_df = strata_joined_df.withColumn(
