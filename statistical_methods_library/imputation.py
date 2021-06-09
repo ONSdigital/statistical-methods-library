@@ -357,6 +357,7 @@ def imputation(
                     "leftouter",
                 )
                 .select(
+                    col("period"),
                     lit(strata_val["strata"]).alias("strata"),
                     col("forward"),
                     (lit(1.0) / col("next_forward")).alias("backward"),
@@ -375,7 +376,6 @@ def imputation(
         # a set of ratios.
         ret_df = df.join(ratio_union_df, ["period", "strata"]).select(
             "*",
-            ratio_union_df.period,
             ratio_union_df.forward,
             ratio_union_df.backward,
             ratio_union_df.construction,
