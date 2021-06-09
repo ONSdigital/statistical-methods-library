@@ -350,10 +350,10 @@ def imputation(
             strata_ratio_df = (
                 strata_forward_union_df.join(
                     strata_forward_union_df.select(
-                        col("next_period").alias("period"),
+                        col("period").alias("other_period"),
                         col("forward").alias("next_forward"),
                     ),
-                    "period",
+                    [col("next_period") == col("other_period")],
                     "leftouter",
                 )
                 .select(
