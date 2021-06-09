@@ -299,14 +299,18 @@ def imputation(
                     col("prev.output").alias("other_output"),
                     col("current.output").alias("output_for_construction"),
                 )
-                working_df = working_df.agg(
-                    {
-                        "output": "sum",
-                        "other_output": "sum",
-                        "aux": "sum",
-                        "output_for_construction": "sum",
-                    }
-                ).withColumn("period", lit(period))
+                working_df = (
+                    working_df.agg(
+                        {
+                            "output": "sum",
+                            "other_output": "sum",
+                            "aux": "sum",
+                            "output_for_construction": "sum",
+                        }
+                    )
+                    .withColumn("period", lit(period))
+                    .withColumn("next_period", lit(period_val["next_period"]))
+                )
 
                 # Calculate the forward ratio for every period using 1 in the
                 # case of a 0 denominator. We also calculate construction
