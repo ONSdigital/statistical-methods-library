@@ -361,9 +361,9 @@ def imputation(
                 period_df.join(strata_backward_df, "period", "leftouter")
                 .select(
                     period_df.period,
-                    strata_backward_union_df.forward,
-                    strata_backward_union_df.backward,
-                    strata_backward_union_df.construction,
+                    strata_backward_df.forward,
+                    strata_backward_df.backward,
+                    strata_backward_df.construction,
                 )
                 .fillna(1.0, "backward")
             )
