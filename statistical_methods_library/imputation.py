@@ -484,8 +484,9 @@ def imputation(
             prev_df,
             [
                 col("cur.ref") == col("prev.ref"),
-                col("cur.period") != col("prev.previous_period"),
+                col("cur.period") == col("prev.previous_period"),
             ],
+            "leftanti"
         ).select(
             col("cur.ref").alias("ref"),
             col("cur.period").alias("period"),
