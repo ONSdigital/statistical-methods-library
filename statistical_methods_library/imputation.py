@@ -352,8 +352,7 @@ def imputation(
                 .select(
                     period_df.period,
                     period_df.next_period,
-                    strata_forward_union_df,
-                    forward,
+                    strata_forward_union_df.forward,
                     strata_forward_union_df.construction,
                 )
             )
