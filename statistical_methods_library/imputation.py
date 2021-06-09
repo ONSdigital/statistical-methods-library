@@ -2,7 +2,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
-# The value is a resonse.
+# The value is a response.
 MARKER_RESPONSE = "R"
 # The value has been forward imputed from a response.
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
@@ -474,48 +474,26 @@ def imputation(
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
-        filtered_df = (
-            df.filter(df.output.isNull())
-            .select("ref", "period", "aux", "construction", "previous_period")
-            .persist()
+        construction_df = df.filter(df.output.isNull()).select(
+            "ref", "period", "aux", "construction", "previous_period"
         )
-        ref_df = filtered_df.select("ref").distinct().persist()
-        construction_union_df = None
-        for ref_val in ref_df.toLocalIterator():
-            ref_filtered_df = (
-                filtered_df.filter(col("ref") == ref_val["ref"])
-                .select("ref", "period", "aux", "construction", "previous_period")
-                .persist()
+        construction_df = (
+            construction_df.join(
+                construction_df.select(
+                    col("ref"), col("previous_period").alias("period")
+                ),
+                ["ref", "period"],
+                "leftanti",
             )
-            period_df = ref_filtered_df.select("period", "previous_period").distinct()
-            for period_val in period_df.toLocalIterator():
-                if (
-                    ref_filtered_df.filter(
-                        col("period") == period_val["previous_period"]
-                    ).count()
-                    > 0
-                ):
-                    # We have a previous period so don't construct.
-                    continue
-
-                calculation_df = (
-                    ref_filtered_df.filter(col("period") == period_val["period"])
-                    .withColumn("constructed_output", col("aux") * col("construction"))
-                    .withColumn("constructed_marker", lit(MARKER_CONSTRUCTED))
-                )
-
-                if construction_union_df is None:
-                    construction_union_df = calculation_df.persist()
-                else:
-                    construction_union_df = construction_union_df.union(
-                        calculation_df
-                    ).persist()
+            .withColumn("constructed_output", col("aux") * col("construction"))
+            .withColumn("constructed_marker", lit(MARKER_CONSTRUCTED))
+        )
 
         return (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
             .join(
-                construction_union_df.drop("aux", "construction", "previous_period"),
+                construction_df.drop("aux", "construction", "previous_period"),
                 ["ref", "period"],
                 "leftouter",
             )
