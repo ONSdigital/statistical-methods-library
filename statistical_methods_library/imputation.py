@@ -235,15 +235,15 @@ def imputation(
 
         return df.select(select_col_list)
 
-    def calculate_previous_period(period_col):
+    def calculate_previous_period(period):
         return when(
-            period_col.endswith("01"), (period_col.cast("int") - 89).cast("string")
-        ).otherwise((period_col.cast("int") - 1).cast("string"))
+            period.endswith("01"), (period.cast("int") - 89).cast("string")
+        ).otherwise((period.cast("int") - 1).cast("string"))
 
-    def calculate_next_period(period_col):
+    def calculate_next_period(period):
         return when(
-            period_col.endswith("12"), (period_col.cast("int") + 89).cast("string")
-        ).otherwise((period_col.cast("int") - 1).cast("string"))
+            period.endswith("12"), (period.cast("int") + 89).cast("string")
+        ).otherwise((period.cast("int") - 1).cast("string"))
 
     def calculate_ratios(df):
         ratio_union_df = None
