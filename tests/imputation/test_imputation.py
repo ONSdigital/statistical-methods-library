@@ -189,7 +189,9 @@ for scenario_type in ("dev", "methodology"):
         )
 
 
-@pytest.mark.parametrize("scenario, selection", sorted(test_scenarios, key=lambda t: t[0]))
+@pytest.mark.parametrize(
+    "scenario, selection", sorted(test_scenarios, key=lambda t: t[0])
+)
 @pytest.mark.dependency(
     depends=[
         "test_dataframe_returned",
