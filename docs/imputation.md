@@ -1,22 +1,23 @@
-Link Calculation
+Ratio Calculation
 ================
 
-We can calculate the links on a per-strata level in one direction then use
-the reciprocal of the previous period's to calculate the other direction's
-links. Links can then be joined onto the rest of the data by strata such
-that each contributor will have its own links. In the event that the link
-columns are provided these steps can be skipped since the link columns can
-be selected as the correctly named colums for imputation.
+We can calculate the ratios (or links) on a per-strata level in one
+direction then use the reciprocal of the previous period's to calculate the
+other direction's ratios. Ratios can then be joined onto the rest of the
+data by strata such that each contributor will have its own ratios. In the
+event that the ratio columns are provided these steps can be skipped since
+the ratio columns can be selected as the correctly named columns for
+imputation.
 
-The link calculation is:
+The ratio calculation is:
 ```
-forward_link(current_period) = sum(responders_in_both(current_period))
+forward_ratio(current_period) = sum(responders_in_both(current_period))
     /sum(responders_in_both(previous_period)
 
-backward_link(current_period) = 1/forward_link(next_period)
+backward_ratio(current_period) = 1/forward_ratio(next_period)
 
-link(current_period) = forward_link(current_period) if direction is forward
-    or backward_link(current_period)
+ratio(current_period) = forward_ratio(current_period) if direction is forward
+    or backward_ratio(current_period)
 ```
 
 Where `responders_in_both(period)` is a function which returns the values for
@@ -25,7 +26,7 @@ periods. If there are no matching responders this will be null. A responder
 is a contributor for whom the value is a response rather than imputed or
 constructed. If the denominator = 0 (null return from contributors_in_both
 or 0 sum) then the denominator = 1. If there are no matching contributors
-then `link(current_period)` returns 1.
+then `ratio(current_period)` returns 1.
 
 Imputation
 ==========
@@ -33,12 +34,12 @@ Imputation
 Imputation only needs to work with current and previous periods since the
 data can be reordered to do either direction. It simplifies to the process
 of determining whether we have a value in the output column for the previous
-period and a link for the current period and multiplying both to give the
+period and a ratio for the current period and multiplying both to give the
 current period's value. No knowledge of strata etc is required.
 
 The imputation calculation is:
 ```
-impute(current_period) = contributor(previous_period)*link(current_period)
+impute(current_period) = contributor(previous_period)*ratio(current_period)
 ```
 
 Where `contributor(previous_period)` is the contributor's value for that
@@ -95,14 +96,16 @@ Overall Algorithm
 =================
 
 The overall imputation algorithm performs steps in the following order:
-1. Link calculation
+1. Ratio calculation
 2. Forward imputation from response
 3. Backward imputation
 4. Construction
 5. Forward imputation from construction
 
-If, at any point, the output column no longer contains null values, the
-function returns. If nulls are still present at the end of the process, a
+* If, at any point, the output column no longer contains null values, the
+function returns. 
+
+* If nulls are still present at the end of the process, a
 runtime error is raised.
 
 TODO
