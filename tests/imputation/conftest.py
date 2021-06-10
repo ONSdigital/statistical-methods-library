@@ -24,6 +24,7 @@ def fxt_load_test_csv(fxt_spark_session):
 
     return load
 
+
 # We want to isolate the session per tests to prevent interactions
 @pytest.fixture(scope="function")
 def fxt_spark_session():
