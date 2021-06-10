@@ -365,8 +365,6 @@ def imputation(
                 )
                 .fillna(1.0, "backward")
             )
-            print("--- strata_ratio_df ---")
-            strata_ratio_df.show()
 
             # Store the completed ratios for this strata.
             if ratio_union_df is None:
