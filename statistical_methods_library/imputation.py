@@ -344,7 +344,7 @@ def imputation(
 
             strata_forward_union_df = (
                 strata_forward_union_df.fillna(1.0, ["forward", "construction"])
-                .withColumn(strata_val["strata"])
+                .withColumn("strata", lit(strata_val["strata"]))
                 .persist()
             )
 
