@@ -1,4 +1,4 @@
-reference,period,strata,target,auxiliary,forward_link,backward_link,construction_link
+reference,period,strata,target,auxiliary,forward,backward,construction
 190001,202001,100,9261,95,,0.9214,50.3694
 190001,202002,100,4996,95,0.8521,1.5274,121.4187
 190001,202003,100,1480,95,0.9685,1.8795,89.3761
