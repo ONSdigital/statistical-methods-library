@@ -206,11 +206,21 @@ def test_calculations(fxt_load_test_csv, scenario, selection):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, f"{scenario}_input.csv"
     )
+
+    if forward_col in test_dataframe.columns:
+        imputation_kwargs = {
+            "forward_link_col": forward_col,
+            "backward_link_col": backward_col,
+            "construction_link_col": construction_col,
+        }
+    else:
+        imputation_kwargs = {}
+
     exp_val = fxt_load_test_csv(
         dataframe_columns, dataframe_types, f"{scenario}_output.csv"
     )
 
-    ret_val = imputation.imputation(test_dataframe, *params)
+    ret_val = imputation.imputation(test_dataframe, *params, **imputation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
