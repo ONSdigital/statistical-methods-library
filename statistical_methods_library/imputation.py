@@ -246,7 +246,6 @@ def imputation(
         ).otherwise((period.cast("int") + 1).cast("string"))
 
     def calculate_ratios(df):
-        ratio_union_df = None
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
@@ -282,7 +281,6 @@ def imputation(
             col("current.aux").alias("aux"),
             col("prev.output").alias("other_output"),
             col("current.output").alias("output_for_construction"),
-            col("current.next_period").alias("next_period"),
         )
         working_df = working_df.groupBy("period", "strata").agg(
             {
@@ -311,6 +309,10 @@ def imputation(
                 / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
             )
             .fillna(1.0, ["forward", "construction"])
+            .join(
+                filtered_df.select("period", "strata", "next_period"),
+                ["period", "strata"]
+            )
         )
 
         # Calculate backward ratio as 1/forward for the next period for each
