@@ -379,11 +379,11 @@ def imputation(
 
         # Join the strata ratios onto the input such that each contributor has
         # a set of ratios.
-        ret_df = df.join(ratio_union_df, ["period", "strata"]).select(
+        ret_df = df.join(strata_ratio_df, ["period", "strata"]).select(
             "*",
-            ratio_union_df.forward,
-            ratio_union_df.backward,
-            ratio_union_df.construction,
+            strata_ratio_df.forward,
+            strata_ratio_df.backward,
+            strata_ratio_df.construction,
         )
         return ret_df
 
