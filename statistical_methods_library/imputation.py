@@ -342,9 +342,11 @@ def imputation(
                         working_df
                     ).persist()
 
-            strata_forward_union_df = strata_forward_union_df.fillna(
-                1.0, ["forward", "construction"]
-            ).persist()
+            strata_forward_union_df = (
+                strata_forward_union_df.fillna(1.0, ["forward", "construction"])
+                .withColumn(strata_val["strata"])
+                .persist()
+            )
 
             # Store the completed ratios for this strata.
             if ratio_union_df is None:
