@@ -263,102 +263,61 @@ def imputation(
             )
             .persist()
         )
-        for strata_val in filtered_df.select("strata").distinct().toLocalIterator():
-            strata_df = filtered_df.filter(df.strata == strata_val["strata"]).persist()
-            period_df = (
-                strata_df.select("period", "previous_period", "next_period")
-                .distinct()
-                .persist()
+
+        # Put the values from the current and previous periods for a
+        # contributor on the same row. Then calculate the sum for both
+        # for all contributors in a period as the values now line up.
+        working_df = filtered_df.alias("current")
+        working_df = working_df.join(
+            filtered_df.select("ref", "period", "output").alias("prev"),
+            [
+                col("current.ref") == col("prev.ref"),
+                col("current.previous_period") == col("prev.period"),
+            ],
+            "leftouter",
+        ).select(
+            col("current.strata").alias("strata"),
+            col("current.period").alias("period"),
+            when(~col("prev.output").isNull(), col("current.output")).alias("output"),
+            col("current.aux").alias("aux"),
+            col("prev.output").alias("other_output"),
+            col("current.output").alias("output_for_construction"),
+            col("current.next_period").alias("next_period"),
+        )
+        working_df = working_df.groupBy("period", "strata").agg(
+            {
+                "output": "sum",
+                "other_output": "sum",
+                "aux": "sum",
+                "output_for_construction": "sum",
+            }
+        )
+        # Calculate the forward ratio for every period using 1 in the
+        # case of a 0 denominator. We also calculate construction
+        # links at the same time for efficiency reasons. This shares
+        # the same behaviour of defaulting to a 1 in the case of a 0
+        # denominator.
+        forward_df = (
+            working_df.withColumn(
+                "forward",
+                col("sum(output)")
+                / when(col("sum(other_output)") == 0, lit(1.0)).otherwise(
+                    col("sum(other_output)")
+                ),
             )
-            strata_forward_union_df = None
-            for period_val in period_df.toLocalIterator():
-                period = period_val["period"]
-                previous_period = period_val["previous_period"]
-                df_current_period = (
-                    strata_df.filter(strata_df.period == period)
-                    .alias("current")
-                    .persist()
-                )
-                df_previous_period = (
-                    strata_df.filter(strata_df.period == previous_period)
-                    .alias("prev")
-                    .persist()
-                )
-                # Put the values from the current and previous periods for a
-                # contributor on the same row. Then calculate the sum for both
-                # for all contributors in a period as the values now line up.
-                working_df = df_current_period.join(
-                    df_previous_period,
-                    (col("current.ref") == col("prev.ref")),
-                    "leftouter",
-                ).select(
-                    when(~col("prev.output").isNull(), col("current.output")).alias(
-                        "output"
-                    ),
-                    col("current.aux").alias("aux"),
-                    col("prev.output").alias("other_output"),
-                    col("current.output").alias("output_for_construction"),
-                )
-                working_df = (
-                    working_df.agg(
-                        {
-                            "output": "sum",
-                            "other_output": "sum",
-                            "aux": "sum",
-                            "output_for_construction": "sum",
-                        }
-                    )
-                    .withColumn("period", lit(period))
-                    .withColumn("next_period", lit(period_val["next_period"]))
-                )
-
-                # Calculate the forward ratio for every period using 1 in the
-                # case of a 0 denominator. We also calculate construction
-                # links at the same time for efficiency reasons. This shares
-                # the same behaviour of defaulting to a 1 in the case of a 0
-                # denominator.
-                working_df = working_df.withColumn(
-                    "forward",
-                    col("sum(output)")
-                    / when(col("sum(other_output)") == 0, lit(1.0)).otherwise(
-                        col("sum(other_output)")
-                    ),
-                ).withColumn(
-                    "construction",
-                    col("sum(output_for_construction)")
-                    / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
-                )
-
-                # Store the completed period.
-                working_df = working_df.select(
-                    "period", "forward", "construction", "next_period"
-                )
-
-                if strata_forward_union_df is None:
-                    strata_forward_union_df = working_df.persist()
-
-                else:
-                    strata_forward_union_df = strata_forward_union_df.union(
-                        working_df
-                    ).persist()
-
-            strata_forward_union_df = (
-                strata_forward_union_df.fillna(1.0, ["forward", "construction"])
-                .withColumn("strata", lit(strata_val["strata"]))
-                .persist()
+            .withColumn(
+                "construction",
+                col("sum(output_for_construction)")
+                / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
             )
-
-            # Store the completed ratios for this strata.
-            if ratio_union_df is None:
-                ratio_union_df = strata_forward_union_df.persist()
-            else:
-                ratio_union_df = ratio_union_df.union(strata_forward_union_df).persist()
+            .fillna(1.0, ["forward", "construction"])
+        )
 
         # Calculate backward ratio as 1/forward for the next period for each
         # strata.
         strata_ratio_df = (
-            ratio_union_df.join(
-                ratio_union_df.select(
+            forward_df.join(
+                forward_df.select(
                     col("period").alias("other_period"),
                     col("forward").alias("next_forward"),
                     col("strata").alias("other_strata"),
