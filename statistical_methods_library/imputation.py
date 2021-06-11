@@ -346,31 +346,36 @@ def imputation(
                 1.0, ["forward", "construction"]
             ).persist()
 
-            # Calculate backward ratio as 1/forward for the next period.
-            strata_ratio_df = (
-                strata_forward_union_df.join(
-                    strata_forward_union_df.select(
-                        col("period").alias("other_period"),
-                        col("forward").alias("next_forward"),
-                    ),
-                    [col("next_period") == col("other_period")],
-                    "leftouter",
-                )
-                .select(
-                    col("period"),
-                    lit(strata_val["strata"]).alias("strata"),
-                    col("forward"),
-                    (lit(1.0) / col("next_forward")).alias("backward"),
-                    col("construction"),
-                )
-                .fillna(1.0, "backward")
-            )
-
             # Store the completed ratios for this strata.
             if ratio_union_df is None:
-                ratio_union_df = strata_ratio_df.persist()
+                ratio_union_df = strata_forward_union_df.persist()
             else:
-                ratio_union_df = ratio_union_df.union(strata_ratio_df).persist()
+                ratio_union_df = ratio_union_df.union(strata_forward_union_df).persist()
+
+        # Calculate backward ratio as 1/forward for the next period for each
+        # strata.
+        strata_ratio_df = (
+            ratio_union_df.join(
+                ratio_union_df.select(
+                    col("period").alias("other_period"),
+                    col("forward").alias("next_forward"),
+                    col("strata").alias("other_strata"),
+                ),
+                [
+                    col("next_period") == col("other_period"),
+                    col("strata") == col("other_strata"),
+                ],
+                "leftouter",
+            )
+            .select(
+                col("period"),
+                col("strata"),
+                col("forward"),
+                (lit(1.0) / col("next_forward")).alias("backward"),
+                col("construction"),
+            )
+            .fillna(1.0, "backward")
+        )
 
         # Join the strata ratios onto the input such that each contributor has
         # a set of ratios.
