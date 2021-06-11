@@ -207,6 +207,9 @@ def test_calculations(fxt_load_test_csv, scenario, selection):
         dataframe_columns, dataframe_types, f"{scenario}_input.csv"
     )
 
+    # We use imputation_kwargs to allow us to pass in the forward, backward
+    # and construction link columns which are usually defaulted to None. This
+    # means that we can autodetect when we should pass these.
     if forward_col in test_dataframe.columns:
         imputation_kwargs = {
             "forward_link_col": forward_col,
