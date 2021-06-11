@@ -246,6 +246,9 @@ def imputation(
         ).otherwise((period.cast("int") + 1).cast("string"))
 
     def calculate_ratios(df):
+        if "forward" in df.columns:
+            return df
+
         ratio_union_df = None
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
