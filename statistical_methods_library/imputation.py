@@ -428,9 +428,8 @@ def imputation(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        return (
-            df.drop("output", "marker")
-            .join(imputed_df.drop("link"), ["ref", "period"], "leftouter")
+        return df.drop("output", "marker").join(
+            imputed_df.drop("link"), ["ref", "period"], "leftouter"
         )
 
     def forward_impute_from_response(df):
