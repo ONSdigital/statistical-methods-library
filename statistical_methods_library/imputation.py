@@ -129,7 +129,7 @@ def imputation(
         )
 
         for stage in stages:
-            df = stage(df).localCheckpoint()
+            df = stage(df).persist()
             if df.filter(col("output").isNull()).count() == 0:
                 break
 
@@ -263,7 +263,6 @@ def imputation(
                 "previous_period",
                 "next_period",
             )
-            .persist()
         )
 
         # Put the values from the current and previous periods for a
@@ -434,7 +433,7 @@ def imputation(
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
             imputed_df.drop("link"), ["ref", "period"], "leftouter"
-        )
+        ).localCheckpoint()
 
     def forward_impute_from_response(df):
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
