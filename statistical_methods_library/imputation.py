@@ -252,17 +252,14 @@ def imputation(
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = (
-            df.filter(~df.output.isNull())
-            .select(
-                "ref",
-                "period",
-                "strata",
-                "output",
-                "aux",
-                "previous_period",
-                "next_period",
-            )
+        filtered_df = df.filter(~df.output.isNull()).select(
+            "ref",
+            "period",
+            "strata",
+            "output",
+            "aux",
+            "previous_period",
+            "next_period",
         )
 
         # Put the values from the current and previous periods for a
@@ -362,17 +359,14 @@ def imputation(
 
         # Avoid having to care about the name of our link column by selecting
         # it as a fixed name here.
-        working_df = (
-            df.select(
-                col("ref"),
-                col("period"),
-                col(link_col).alias("link"),
-                col("output"),
-                col("marker"),
-                col(other_period_col).alias("other_period"),
-            )
-            .persist()
-        )
+        working_df = df.select(
+            col("ref"),
+            col("period"),
+            col(link_col).alias("link"),
+            col("output"),
+            col("marker"),
+            col(other_period_col).alias("other_period"),
+        ).persist()
         # Anything which isn't null is already imputed or a response and thus
         # can be imputed from.
         imputed_df = (
@@ -433,9 +427,8 @@ def imputation(
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
     def construct_values(df):
-        construction_df = (
-            df.filter(df.output.isNull())
-            .select("ref", "period", "aux", "construction", "previous_period")
+        construction_df = df.filter(df.output.isNull()).select(
+            "ref", "period", "aux", "construction", "previous_period"
         )
         other_df = construction_df.select("ref", "period").alias("other")
         construction_df = construction_df.alias("construction")
