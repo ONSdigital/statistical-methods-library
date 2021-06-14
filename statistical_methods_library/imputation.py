@@ -129,7 +129,7 @@ def imputation(
         )
 
         for stage in stages:
-            df = stage(df).localCheckpoint()
+            df = stage(df).localCheckpoint(eager=False)
             if df.filter(col("output").isNull()).count() == 0:
                 break
 
