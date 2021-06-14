@@ -263,7 +263,6 @@ def imputation(
                 "previous_period",
                 "next_period",
             )
-            .repartition("strata")
         )
 
         # Put the values from the current and previous periods for a
@@ -372,7 +371,6 @@ def imputation(
                 col("marker"),
                 col(other_period_col).alias("other_period"),
             )
-            .repartition("ref")
             .persist()
         )
         # Anything which isn't null is already imputed or a response and thus
@@ -438,7 +436,6 @@ def imputation(
         construction_df = (
             df.filter(df.output.isNull())
             .select("ref", "period", "aux", "construction", "previous_period")
-            .repartition("ref")
         )
         other_df = construction_df.select("ref", "period").alias("other")
         construction_df = construction_df.alias("construction")
