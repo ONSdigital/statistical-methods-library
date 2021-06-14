@@ -418,7 +418,7 @@ def imputation(
             imputed_df = imputed_df.union(calculation_df).persist()
             # Remove the newly imputed rows from our filtered set.
             filtered_df = filtered_df.join(
-                imputed_df.select("ref", "period"), ["ref", "period"], "leftanti"
+                calculation_df.select("ref", "period"), ["ref", "period"], "leftanti"
             ).persist()
 
         # We should now have an output column which is as fully populated as
