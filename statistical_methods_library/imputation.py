@@ -252,17 +252,14 @@ def imputation(
         # Since we're going to join on to the main df at the end filtering for
         # nulls won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = (
-            df.filter(~df.output.isNull())
-            .select(
-                "ref",
-                "period",
-                "strata",
-                "output",
-                "aux",
-                "previous_period",
-                "next_period",
-            )
+        filtered_df = df.filter(~df.output.isNull()).select(
+            "ref",
+            "period",
+            "strata",
+            "output",
+            "aux",
+            "previous_period",
+            "next_period",
         )
 
         # Put the values from the current and previous periods for a
@@ -431,9 +428,11 @@ def imputation(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        return df.drop("output", "marker").join(
-            imputed_df.drop("link"), ["ref", "period"], "leftouter"
-        ).localCheckpoint()
+        return (
+            df.drop("output", "marker")
+            .join(imputed_df.drop("link"), ["ref", "period"], "leftouter")
+            .localCheckpoint()
+        )
 
     def forward_impute_from_response(df):
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
