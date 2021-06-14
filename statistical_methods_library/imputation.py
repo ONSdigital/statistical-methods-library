@@ -376,54 +376,42 @@ def imputation(
         )
         # Any refs which have no values at all can't be imputed from so we
         # don't care about them here.
-        for ref_val in imputed_df.select("ref").distinct().toLocalIterator():
-            # Get all the periods and links for this ref where the output is
-            # null since they're the periods we care about.
-            ref_df = working_df.filter(
-                (col("ref") == ref_val["ref"]) & (col("output").isNull())
-            ).persist()
-            # Make sure the periods are in the correct order so that we have
-            # the other period we need to impute from where possible.
-            for period_val in (
-                ref_df.select("period", "other_period")
-                .distinct()
-                .sort("period", ascending=direction)
-                .toLocalIterator()
-            ):
-                # Get the already present value for the other period if any.
-                # At this point we don't care if it's a response, imputation
-                # or construction only that it isn't null.
-                other_value_df = (
-                    imputed_df.filter(
-                        (col("ref") == ref_val["ref"])
-                        & (col("period") == period_val["other_period"])
-                    )
-                    .select(col("ref"), col("output").alias("other_output"))
-                    .persist()
+        ref_df = imputed_df.select("ref").distinct().persist()
+        filtered_df = (
+            working_df.filter(col("output").isNull()).join(ref_df, "ref").persist()
+        )
+        while True:
+            other_df = imputed_df.select("ref", "period", "output").alias("other")
+            calculation_df = (
+                filtered_df.alias("filtered")
+                .join(
+                    other_df,
+                    [
+                        col("filtered.other_period") == col("other.period"),
+                        col("filtered.ref") == col("other.ref"),
+                    ],
                 )
-                if other_value_df.count() == 0:
-                    # We either have a gap or no value to impute from,
-                    # either way nothing to do.
-                    continue
+                .select(
+                    col("filtered.ref").alias("ref"),
+                    col("filtered.period").alias("period"),
+                    col("filtered.link").alias("link"),
+                    (col("filtered.link") * col("other.output")).alias("output"),
+                    lit(marker).alias("marker"),
+                )
+                .persist()
+            )
+            # If we've imputed nothing then we've got as far as we can get for
+            # this phase.
+            if calculation_df.count() == 0:
+                break
 
-                # Join the other value into this period so that we can
-                # multiply by the link. We only need the ref column in both to
-                # do the join.
-                calculation_df = (
-                    ref_df.filter(col("period") == period_val["period"])
-                    .select("ref", "period", "link")
-                    .join(other_value_df, "ref")
-                    .select(
-                        col("ref"),
-                        col("period"),
-                        col("link"),
-                        (col("link") * col("other_output")).alias("output"),
-                        lit(marker).alias("marker"),
-                    )
-                )
-                # Store the imputed period for this ref in our imputed
-                # dataframe so that it can be referenced by another period.
-                imputed_df = imputed_df.union(calculation_df).persist()
+            # Store this set of imputed values in our main set for the next
+            # iteration.
+            imputed_df = imputed_df.union(calculation_df).persist()
+            # Remove the newly imputed rows from our filtered set.
+            filtered_df = filtered_df.join(
+                imputed_df.select("ref", "period"), ["ref", "period"], "leftanti"
+            ).persist()
 
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
