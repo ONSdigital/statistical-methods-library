@@ -313,7 +313,7 @@ def imputation(
             )
             .fillna(1.0, ["forward", "construction"])
             .join(
-                filtered_df.select("period", "strata", "next_period"),
+                filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
             )
         )
