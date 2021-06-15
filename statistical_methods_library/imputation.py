@@ -368,7 +368,11 @@ def imputation(
             col(other_period_col).alias("other_period"),
         ).persist()
         # Anything which isn't null is already imputed or a response and thus
-        # can be imputed from.
+        # can be imputed from. Note that in the case of backward imputation
+        # this still holds since it always happens after forward imputation
+        # and thus it can never attempt to backward impute from a forward
+        # imputation since there will never be a null value directly prior to
+        # one.
         imputed_df = (
             working_df.filter(~col("output").isNull())
             .select("ref", "period", "link", "output", "marker")
