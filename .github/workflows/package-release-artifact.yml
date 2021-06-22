@@ -33,6 +33,8 @@ jobs:
         run: poetry install --no-dev
       - name: build
         run: poetry build
+      - name: echo version
+        run: poetry version -s > statististical-methods-library.version
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
