@@ -34,13 +34,13 @@ jobs:
       - name: build
         run: poetry build
       - name: echo version
-        run: poetry version -s > statististical-methods-library.version
+        run: poetry version -s > statistical-methods-library.version
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            statististical-methods-library.version
+            statistical-methods-library.version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
