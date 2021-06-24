@@ -1,5 +1,6 @@
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Column
 from pyspark.sql.functions import col, lit, when
+import typing
 
 # --- Marker constants ---
 # The value is a response.
@@ -32,47 +33,47 @@ class DataIntegrityError(ImputationError):
 
 
 def imputation(
-    input_df,
-    reference_col,
-    period_col,
-    strata_col,
-    target_col,
-    auxiliary_col,
-    output_col,
-    marker_col,
-    forward_link_col=None,
-    backward_link_col=None,
-    construction_link_col=None,
-):
+    input_df: DataFrame,
+    reference_col: str,
+    period_col: str,
+    strata_col: str,
+    target_col: str,
+    auxiliary_col: str,
+    output_col: str,
+    marker_col: str,
+    forward_link_col: typing.Optional[str]=None,
+    backward_link_col: typing.Optional[str]=None,
+    construction_link_col: typing.Optional[str]=None,
+) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
     dataframe.
 
-    :param input_df: The input dataframe - an instance of pyspark.sql.Dataframe
+    :param input_df: The input dataframe
     :param reference_col: The name of the column to reference a unique
-    contributor - str
+    contributor
     :param period_col: The name of the column containing the period
-    information for the contributor - str
+    information for the contributor
     :param strata_col: The Name of the column containing the strata information
-    for the contributor - str
+    for the contributor
     :param target_col: The name of the column containing the target
-    variable - str
+    variable
     :param auxiliary_col: The name of the column containing the auxiliary
-    variable - str
+    variable
     :param output_col: The name of the column which will contain the
-    output - str
+    output
     :param marker_col: The name of the column which will contain the marker
-    information for a given value - str
+    information for a given value
     :param forward_link_col: If specified, the name of an existing column
-    containing forward ratio (or link) information - str or None
+    containing forward ratio (or link) information
     Defaults to None which means that a default column name of "forward" will
     be created and the forward ratios will be calculated
     :param backward_link_col: If specified, the name of an existing column
-    containing backward ratio (or link) information - str or None
+    containing backward ratio (or link) information
     Defaults to None which means that a default column name of "backward"
     will be created and the backward ratios will be calculated
     :param construction_link_col: If specified, the name of an existing column
-    containing construction ratio (or link) information - str or None
+    containing construction ratio (or link) information
     Defaults to None which means that a default column name of "construction"
     will be created and the construction ratios will be calculated.
 
@@ -117,7 +118,7 @@ def imputation(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
-    def run(df):
+    def run(df: DataFrame) -> DataFrame:
         validate_df(df)
         stages = (
             prepare_df,
@@ -135,7 +136,7 @@ def imputation(
 
         return create_output(df)
 
-    def validate_df(df):
+    def validate_df(df: DataFrame) -> DataFrame:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
@@ -174,7 +175,7 @@ def imputation(
             msg = f"Missing columns: {', '.join(c for c in missing_cols)}"
             raise ValidationError(msg)
 
-    def prepare_df(df):
+    def prepare_df(df: DataFrame) -> DataFrame:
         col_list = [
             col(reference_col).alias("ref"),
             col(period_col).alias("period"),
@@ -200,7 +201,7 @@ def imputation(
             .withColumn("next_period", calculate_next_period(col("period")))
         )
 
-    def create_output(df):
+    def create_output(df: DataFrame) -> DataFrame:
         nonlocal forward_link_col
         if forward_link_col is None:
             forward_link_col = "forward"
@@ -235,17 +236,17 @@ def imputation(
 
         return df.select(select_col_list)
 
-    def calculate_previous_period(period):
+    def calculate_previous_period(period: Column) -> Column:
         return when(
             period.endswith("01"), (period.cast("int") - 89).cast("string")
         ).otherwise((period.cast("int") - 1).cast("string"))
 
-    def calculate_next_period(period):
+    def calculate_next_period(period: Column) -> Column:
         return when(
             period.endswith("12"), (period.cast("int") + 89).cast("string")
         ).otherwise((period.cast("int") + 1).cast("string"))
 
-    def calculate_ratios(df):
+    def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
             return df
 
@@ -349,7 +350,7 @@ def imputation(
         )
         return ret_df
 
-    def impute(df, link_col, marker, direction):
+    def impute(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -424,13 +425,13 @@ def imputation(
             imputed_df.drop("link"), ["ref", "period"], "leftouter"
         )
 
-    def forward_impute_from_response(df):
+    def forward_impute_from_response(df: DataFrame) -> DataFrame:
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
 
-    def backward_impute(df):
+    def backward_impute(df: DataFrame) -> DataFrame:
         return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
 
-    def construct_values(df):
+    def construct_values(df: DataFrame) -> DataFrame:
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "aux", "construction", "previous_period"
         )
@@ -470,7 +471,7 @@ def imputation(
             .drop("existing_output", "constructed_output", "constructed_marker")
         )
 
-    def forward_impute_from_construction(df):
+    def forward_impute_from_construction(df: DataFrame) -> DataFrame:
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
 
     # ----------
