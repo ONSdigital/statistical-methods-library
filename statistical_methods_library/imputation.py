@@ -1,6 +1,7 @@
-from pyspark.sql import DataFrame, Column
-from pyspark.sql.functions import col, lit, when
 import typing
+
+from pyspark.sql import Column, DataFrame
+from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
 # The value is a response.
@@ -41,9 +42,9 @@ def imputation(
     auxiliary_col: str,
     output_col: str,
     marker_col: str,
-    forward_link_col: typing.Optional[str]=None,
-    backward_link_col: typing.Optional[str]=None,
-    construction_link_col: typing.Optional[str]=None,
+    forward_link_col: typing.Optional[str] = None,
+    backward_link_col: typing.Optional[str] = None,
+    construction_link_col: typing.Optional[str] = None,
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
