@@ -3,7 +3,7 @@ import os
 
 import pytest
 from chispa.dataframe_comparer import assert_approx_df_equality
-
+from pyspark.sql.functions import lit
 from statistical_methods_library import imputation
 
 auxiliary_col = "auxiliary"
@@ -158,7 +158,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
     )
-    test_dataframe = test_dataframe.withColumn("bonus_column",0)
+    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
