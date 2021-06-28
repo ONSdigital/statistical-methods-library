@@ -376,8 +376,6 @@ def imputation(
             )
 
         while True:
-            print("--- null_response_df ---")
-            null_response_df.show()
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref", "period AS other_period", "output AS other_output"
             )
@@ -392,19 +390,17 @@ def imputation(
                 .select(
                     "ref",
                     "period",
-                    "forward",
-                    "backward",
-                    "previous_period",
-                    "next_period",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker).alias("marker"),
+                    "previous_period",
+                    "next_period",
+                    "forward",
+                    "backward",
                 )
                 .persist()
             )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
-            print("--- calculation_df ---")
-            calculation_df.show()
             if calculation_df.count() == 0:
                 break
 
