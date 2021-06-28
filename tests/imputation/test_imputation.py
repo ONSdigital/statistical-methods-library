@@ -158,11 +158,13 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
     )
+    test_dataframe = test_dataframe.withColumn("bonus_column",0)
     ret_val = imputation.imputation(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = ret_val.columns
+    assert "bonus_column" in ret_cols
     assert "output" in ret_cols
     assert "marker" in ret_cols
     assert "forward" in ret_cols
