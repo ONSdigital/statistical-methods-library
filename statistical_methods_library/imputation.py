@@ -412,12 +412,12 @@ def imputation(
                 break
 
             # Store this set of imputed values in our main set for the next
-            # iteration.
-            imputed_df = imputed_df.union(calculation_df).persist()
+            # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
+            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
             filtered_df = filtered_df.join(
                 calculation_df.select("ref", "period"), ["ref", "period"], "leftanti"
-            ).persist()
+            ).localCheckpoint(eager=True)
 
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
