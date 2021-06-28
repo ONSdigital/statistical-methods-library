@@ -214,7 +214,7 @@ def imputation(
         if forward_link_col is None and "forward" in df.columns:
             select_col_list += [col("forward"), col("backward"), col("construction")]
 
-        return input_df.drop(target_col).join(
+        return input_df.join(
             df.select(select_col_list), [reference_col, period_col]
         )
 
