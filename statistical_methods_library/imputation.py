@@ -203,39 +203,19 @@ def imputation(
         )
 
     def create_output(df: DataFrame) -> DataFrame:
-        nonlocal forward_link_col
-        if forward_link_col is None:
-            forward_link_col = "forward"
-
-        nonlocal backward_link_col
-        if backward_link_col is None:
-            backward_link_col = "backward"
-
-        nonlocal construction_link_col
-        if construction_link_col is None:
-            construction_link_col = "construction"
-
         select_col_list = [
             col("ref").alias(reference_col),
             col("period").alias(period_col),
-            col("strata").alias(strata_col),
-            col("target").alias(target_col),
-            col("aux").alias(auxiliary_col),
             col("output").alias(output_col),
             col("marker").alias(marker_col),
-            col("forward").alias(forward_link_col),
-            col("backward").alias(backward_link_col),
-            col("construction").alias(construction_link_col),
         ]
-        if "forward" not in df.columns:
-            # If we haven't calculated forward ratio we've not calculated any
-            df = (
-                df.withColumn("forward", lit(1.0))
-                .withColumn("backward", lit(1.0))
-                .withColumn("construction", lit(1.0))
-            )
+        if "forward" in df.columns:
+            # We've either calculated all or none of our ratios.
+            select_col_list += [col("forward"), col("backward"), col("construction")]
 
-        return df.select(select_col_list)
+        return input_df.drop(target_col).join(
+            df.select(select_col_list), [reference_col, period_col]
+        )
 
     def calculate_previous_period(period: Column) -> Column:
         return when(
