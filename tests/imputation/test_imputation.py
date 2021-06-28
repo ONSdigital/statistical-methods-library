@@ -165,11 +165,6 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = ret_val.columns
     assert "bonus_column" in ret_cols
-    assert "output" in ret_cols
-    assert "marker" in ret_cols
-    assert "forward" in ret_cols
-    assert "backward" in ret_cols
-    assert "construction" in ret_cols
 
 
 # --- Test if output is a dataframe (or the expected type)---
