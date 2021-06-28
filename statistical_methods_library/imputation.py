@@ -209,8 +209,9 @@ def imputation(
             col("output").alias(output_col),
             col("marker").alias(marker_col),
         ]
-        if "forward" in df.columns:
-            # We've either calculated all or none of our ratios.
+        # Either we've calculated all or none of our ratios or alternatively
+        # we've not done any imputation.
+        if forward_link_col is None and "forward" in df.columns:
             select_col_list += [col("forward"), col("backward"), col("construction")]
 
         return input_df.drop(target_col).join(
