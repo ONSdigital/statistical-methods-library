@@ -378,18 +378,20 @@ def imputation(
         while True:
             print("--- null_response_df ---")
             null_response_df.show()
-            other_df = imputed_df.select("ref", "period", "output").alias("other")
+            other_df = imputed_df.selectExpr(
+                "ref AS other_ref", "period AS other_period", "output AS other_output"
+            )
             calculation_df = (
                 null_response_df.join(
                     other_df,
                     [
-                        col(other_period_col) == col("other.period"),
-                        col("ref") == col("other.ref"),
+                        col(other_period_col) == col("other_period"),
+                        col("ref") == col("other_ref"),
                     ],
                 )
                 .select(
                     "*",
-                    (col(link_col) * col("other.output")).alias("output"),
+                    (col(link_col) * col("other_output")).alias("output"),
                     lit(marker).alias("marker"),
                 )
                 .persist()
