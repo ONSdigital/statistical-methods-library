@@ -137,7 +137,7 @@ def imputation(
 
         return create_output(df)
 
-    def validate_df(df: DataFrame) -> DataFrame:
+    def validate_df(df: DataFrame) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
