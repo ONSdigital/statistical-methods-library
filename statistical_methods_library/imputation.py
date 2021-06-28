@@ -390,7 +390,12 @@ def imputation(
                     ],
                 )
                 .select(
-                    "*",
+                    "ref",
+                    "period",
+                    "forward",
+                    "backward",
+                    "previous_period",
+                    "next_period",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker).alias("marker"),
                 )
