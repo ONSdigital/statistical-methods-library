@@ -137,7 +137,7 @@ def imputation(
 
         return create_output(df)
 
-    def validate_df(df: DataFrame) -> DataFrame:
+    def validate_df(df: DataFrame) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
@@ -330,7 +330,13 @@ def imputation(
         )
         return ret_df
 
+    # Caching for both imputed and unimputed data.
+    imputed_df = None
+    null_response_df = None
+
     def impute(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
+        nonlocal imputed_df
+        nonlocal null_response_df
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -338,52 +344,60 @@ def imputation(
             # Backward imputation
             other_period_col = "next_period"
 
-        # Avoid having to care about the name of our link column by selecting
-        # it as a fixed name here.
-        working_df = df.select(
-            col("ref"),
-            col("period"),
-            col(link_col).alias("link"),
-            col("output"),
-            col("marker"),
-            col(other_period_col).alias("other_period"),
-        ).persist()
-        # Anything which isn't null is already imputed or a response and thus
-        # can be imputed from. Note that in the case of backward imputation
-        # this still holds since it always happens after forward imputation
-        # and thus it can never attempt to backward impute from a forward
-        # imputation since there will never be a null value directly prior to
-        # one.
-        imputed_df = (
-            working_df.filter(~col("output").isNull())
-            .select("ref", "period", "link", "output", "marker")
-            .persist()
-        )
-        # Any refs which have no values at all can't be imputed from so we
-        # don't care about them here.
-        ref_df = imputed_df.select("ref").distinct().persist()
-        filtered_df = (
-            working_df.filter(col("output").isNull()).join(ref_df, "ref").persist()
-        )
+        if imputed_df is None:
+            working_df = df.select(
+                "ref",
+                "period",
+                "output",
+                "marker",
+                "previous_period",
+                "next_period",
+                "forward",
+                "backward",
+            )
+
+            # Anything which isn't null is already imputed or a response and thus
+            # can be imputed from. Note that in the case of backward imputation
+            # this still holds since it always happens after forward imputation
+            # and thus it can never attempt to backward impute from a forward
+            # imputation since there will never be a null value directly prior to
+            # one.
+            imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
+                eager=True
+            )
+            # Any refs which have no values at all can't be imputed from so we
+            # don't care about them here.
+            ref_df = imputed_df.select("ref").distinct()
+            null_response_df = (
+                working_df.filter(col("output").isNull())
+                .drop("output", "marker")
+                .join(ref_df, "ref")
+                .localCheckpoint(eager=True)
+            )
+
         while True:
-            other_df = imputed_df.select("ref", "period", "output").alias("other")
+            other_df = imputed_df.selectExpr(
+                "ref AS other_ref", "period AS other_period", "output AS other_output"
+            )
             calculation_df = (
-                filtered_df.alias("filtered")
-                .join(
+                null_response_df.join(
                     other_df,
                     [
-                        col("filtered.other_period") == col("other.period"),
-                        col("filtered.ref") == col("other.ref"),
+                        col(other_period_col) == col("other_period"),
+                        col("ref") == col("other_ref"),
                     ],
                 )
                 .select(
-                    col("filtered.ref").alias("ref"),
-                    col("filtered.period").alias("period"),
-                    col("filtered.link").alias("link"),
-                    (col("filtered.link") * col("other.output")).alias("output"),
+                    "ref",
+                    "period",
+                    (col(link_col) * col("other_output")).alias("output"),
                     lit(marker).alias("marker"),
+                    "previous_period",
+                    "next_period",
+                    "forward",
+                    "backward",
                 )
-                .persist()
+                .localCheckpoint(eager=False)
             )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
@@ -394,7 +408,7 @@ def imputation(
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
-            filtered_df = filtered_df.join(
+            null_response_df = null_response_df.join(
                 calculation_df.select("ref", "period"), ["ref", "period"], "leftanti"
             ).localCheckpoint(eager=True)
 
@@ -402,7 +416,9 @@ def imputation(
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
-            imputed_df.drop("link"), ["ref", "period"], "leftouter"
+            imputed_df.select("ref", "period", "output", "marker"),
+            ["ref", "period"],
+            "leftouter",
         )
 
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
@@ -452,6 +468,12 @@ def imputation(
         )
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
+        # We need to recalculate our imputed and null response data frames to
+        # account for construction.
+        nonlocal imputed_df
+        nonlocal null_response_df
+        imputed_df = None
+        null_response_df = None
         return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
 
     # ----------
