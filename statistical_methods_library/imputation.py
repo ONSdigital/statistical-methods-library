@@ -397,7 +397,7 @@ def imputation(
                     "forward",
                     "backward",
                 )
-                .persist()
+                .localCheckpoint(eager=False)
             )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
