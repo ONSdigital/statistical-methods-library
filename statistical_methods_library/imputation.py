@@ -82,9 +82,6 @@ def imputation(
     A new dataframe containing:
     * <reference_col>
     * <period_col>
-    * <strata_col>
-    * <target_col>
-    * <auxiliary_col>
     * <output_col>
     * <marker_col>
     * <forward_col>
@@ -211,10 +208,22 @@ def imputation(
         ]
         # Either we've calculated all or none of our ratios or alternatively
         # we've not done any imputation.
-        if forward_link_col is None and "forward" in df.columns:
-            select_col_list += [col("forward"), col("backward"), col("construction")]
+        if forward_link_col is None:
+            if "forward" in df.columns:
+                select_col_list += [
+                    col("forward"),
+                    col("backward"),
+                    col("construction"),
+                ]
 
-        return input_df.join(df.select(select_col_list), [reference_col, period_col])
+        else:
+            select_col_list += [
+                col("forward").alias(forward_link_col),
+                col("backward").alias(backward_link_col),
+                col("construction").alias(construction_link_col),
+            ]
+
+        return df.select(select_col_list)
 
     def calculate_previous_period(period: Column) -> Column:
         return when(
