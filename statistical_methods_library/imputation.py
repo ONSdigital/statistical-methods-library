@@ -1,35 +1,51 @@
+"""
+Perform imputation on a data frame. Currently only Ratio of Means (or Ratio of
+Sums) imputation is implemented.
+"""
+
 import typing
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
-# The value is a response.
-MARKER_RESPONSE = "R"
-# The value has been forward imputed from a response.
-MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
-# The value has been backward imputed from a response, backward imputation
-# from construction is not permitted.
-MARKER_BACKWARD_IMPUTE = "BI"
-# The value is constructed.
-MARKER_CONSTRUCTED = "C"
-# The value has been forward imputed from a constructed value.
-MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
+# Documented after the variable as per pdoc syntax for documenting variables.
 
+MARKER_RESPONSE = "R"
+"""Marker showing that the value is a response."""
+
+MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
+"""Marker showing that the value has been forward imputed from a response."""
+
+MARKER_BACKWARD_IMPUTE = "BI"
+"""Marker showing that the value has been backward imputed from a response,
+backward imputation from construction is not permitted."""
+
+MARKER_CONSTRUCTED = "C"
+"""Marker showing that the value is constructed."""
+
+MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
+"""Marker showing that the value has been forward imputed from a constructed value."""
 
 # --- Imputation errors ---
-# Base type for imputation errors
+
+
 class ImputationError(Exception):
+    """Base type for imputation errors"""
+
     pass
 
 
-# Error raised by dataframe validation
 class ValidationError(ImputationError):
+    """Error raised by dataframe validation"""
+
     pass
 
 
-# Error raised when imputation has failed to impute for data integrity reasons
 class DataIntegrityError(ImputationError):
+    """Error raised when imputation has failed to impute for data integrity
+    reasons (currently when the auxiliary column contains nulls)"""
+
     pass
 
 
@@ -50,58 +66,59 @@ def imputation(
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
     dataframe.
 
-    :param input_df: The input dataframe
-    :param reference_col: The name of the column to reference a unique
-    contributor
-    :param period_col: The name of the column containing the period
-    information for the contributor
-    :param strata_col: The Name of the column containing the strata information
-    for the contributor
-    :param target_col: The name of the column containing the target
-    variable
-    :param auxiliary_col: The name of the column containing the auxiliary
-    variable
-    :param output_col: The name of the column which will contain the
-    output
-    :param marker_col: The name of the column which will contain the marker
-    information for a given value
-    :param forward_link_col: If specified, the name of an existing column
-    containing forward ratio (or link) information
-    Defaults to None which means that a default column name of "forward" will
-    be created and the forward ratios will be calculated
-    :param backward_link_col: If specified, the name of an existing column
-    containing backward ratio (or link) information
-    Defaults to None which means that a default column name of "backward"
-    will be created and the backward ratios will be calculated
-    :param construction_link_col: If specified, the name of an existing column
-    containing construction ratio (or link) information
-    Defaults to None which means that a default column name of "construction"
-    will be created and the construction ratios will be calculated.
+    ###Arguments
+    * input_df: The input dataframe
+    * reference_col: The name of the column to reference a unique
+      contributor
+    * period_col: The name of the column containing the period
+      information for the contributor
+    * strata_col: The Name of the column containing the strata information
+      for the contributor
+    * target_col: The name of the column containing the target
+      variable
+    * auxiliary_col: The name of the column containing the auxiliary
+      variable
+    * output_col: The name of the column which will contain the
+      output
+    * marker_col: The name of the column which will contain the marker
+      information for a given value
+    * forward_link_col: If specified, the name of an existing column
+      containing forward ratio (or link) information
+      Defaults to None which means that a default column name of "forward" will
+      be created and the forward ratios will be calculated
+    * backward_link_col: If specified, the name of an existing column
+      containing backward ratio (or link) information
+      Defaults to None which means that a default column name of "backward"
+      will be created and the backward ratios will be calculated
+    * construction_link_col: If specified, the name of an existing column
+      containing construction ratio (or link) information
+      Defaults to None which means that a default column name of "construction"
+      will be created and the construction ratios will be calculated.
 
-    Returns:
+    ###Returns
     A new dataframe containing:
-    * <reference_col>
-    * <period_col>
-    * <output_col>
-    * <marker_col>
-    * <forward_col>
-    * <backward_col>
-    * <construction_col>
 
-    Where the <...> refer to the provided column names or the respective
-    defaults. No other columns are created. In particular, no other columns
+    * `reference_col`
+    * `period_col`
+    * `output_col`
+    * `marker_col`
+    * `forward_col`
+    * `backward_col`
+    * `construction_col`
+
+    No other columns are created. In particular, no other columns
     will be passed through from the input since it is expected that the
     information in the output dataframe will be sufficient to join on any
     other required input data.
 
-    Notes:
-    The existence of <output_col> and <marker_col> in the input data is
+    ###Notes
+    The existence of `output_col` and `marker_col` in the input data is
     an error.
 
-    All or none of <forward_link_col>, <backward_link_col> and
-    <construction_link_col> must be specified.
+    All or none of `forward_link_col`, `backward_link_col` and
+    `construction_link_col` must be specified.
 
-    <marker_col> will contain one of the marker constants defined in this
+    `marker_col` will contain one of the marker constants defined in this
     module.
 
     This method implements rolling imputation, that is imputed values chain
