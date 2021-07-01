@@ -10,34 +10,42 @@ from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
 # Documented after the variable as per pdoc syntax for documenting variables.
+
 MARKER_RESPONSE = "R"
 """Marker showing that the value is a response."""
 
 MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
 """Marker showing that the value has been forward imputed from a response."""
+
 MARKER_BACKWARD_IMPUTE = "BI"
 """Marker showing that the value has been backward imputed from a response,
 backward imputation from construction is not permitted."""
+
 MARKER_CONSTRUCTED = "C"
 """Marker showing that the value is constructed."""
+
 MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
 """Marker showing that the value has been forward imputed from a constructed value."""
 
 # --- Imputation errors ---
 
+
 class ImputationError(Exception):
     """Base type for imputation errors"""
+
     pass
 
 
 class ValidationError(ImputationError):
     """Error raised by dataframe validation"""
+
     pass
 
 
 class DataIntegrityError(ImputationError):
     """Error raised when imputation has failed to impute for data integrity
     reasons (currently when the auxiliary column contains nulls)"""
+
     pass
 
 
