@@ -1,69 +1,72 @@
+import typing
+
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, lit, count, expr
+from pyspark.sql.functions import col
 
 
-def estimation_by_expansion(
+def estimation(
     input_df: DataFrame,
-    strata_col: str,
     period_col: str,
+    strata_col: str,
     sample_inclusion_marker_col: str,
-    death_marker_col: str,
-    h_col: str,
+    death_marker_col: typing.Optional[str] = None,
+    h_col: typing.Optional[str] = None,
+    auxiliary_col: typing.Optional[str] = None,
+    calibration_group_col: typing.Optional[str] = None,
 ) -> DataFrame:
-    group_cols = [period_col, strata_col]
-    if death_marker_col not in input_df.columns:
-        prepped_df = input_df.withColumn(death_marker_col, lit(0))
-        prepped_df = prepped_df.withColumn(h_col, lit(0))
-    else:
-        prepped_df = input_df
+    col_list = [
+        col(period_col).alias("period"),
+        col(strata_col).alias("strata"),
+        col(sample_inclusion_marker_col).alias("sample_marker"),
+        col(death_marker_col).alias("death_marker"),
+        col(h_col).alias("h_value"),
+    ]
 
-    return prepped_df.groupBy(group_cols)\
-        .agg(count(col(sample_inclusion_marker_col) == 1)).alias("sample_count")\
-        .agg(count(col(sample_inclusion_marker_col))).alias("population_count")\
-        .agg(count(col(death_marker_col) == 1)).alias("death_count")\
-        .withColumn(
-            "design_weight", expr("(population_count / sample_count) * (1 + (" + h_col + " * (death_count/(sample_count - death_count))))")
+    if auxiliary_col is not None:
+        col_list.append(col(auxiliary_col).alias("auxiliary"))
+
+    if calibration_group_col is not None:
+        col_list.append(col(calibration_group_col).alias("calibration_group"))
+
+    working_df = input_df.select(col_list)
+    design_df = working_df.groupBy(["period", "strata"]).selectExpr(
+        "period",
+        "strata",
+        "SUM(sample_marker) as sample_count",
+        "SUM(death_marker) as death_count",
+        "(COUNT(sample_marker) / sample_count) AS unadjusted_design_weight",
+        """
+            unadjusted_design_weight * (1 + (h_value * (death_count
+            / (sample_count - death_count)))) AS design_weight
+        """,
+    )
+
+    def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
+        group_cols = ["period", group_col]
+        return df.groupBy(group_cols).selectExpr(
+            """
+                SUM(auxiliary) / SUM(auxiliary * unadjusted_design_weight)
+                AS calibration_weight
+            """
         )
 
+    if "auxiliary" in working_df.columns:
+        working_df = working_df.join(design_df, ["period", "strata"])
+        if "calibration_group" in working_df.columns:
+            calibration_df = calibration_calculation(working_df, "calibration_group")
+        else:
+            calibration_df = calibration_calculation(working_df, "strata")
 
-def estimation_calibration_calculation(
-        input_df: DataFrame,
-        group_col: str,
-        period_col: str,
-        sample_inclusion_marker_col: str,
-        auxiliary_col: str
-) -> DataFrame:
-    group_cols = [period_col, group_col]
-    input_df.groupBy(group_cols) \
-        .agg(count(col(sample_inclusion_marker_col) == 1)).alias("sample_count") \
-        .agg(count(col(sample_inclusion_marker_col))).alias("population_count") \
-        .agg(sum(col(auxiliary_col))).alias("sum_auxiliary") \
-        .agg(expr("sum(" + auxiliary_col + " * population_count / sample_count)")).alias("sum_auxiliary_design")\
-        .withColumn("calibration_weight", expr("sum_auxiliary / sum_auxiliary_design"))
+        return working_df.join(calibration_df, ["period", "strata"]).select(
+            col("period").alias(period_col),
+            col("strata").alias(strata_col),
+            col("design_weight"),
+            col("calibration_weight"),
+        )
 
-
-def estimation_by_ratio(
-        input_df: DataFrame,
-        strata_col: str,
-        period_col: str,
-        sample_inclusion_marker_col: str,
-        auxiliary_col: str,
-        death_marker_col: str,
-        h_marker_col: str,
-) -> DataFrame:
-    df_with_design = estimation_by_expansion(input_df, strata_col, period_col, sample_inclusion_marker_col, death_marker_col, h_marker_col)
-    df_with_calibration = estimation_calibration_calculation(input_df, strata_col, period_col, sample_inclusion_marker_col, auxiliary_col)
-
-
-def estimation_by_combined_ratio(
-        input_df: DataFrame,
-        strata_col: str,
-        period_col: str,
-        sample_inclusion_marker_col: str,
-        calibration_group_col: str,
-        auxiliary_col: str,
-        death_marker_col: str,
-        h_marker_col: str,
-) -> DataFrame:
-    df_with_design = estimation_by_expansion(input_df, strata_col, period_col, sample_inclusion_marker_col, death_marker_col, h_marker_col)
-    df_with_calibration = estimation_calibration_calculation(input_df, calibration_group_col, period_col, sample_inclusion_marker_col, auxiliary_col)
+    else:
+        return design_df.select(
+            col(period_col).alias("period"),
+            col("strata").alias(strata_col),
+            col("design_weight"),
+        )
