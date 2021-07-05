@@ -103,7 +103,7 @@ def estimation(
         """,
     )
 
-    # the ratio calculation for calibration weight is the same for Separate
+    # The ratio calculation for calibration weight is the same for Separate
     # and Combined estimation with the exception of the grouping.
     def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
         group_cols = ["period", group_col]
