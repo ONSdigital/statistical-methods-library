@@ -1,3 +1,7 @@
+"""
+Estimates design and calibration weights based on expansion and ratio estimation.
+"""
+
 import typing
 
 from pyspark.sql import DataFrame
@@ -14,6 +18,53 @@ def estimation(
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
 ) -> DataFrame:
+    """
+    Perform estimation of design and calibration weights using Expansion and
+    Ratio estimation.
+
+    ###Arguments
+    * input_df: The input data frame.
+    period_col: The name of the column containing the period information for
+      the contributor.
+    strata_col: The name of the column containing the strata of the contributor.
+    sample_inclusion_marker_col: The name of the column containing a marker
+      for whether to include the contributor in the sample or only in the
+      population. This column must only contain values of 0 or 1 where 0 means
+      to exclude the contributor from the sample and 1 means the contributor
+      will be included in the sample count.
+    death_marker_col: The name of the column containing a marker for whether
+      the contributor is dead. This column must only contain the values 0
+      meaning the contributor is not dead and 1 meaning that the contributor is dead.
+    h_col: The name of the column containing the h value for the strata.
+    auxiliary_col: The name of the column containing the auxiliary value for
+      the contributor.
+    calibration_group_col: The name of the column containing the calibration
+      group for the contributor.
+
+    ###Returns
+    A data frame containing:
+
+    * `period_col`
+    * `strata_col`
+    * `design_weight`
+    * `calibration_weight`
+
+    ###Notes
+
+    Either both or neither of `death_marker_col` and `h_col` must be specified.
+    If they are then the design weight is adjusted using birth-death
+    adjustment, otherwise it is not.
+
+    If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
+    estimation is performed. This depends on whether `calibration_group_col`
+    is specified. If so then Combined Ratio estimation is performed, otherwise
+    Separate Ratio estimation is performed. If `auxiliary_col` is not
+    specified then only Expansion estimation is performed and specifying
+    `calibration_group_col` raises an error.
+
+    All specified columns must be fully populated. If not an error is raised.
+    """
+
     col_list = [
         col(period_col).alias("period"),
         col(strata_col).alias("strata"),
