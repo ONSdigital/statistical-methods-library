@@ -1,5 +1,5 @@
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, lit, count
+from pyspark.sql.functions import col, lit, count, expr
 
 
 def estimation_by_expansion(
@@ -17,7 +17,10 @@ def estimation_by_expansion(
     else:
         prepped_df = input_df
 
-    working_df = prepped_df.groupBy(group_cols)\
+    return prepped_df.groupBy(group_cols)\
         .agg(count(col(sample_inclusion_marker_col) == 1)).alias("sample_count")\
-        .count().alias("population_count")\
-        .agg(count(col(death_marker_col) == 1)).alias("death_count")
+        .agg(count(col(h_marker_col))).alias("population_count")\
+        .agg(count(col(death_marker_col) == 1)).alias("death_count")\
+        .withColumn(
+            "design_weight", expr("(population_count / sample_count) * (1 + (" + h_marker_col + " * (death_count/(sample_count - death_count))))")
+        )
