@@ -12,9 +12,9 @@ def estimation(
     input_df: DataFrame,
     period_col: str,
     strata_col: str,
-    sample_inclusion_marker_col: str,
+    sample_marker_col: str,
     death_marker_col: typing.Optional[str] = None,
-    h_col: typing.Optional[str] = None,
+    h_value_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
 ) -> DataFrame:
@@ -27,7 +27,7 @@ def estimation(
     * period_col: The name of the column containing the period information for
       the contributor.
     * strata_col: The name of the column containing the strata of the contributor.
-    * sample_inclusion_marker_col: The name of the column containing a marker
+    * sample_marker_col: The name of the column containing a marker
       for whether to include the contributor in the sample or only in the
       population. This column must only contain values of 0 or 1 where 0 means
       to exclude the contributor from the sample and 1 means the contributor
@@ -35,7 +35,7 @@ def estimation(
     * death_marker_col: The name of the column containing a marker for whether
       the contributor is dead. This column must only contain the values 0
       meaning the contributor is not dead and 1 meaning that the contributor is dead.
-    * h_col: The name of the column containing the h value for the strata.
+    * h_value_col: The name of the column containing the h value for the strata.
     * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
@@ -51,7 +51,7 @@ def estimation(
 
     ###Notes
 
-    Either both or neither of `death_marker_col` and `h_col` must be specified.
+    Either both or neither of `death_marker_col` and `h_value_col` must be specified.
     If they are then the design weight is adjusted using birth-death
     adjustment, otherwise it is not.
 
@@ -68,13 +68,13 @@ def estimation(
     col_list = [
         col(period_col).alias("period"),
         col(strata_col).alias("strata"),
-        col(sample_inclusion_marker_col).alias("sample_marker"),
+        col(sample_marker_col).alias("sample_marker"),
     ]
 
     if death_marker_col is not None:
         col_list += [
             col(death_marker_col).alias("death_marker"),
-            col(h_col).alias("h_value"),
+            col(h_value_col).alias("h_value"),
         ]
 
     else:
@@ -87,6 +87,10 @@ def estimation(
         col_list.append(col(calibration_group_col).alias("calibration_group"))
 
     working_df = input_df.select(col_list)
+    for column in working_df.columns:
+        if working_df.filter(col(column).isNull()).count() > 0:
+            raise ValueError(f"Input column {column}_col contains null values")
+
     # Perform Expansion estimation. If we've got a death marker and h value
     # then we'll use these, otherwise they'll be 0 and thus the
     # calculation for design weight just multiplies the unadjusted design
