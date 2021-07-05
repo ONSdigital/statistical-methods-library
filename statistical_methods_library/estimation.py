@@ -1,7 +1,7 @@
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, lit
 
 
 def estimation(
@@ -18,9 +18,16 @@ def estimation(
         col(period_col).alias("period"),
         col(strata_col).alias("strata"),
         col(sample_inclusion_marker_col).alias("sample_marker"),
-        col(death_marker_col).alias("death_marker"),
-        col(h_col).alias("h_value"),
     ]
+
+    if death_marker_col is not None:
+        col_list += [
+            col(death_marker_col).alias("death_marker"),
+            col(h_col).alias("h_value"),
+        ]
+
+    else:
+        col_list += [lit(0.0).alias("death_marker"), lit(0.0).alias("h_value")]
 
     if auxiliary_col is not None:
         col_list.append(col(auxiliary_col).alias("auxiliary"))
@@ -66,7 +73,7 @@ def estimation(
 
     else:
         return design_df.select(
-            col(period_col).alias("period"),
+            col("period").alias(period_col),
             col("strata").alias(strata_col),
             col("design_weight"),
         )
