@@ -1,5 +1,5 @@
 """
-Estimates design and calibration weights based on expansion and ratio estimation.
+Estimates design and calibration weights based on Expansion and Ratio estimation.
 """
 
 import typing
@@ -24,21 +24,21 @@ def estimation(
 
     ###Arguments
     * input_df: The input data frame.
-    period_col: The name of the column containing the period information for
+    * period_col: The name of the column containing the period information for
       the contributor.
-    strata_col: The name of the column containing the strata of the contributor.
-    sample_inclusion_marker_col: The name of the column containing a marker
+    * strata_col: The name of the column containing the strata of the contributor.
+    * sample_inclusion_marker_col: The name of the column containing a marker
       for whether to include the contributor in the sample or only in the
       population. This column must only contain values of 0 or 1 where 0 means
       to exclude the contributor from the sample and 1 means the contributor
       will be included in the sample count.
-    death_marker_col: The name of the column containing a marker for whether
+    * death_marker_col: The name of the column containing a marker for whether
       the contributor is dead. This column must only contain the values 0
       meaning the contributor is not dead and 1 meaning that the contributor is dead.
-    h_col: The name of the column containing the h value for the strata.
-    auxiliary_col: The name of the column containing the auxiliary value for
+    * h_col: The name of the column containing the h value for the strata.
+    * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
-    calibration_group_col: The name of the column containing the calibration
+    * calibration_group_col: The name of the column containing the calibration
       group for the contributor.
 
     ###Returns
@@ -87,6 +87,10 @@ def estimation(
         col_list.append(col(calibration_group_col).alias("calibration_group"))
 
     working_df = input_df.select(col_list)
+    # Perform Expansion estimation. If we've got a death marker and h value
+    # then we'll use these, otherwise they'll be 0 and thus the
+    # calculation for design weight just multiplies the unadjusted design
+    # weight by 1.
     design_df = working_df.groupBy(["period", "strata"]).selectExpr(
         "period",
         "strata",
@@ -99,6 +103,8 @@ def estimation(
         """,
     )
 
+    # the ratio calculation for calibration weight is the same for Separate
+    # and Combined estimation with the exception of the grouping.
     def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
         group_cols = ["period", group_col]
         return df.groupBy(group_cols).selectExpr(
@@ -109,10 +115,15 @@ def estimation(
         )
 
     if "auxiliary" in working_df.columns:
+        # We can perform some sort of ratio estimation since we have an
+        # auxiliary value.
         working_df = working_df.join(design_df, ["period", "strata"])
         if "calibration_group" in working_df.columns:
+            # We have a calibration group so perform Combined Ratio estimation.
             calibration_df = calibration_calculation(working_df, "calibration_group")
+
         else:
+            # No calibration group so perform Separate Ratio estimation.
             calibration_df = calibration_calculation(working_df, "strata")
 
         return working_df.join(calibration_df, ["period", "strata"]).select(
@@ -123,6 +134,7 @@ def estimation(
         )
 
     else:
+        # No auxiliary values so only perform Expansion estimation.
         return design_df.select(
             col("period").alias(period_col),
             col("strata").alias(strata_col),
