@@ -80,4 +80,9 @@ def test_calculations(fxt_load_test_csv):
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["period", "strata"]
-    assert_approx_df_equality(ret_val.sort(sort_col_list), exp_val.sort(sort_col_list))
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list),
+        exp_val.sort(sort_col_list),
+        0.0001,
+        ignore_nullable=True,
+    )
