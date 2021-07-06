@@ -216,13 +216,18 @@ def estimate(
         working_df = working_df.join(design_df, ["period", "strata"])
         if "calibration_group" in working_df.columns:
             # We have a calibration group so perform Combined Ratio estimation.
-            calibration_df = calibration_calculation(working_df, "calibration_group")
+            working_df = working_df.join(
+                calibration_calculation(working_df, "calibration_group"),
+                ["period", "calibration_group"],
+            )
 
         else:
             # No calibration group so perform Separate Ratio estimation.
-            calibration_df = calibration_calculation(working_df, "strata")
+            working_df.join(
+                calibration_calculation(working_df, "strata"), ["period", "strata"]
+            )
 
-        return working_df.join(calibration_df, ["period", "strata"]).select(
+        return working_df.select(
             col("period").alias(period_col),
             col("strata").alias(strata_col),
             col("design_weight"),
