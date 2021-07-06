@@ -8,6 +8,14 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, lit
 
 
+class ValidationError(Exception):
+    """
+    Error raised when validating the input data frame.
+    """
+
+    pass
+
+
 def estimation(
     input_df: DataFrame,
     period_col: str,
@@ -65,6 +73,64 @@ def estimation(
     All specified columns must be fully populated. If not an error is raised.
     """
 
+    # --- Validate params ---
+    if not isinstance(input_df, DataFrame):
+        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
+
+    death_cols = (death_marker_col, h_value_col)
+    if any(death_cols) and not all(death_cols):
+        raise TypeError(
+            "Either both or none of death_marker_col and h_value_col must be specified."
+        )
+
+    if calibration_group_col is not None and auxiliary_col is None:
+        raise TypeError(
+            "If calibration_group_col is specified then auxiliary_col must be provided."
+        )
+
+    expected_cols = [
+        period_col,
+        strata_col,
+        sample_marker_col,
+    ]
+    if death_marker_col is not None:
+        expected_cols += [death_marker_col, h_value_col]
+    if auxiliary_col is not None:
+        expected_cols.append(auxiliary_col)
+
+    if calibration_group_col is not None:
+        expected_cols.append(calibration_group_col)
+
+    # Check to see if the column names are of the correct types, not empty and
+    # do not contain nulls.
+    for col_name in expected_cols:
+        if not isinstance(col_name, str):
+            raise TypeError("All column names provided in params must be strings.")
+
+        if col_name == "":
+            raise ValueError(
+                "Column name strings provided in params must not be empty."
+            )
+
+        if input_df.filter(col(col_name).isNull()).count() > 0:
+            raise ValidationError(
+                f"Input column {col_name} must not contain null values."
+            )
+
+    # Check to see if any required columns are missing from the dataframe.
+    missing_cols = set(expected_cols) - set(input_df.columns)
+    if missing_cols:
+        raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
+
+    # As per the documentation, death marker and sample marker columns must
+    # only contain 0 or 1.
+    for col_name in (sample_marker_col, death_marker_col):
+        if input_df.filter((col(col_name) != 0) | (col(col_name) != 1)).count() > 0:
+            raise ValidationError(
+                f"Input column {col_name} must only contain values of 0 or 1."
+            )
+
+    # --- prepare our working data frame ---
     col_list = [
         col(period_col).alias("period"),
         col(strata_col).alias("strata"),
@@ -87,14 +153,10 @@ def estimation(
         col_list.append(col(calibration_group_col).alias("calibration_group"))
 
     working_df = input_df.select(col_list)
-    for column in working_df.columns:
-        if working_df.filter(col(column).isNull()).count() > 0:
-            raise ValueError(f"Input column {column}_col contains null values")
-
-    # Perform Expansion estimation. If we've got a death marker and h value
-    # then we'll use these, otherwise they'll be 0 and thus the
-    # calculation for design weight just multiplies the unadjusted design
-    # weight by 1.
+    # --- Expansion estimation ---
+    # If we've got a death marker and h value then we'll use these, otherwise
+    # they'll be 0 and thus the calculation for design weight just multiplies
+    # the unadjusted design weight by 1.
     design_df = working_df.groupBy(["period", "strata"]).selectExpr(
         "period",
         "strata",
@@ -106,6 +168,10 @@ def estimation(
             / (sample_count - death_count)))) AS design_weight
         """,
     )
+
+    # --- Ratio estimation ---
+    # Note: if we don't have the columns for this then only Expansion
+    # estimation is performed.
 
     # The ratio calculation for calibration weight is the same for Separate
     # and Combined estimation with the exception of the grouping.
@@ -138,7 +204,7 @@ def estimation(
         )
 
     else:
-        # No auxiliary values so only perform Expansion estimation.
+        # No auxiliary values so return the results of Expansion estimation.
         return design_df.select(
             col("period").alias(period_col),
             col("strata").alias(strata_col),
