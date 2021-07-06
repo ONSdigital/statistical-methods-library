@@ -168,8 +168,8 @@ def estimate(
             col("sum(sample_marker)").alias("sample_count"),
             col("sum(death_marker)").alias("death_count"),
             col("count(sample_marker)").alias("population_count"),
-            col("h_value"),
         )
+        .join(working_df.select("period", "strata", "h_value"), ["period", "strata"])
         .withColumn(
             "unadjusted_design_weight", col("population_count") / col("sample_count")
         )
