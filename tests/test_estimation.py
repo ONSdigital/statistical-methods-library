@@ -28,9 +28,9 @@ dataframe_types = {
     reference_col: "string",
     period_col: "string",
     strata_col: "string",
-    sample_col: "double",
-    death_col: "double",
-    h_col: "double",
+    sample_col: "int",
+    death_col: "int",
+    h_col: "int",
     auxiliary_col: "double",
     calibration_group_col: "string",
 }
