@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, lit
+from pyspark.sql.functions import col, count, lit, sum
 
 
 class ValidationError(Exception):
@@ -157,16 +157,32 @@ def estimate(
     # If we've got a death marker and h value then we'll use these, otherwise
     # they'll be 0 and thus the calculation for design weight just multiplies
     # the unadjusted design weight by 1.
-    design_df = working_df.groupBy(["period", "strata"]).selectExpr(
-        "period",
-        "strata",
-        "SUM(sample_marker) as sample_count",
-        "SUM(death_marker) as death_count",
-        "(COUNT(sample_marker) / sample_count) AS unadjusted_design_weight",
-        """
-            unadjusted_design_weight * (1 + (h_value * (death_count
-            / (sample_count - death_count)))) AS design_weight
-        """,
+    design_df = (
+        working_df.groupBy(["period", "strata"])
+        .agg(
+            sum(col("sample_marker")),
+            sum(col("death_marker")),
+            count(col("sample_marker")),
+        )
+        .select(
+            col("sum(sample_marker)").alias("sample_count"),
+            col("sum(death_marker)").alias("death_count"),
+            col("count(sample_marker").alias("population_count"),
+            (col("population_count") / col("sample_count")).alias(
+                "unadjusted_design_weight"
+            ),
+            (
+                col("unadjusted_design_weight")
+                * (
+                    1
+                    + (
+                        col("h_value")
+                        * col("death_count")
+                        / (col("sample_count") - col("death_count"))
+                    )
+                )
+            ).alias("design_weight"),
+        )
     )
 
     # --- Ratio estimation ---
@@ -177,11 +193,15 @@ def estimate(
     # and Combined estimation with the exception of the grouping.
     def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
         group_cols = ["period", group_col]
-        return df.groupBy(group_cols).selectExpr(
-            """
-                SUM(auxiliary) / SUM(auxiliary * unadjusted_design_weight)
-                AS calibration_weight
-            """
+        return (
+            df.withColumn(
+                "aux_design", col("auxiliary") * col("unadjusted_design_weight")
+            )
+            .groupBy(group_cols)
+            .agg({"auxiliary": "sum", "aux_design": "sum"})
+            .withColumn(
+                "calibration_weight", col("sum(auxiliary)") / col("sum(aux_design)")
+            )
         )
 
     if "auxiliary" in working_df.columns:
