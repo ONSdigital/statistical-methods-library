@@ -68,13 +68,16 @@ def test_calculations(fxt_load_test_csv):
     )
 
     ret_val = estimation.estimate(
-        test_dataframe, period_col, strata_col, sample_col,
-        death_col, h_col, auxiliary_col, calibration_group_col
+        test_dataframe,
+        period_col,
+        strata_col,
+        sample_col,
+        death_col,
+        h_col,
+        auxiliary_col,
+        calibration_group_col,
     )
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["period", "strata"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list),
-        exp_val.sort(sort_col_list)
-    )
+    assert_approx_df_equality(ret_val.sort(sort_col_list), exp_val.sort(sort_col_list))
