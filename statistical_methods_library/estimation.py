@@ -189,6 +189,12 @@ def estimate(
                 )
             ),
         )
+        .drop(
+            "sum(sample_marker)",
+            "sum(death_marker)",
+            "first(h_value)",
+            "count(sample_marker)",
+        )
     )
 
     # --- Ratio estimation ---
@@ -210,34 +216,41 @@ def estimate(
             )
         )
 
+    return_col_list = [
+        col("period").alias(period_col),
+        col("strata").alias(strata_col),
+    ]
     if "auxiliary" in working_df.columns:
         # We can perform some sort of ratio estimation since we have an
         # auxiliary value.
         working_df = working_df.join(design_df, ["period", "strata"])
         if "calibration_group" in working_df.columns:
             # We have a calibration group so perform Combined Ratio estimation.
-            working_df = working_df.join(
-                calibration_calculation(working_df, "calibration_group"),
-                ["period", "calibration_group"],
+            return_col_list.append(
+                col("calibration_group").alias(calibration_group_col)
+            )
+            estimated_df = (
+                working_df.select(
+                    "period", "strata", "calibration_group", "design_weight"
+                )
+                .distinct()
+                .join(
+                    calibration_calculation(working_df, "calibration_group"),
+                    ["period", "calibration_group"],
+                )
             )
 
         else:
             # No calibration group so perform Separate Ratio estimation.
-            working_df.join(
+            estimated_df = design_df.join(
                 calibration_calculation(working_df, "strata"), ["period", "strata"]
             )
 
-        return working_df.select(
-            col("period").alias(period_col),
-            col("strata").alias(strata_col),
-            col("design_weight"),
-            col("calibration_weight"),
-        )
+        return_col_list += [col("design_weight"), col("calibration_weight")]
 
     else:
         # No auxiliary values so return the results of Expansion estimation.
-        return design_df.select(
-            col("period").alias(period_col),
-            col("strata").alias(strata_col),
-            col("design_weight"),
-        )
+        return_col_list.append(col("design_weight"))
+        estimated_df = design_df
+
+    return estimated_df.select(return_col_list)
