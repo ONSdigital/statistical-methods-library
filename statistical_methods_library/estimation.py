@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, lit, sum
+from pyspark.sql.functions import col, count, first, lit, sum
 
 
 class ValidationError(Exception):
@@ -157,21 +157,23 @@ def estimate(
     # If we've got a death marker and h value then we'll use these, otherwise
     # they'll be 0 and thus the calculation for design weight just multiplies
     # the unadjusted design weight by 1.
+    # Due to the fact that sample and death markers are either 0 or 1, summing
+    # those columns gives the number of contributors in the sample and the
+    # number of dead contributors respectively. There's only ever 1 h value
+    # per strata so we can just take the first one in that period and strata,
+    # and every contributor must have a sample marker so counting this column
+    # gives us the total population.
     design_df = (
         working_df.groupBy(["period", "strata"])
         .agg(
             sum(col("sample_marker")),
             sum(col("death_marker")),
+            first(col("h_value")),
             count(col("sample_marker")),
         )
-        .select(
-            col("sum(sample_marker)").alias("sample_count"),
-            col("sum(death_marker)").alias("death_count"),
-            col("count(sample_marker)").alias("population_count"),
-        )
-        .join(working_df.select("period", "strata", "h_value"), ["period", "strata"])
         .withColumn(
-            "unadjusted_design_weight", col("population_count") / col("sample_count")
+            "unadjusted_design_weight",
+            col("count(sample_marker)") / col("sum(sample_marker)"),
         )
         .withColumn(
             "design_weight",
@@ -180,9 +182,9 @@ def estimate(
                 * (
                     1
                     + (
-                        col("h_value")
-                        * col("death_count")
-                        / (col("sample_count") - col("death_count"))
+                        col("first(h_value)")
+                        * col("sum(death_marker)")
+                        / (col("sum(sample_marker)") - col("sum(death_marker)"))
                     )
                 )
             ),
