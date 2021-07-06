@@ -125,7 +125,7 @@ def estimate(
     # As per the documentation, death marker and sample marker columns must
     # only contain 0 or 1.
     for col_name in (sample_marker_col, death_marker_col):
-        if input_df.filter((col(col_name) != 0) | (col(col_name) != 1)).count() > 0:
+        if input_df.filter((col(col_name) != 0) & (col(col_name) != 1)).count() > 0:
             raise ValidationError(
                 f"Input column {col_name} must only contain values of 0 or 1."
             )
