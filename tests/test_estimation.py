@@ -66,7 +66,7 @@ def test_calculations(fxt_load_test_csv):
         "unit",
         "estimation_output",
     )
-
+    test_dataframe.show()
     ret_val = estimation.estimate(
         test_dataframe,
         period_col,
