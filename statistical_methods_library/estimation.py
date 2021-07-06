@@ -168,9 +168,12 @@ def estimate(
             col("sum(sample_marker)").alias("sample_count"),
             col("sum(death_marker)").alias("death_count"),
             col("count(sample_marker)").alias("population_count"),
-            (col("population_count") / col("sample_count")).alias(
-                "unadjusted_design_weight"
-            ),
+        )
+        .withColumn(
+            "unadjusted_design_weight", col("population_count") / col("sample_count")
+        )
+        .withColumn(
+            "design_weight",
             (
                 col("unadjusted_design_weight")
                 * (
@@ -181,7 +184,7 @@ def estimate(
                         / (col("sample_count") - col("death_count"))
                     )
                 )
-            ).alias("design_weight"),
+            ),
         )
     )
 
