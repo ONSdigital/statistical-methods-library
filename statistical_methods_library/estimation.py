@@ -167,7 +167,7 @@ def estimate(
         .select(
             col("sum(sample_marker)").alias("sample_count"),
             col("sum(death_marker)").alias("death_count"),
-            col("count(sample_marker").alias("population_count"),
+            col("count(sample_marker)").alias("population_count"),
             (col("population_count") / col("sample_count")).alias(
                 "unadjusted_design_weight"
             ),
