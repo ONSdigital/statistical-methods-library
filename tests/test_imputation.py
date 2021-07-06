@@ -1,6 +1,7 @@
 import glob
 import os
 import pathlib
+
 import pytest
 from chispa.dataframe_comparer import assert_approx_df_equality
 from pyspark.sql.functions import lit
@@ -169,10 +170,20 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 
 # --- Test if output contents are as expected, both new columns and data ---
 
-test_scenarios = [("unit", "ratio_calculation", ["forward", "backward", "construction"])]
+test_scenarios = [
+    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
+]
 for scenario_type in ("dev", "methodology"):
     for file_name in glob.iglob(
-        str(pathlib.Path("tests", "fixture_data", "imputation", f"{scenario_type}_scenarios", "*_input.csv"))
+        str(
+            pathlib.Path(
+                "tests",
+                "fixture_data",
+                "imputation",
+                f"{scenario_type}_scenarios",
+                "*_input.csv",
+            )
+        )
     ):
         test_scenarios.append(
             (
@@ -184,7 +195,8 @@ for scenario_type in ("dev", "methodology"):
 
 
 @pytest.mark.parametrize(
-    "scenario_type, scenario, selection", sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1]))
+    "scenario_type, scenario, selection",
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
 @pytest.mark.dependency(
     depends=[
@@ -198,7 +210,11 @@ for scenario_type in ("dev", "methodology"):
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", scenario_type, f"{scenario}_input"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_input",
     )
 
     # We use imputation_kwargs to allow us to pass in the forward, backward
@@ -214,7 +230,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
         imputation_kwargs = {}
 
     exp_val = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", scenario_type, f"{scenario}_output"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_output",
     )
 
     ret_val = imputation.imputation(test_dataframe, *params, **imputation_kwargs)
