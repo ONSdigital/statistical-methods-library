@@ -16,7 +16,7 @@ class ValidationError(Exception):
     pass
 
 
-def estimation(
+def estimate(
     input_df: DataFrame,
     period_col: str,
     strata_col: str,
