@@ -45,6 +45,7 @@ dataframe_columns_other = (
 dataframe_types_other = {
     period_col: "string",
     strata_col: "string",
+    calibration_group_col: "string",
     design_weight: "double",
     calibration_weight: "double",
 }
