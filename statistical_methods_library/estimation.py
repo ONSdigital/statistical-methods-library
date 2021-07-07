@@ -220,11 +220,11 @@ def estimate(
         col("period").alias(period_col),
         col("strata").alias(strata_col),
     ]
-    if "auxiliary" in working_df.columns:
+    if auxiliary_col is not None:
         # We can perform some sort of ratio estimation since we have an
         # auxiliary value.
         working_df = working_df.join(design_df, ["period", "strata"])
-        if "calibration_group" in working_df.columns:
+        if calibration_group_col is not None:
             # We have a calibration group so perform Combined Ratio estimation.
             return_col_list.append(
                 col("calibration_group").alias(calibration_group_col)
