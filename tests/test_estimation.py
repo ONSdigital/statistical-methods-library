@@ -56,7 +56,7 @@ def test_calculations(fxt_load_test_csv):
         dataframe_types,
         "estimation",
         "unit",
-        "estimation_input",
+        "combined_estimation_input",
     )
 
     exp_val = fxt_load_test_csv(
@@ -64,7 +64,7 @@ def test_calculations(fxt_load_test_csv):
         dataframe_types_other,
         "estimation",
         "unit",
-        "estimation_output",
+        "combined_estimation_output",
     )
 
     ret_val = estimation.estimate(
