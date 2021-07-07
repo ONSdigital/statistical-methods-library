@@ -144,7 +144,7 @@ def estimate(
         ]
 
     else:
-        col_list += [lit(0.0).alias("death_marker"), lit(0.0).alias("h_value")]
+        col_list += [lit(0).alias("death_marker"), lit(0.0).alias("h_value")]
 
     if auxiliary_col is not None:
         col_list.append(col(auxiliary_col).alias("auxiliary"))
