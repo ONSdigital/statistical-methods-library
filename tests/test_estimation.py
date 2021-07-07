@@ -42,11 +42,7 @@ dataframe_types = {
     calibration_weight_col: "double",
 }
 
-params = (
-        period_col,
-        strata_col,
-        sample_col
-    )
+params = (period_col, strata_col, sample_col)
 
 test_scenarios = []
 
@@ -88,12 +84,7 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (
-        period_col,
-        strata_col,
-        sample_col,
-        death_col
-    )
+    bad_params = (period_col, strata_col, sample_col, death_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -106,12 +97,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (
-        period_col,
-        strata_col,
-        sample_col,
-        calibration_group_col
-    )
+    bad_params = (period_col, strata_col, sample_col, calibration_group_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -124,11 +110,7 @@ def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (
-        period_col,
-        ["strata_col"],
-        sample_col
-    )
+    bad_params = (period_col, ["strata_col"], sample_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -141,11 +123,7 @@ def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (
-        period_col,
-        "",
-        sample_col
-    )
+    bad_params = (period_col, "", sample_col)
     with pytest.raises(ValueError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -207,7 +185,7 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
 
 @pytest.mark.parametrize(
     "scenario_type, scenario",
-    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1]))
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
