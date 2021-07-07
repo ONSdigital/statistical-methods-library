@@ -173,21 +173,21 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 test_scenarios = [
     ("unit", "ratio_calculation", ["forward", "backward", "construction"])
 ]
-for scenario_type in ("dev", "methodology"):
+for scenario_category in ("dev", "methodology"):
     for file_name in glob.iglob(
         str(
             pathlib.Path(
                 "tests",
                 "fixture_data",
                 "imputation",
-                f"{scenario_type}_scenarios",
+                f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
         )
     ):
         test_scenarios.append(
             (
-                f"{scenario_type}_scenarios",
+                f"{scenario_category}_scenarios",
                 os.path.basename(file_name).replace("_input.csv", ""),
                 ["output", "marker"],
             )
