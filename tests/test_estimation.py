@@ -38,6 +38,7 @@ dataframe_types = {
 dataframe_columns_other = (
     period_col,
     strata_col,
+    calibration_group_col,
     design_weight,
     calibration_weight,
 )
