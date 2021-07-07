@@ -66,7 +66,7 @@ for scenario_category in ("dev", "methodology"):
         )
 
 
-# --- Test type validation on the input dataframe(s) [77]---
+# --- Test type validation on the input dataframe(s) ---
 
 
 @pytest.mark.dependency()
@@ -76,7 +76,7 @@ def test_dataframe_not_a_dataframe():
         estimation.estimate("not_a_dataframe", *params)
 
 
-# --- Test validation fail if mismatched death cols [81] ---
+# --- Test validation fail if mismatched death cols  ---
 
 
 @pytest.mark.dependency()
@@ -89,7 +89,7 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *bad_params)
 
 
-# --- Test validation fail if mismatched calibration cols [86] ---
+# --- Test validation fail if mismatched calibration cols  ---
 
 
 @pytest.mark.dependency()
@@ -102,7 +102,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *bad_params)
 
 
-# --- Test if params not strings [108] ---
+# --- Test if params not strings  ---
 
 
 @pytest.mark.dependency()
@@ -115,7 +115,7 @@ def test_params_not_string(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *bad_params)
 
 
-# --- Test if params null [111] ---
+# --- Test if params null  ---
 
 
 @pytest.mark.dependency()
@@ -128,7 +128,7 @@ def test_params_null(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *bad_params)
 
 
-# --- Test validation fail if nulls in data [116] ---
+# --- Test validation fail if nulls in data  ---
 
 
 @pytest.mark.dependency()
@@ -140,7 +140,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *params)
 
 
-# --- Test if cols missing from input dataframe(s) [123] ---
+# --- Test if cols missing from input dataframe(s)  ---
 
 
 @pytest.mark.dependency()
@@ -153,7 +153,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         estimation.estimate(bad_dataframe, *params)
 
 
-# --- Test validation fail if non-boolean markers in data [129] ---
+# --- Test validation fail if non-boolean markers in data  ---
 
 
 @pytest.mark.dependency()
