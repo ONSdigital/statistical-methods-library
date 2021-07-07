@@ -168,8 +168,6 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
-# --- Test if output contents are as expected, both new columns and data ---
-
 test_scenarios = [
     ("unit", "ratio_calculation", ["forward", "backward", "construction"])
 ]

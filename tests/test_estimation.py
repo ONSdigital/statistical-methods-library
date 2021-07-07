@@ -41,6 +41,35 @@ dataframe_types = {
     calibration_weight_col: "double",
 }
 
+params = {
+        period_col,
+        strata_col,
+        sample_col
+    }
+
+
+# --- Test type validation on the input dataframe(s) ---
+
+@pytest.mark.dependency()
+def test_dataframe_not_a_dataframe():
+    with pytest.raises(TypeError):
+        # noinspection PyTypeChecker
+        estimation.estimate("not_a_dataframe", *params)
+
+
+# --- Test if cols missing from input dataframe(s) ---
+
+@pytest.mark.dependency()
+def test_dataframe_column_missing(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_dataframe = test_dataframe.drop(strata_col)
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(bad_dataframe, *params)
+
+
+# --- Test if output contents are as expected, both new columns and data ---
 
 test_scenarios = []
 
