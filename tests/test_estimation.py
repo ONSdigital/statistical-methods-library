@@ -44,21 +44,21 @@ dataframe_types = {
 
 test_scenarios = []
 
-for scenario_type in ("dev", "methodology"):
+for scenario_category in ("dev", "methodology"):
     for file_name in glob.iglob(
         str(
             pathlib.Path(
                 "tests",
                 "fixture_data",
                 "estimation",
-                f"{scenario_type}_scenarios",
+                f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
         )
     ):
         test_scenarios.append(
             (
-                f"{scenario_type}_scenarios",
+                f"{scenario_category}_scenarios",
                 os.path.basename(file_name).replace("_input.csv", ""),
             )
         )
