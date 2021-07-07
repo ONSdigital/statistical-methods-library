@@ -102,6 +102,53 @@ def test_params_not_string(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *bad_params)
 
 
+# --- Test validation fail if nulls in data
+
+@pytest.mark.dependency()
+def test_dataframe_column_missing(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "null_value_present"
+    )
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(test_dataframe, *params)
+
+
+# --- Test validation fail if mismatched death cols
+
+
+@pytest.mark.dependency()
+def test_params_blank(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        strata_col,
+        sample_col,
+        death_col
+    )
+    with pytest.raises(TypeError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
+# --- Test validation fail if mismatched death cols
+
+
+@pytest.mark.dependency()
+def test_params_blank(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        strata_col,
+        sample_col,
+        calibration_group_col
+    )
+    with pytest.raises(TypeError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
 # --- Test if output contents are as expected, both new columns and data ---
 
 
@@ -121,6 +168,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 
 
 # --- Test if output contents are as expected, both new columns and data ---
+
 
 test_scenarios = []
 
