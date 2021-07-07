@@ -48,128 +48,6 @@ params = {
         sample_col
     }
 
-
-# --- Test type validation on the input dataframe(s) ---
-
-@pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
-    with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
-        estimation.estimate("not_a_dataframe", *params)
-
-
-# --- Test if cols missing from input dataframe(s) ---
-
-@pytest.mark.dependency()
-def test_dataframe_column_missing(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    bad_dataframe = test_dataframe.drop(strata_col)
-    with pytest.raises(estimation.ValidationError):
-        estimation.estimate(bad_dataframe, *params)
-
-
-# --- Test if params null ---
-
-@pytest.mark.dependency()
-def test_params_blank(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    bad_params = (
-        period_col,
-        "",
-        sample_col
-    )
-    with pytest.raises(ValueError):
-        estimation.estimate(test_dataframe, *bad_params)
-
-
-# --- Test if params not strings ---
-
-@pytest.mark.dependency()
-def test_params_not_string(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    bad_params = (
-        period_col,
-        ["strata_col"],
-        sample_col
-    )
-    with pytest.raises(TypeError):
-        estimation.estimate(test_dataframe, *bad_params)
-
-
-# --- Test validation fail if nulls in data
-
-@pytest.mark.dependency()
-def test_dataframe_column_missing(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "null_value_present"
-    )
-    with pytest.raises(estimation.ValidationError):
-        estimation.estimate(test_dataframe, *params)
-
-
-# --- Test validation fail if mismatched death cols
-
-
-@pytest.mark.dependency()
-def test_params_blank(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    bad_params = (
-        period_col,
-        strata_col,
-        sample_col,
-        death_col
-    )
-    with pytest.raises(TypeError):
-        estimation.estimate(test_dataframe, *bad_params)
-
-
-# --- Test validation fail if mismatched death cols
-
-
-@pytest.mark.dependency()
-def test_params_blank(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    bad_params = (
-        period_col,
-        strata_col,
-        sample_col,
-        calibration_group_col
-    )
-    with pytest.raises(TypeError):
-        estimation.estimate(test_dataframe, *bad_params)
-
-
-# --- Test if output contents are as expected, both new columns and data ---
-
-
-@pytest.mark.dependency()
-def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    # Make sure that no extra columns pass through.
-    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = estimation.estimate(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
-    ret_cols = ret_val.columns
-    assert "bonus_column" not in ret_cols
-
-
-# --- Test if output contents are as expected, both new columns and data ---
-
-
 test_scenarios = []
 
 for scenario_category in ("dev", "methodology"):
@@ -192,9 +70,144 @@ for scenario_category in ("dev", "methodology"):
         )
 
 
+# --- Test type validation on the input dataframe(s) [77]---
+
+
+@pytest.mark.dependency()
+def test_dataframe_not_a_dataframe():
+    with pytest.raises(TypeError):
+        # noinspection PyTypeChecker
+        estimation.estimate("not_a_dataframe", *params)
+
+
+# --- Test validation fail if mismatched death cols [81] ---
+
+
+@pytest.mark.dependency()
+def test_params_mismatched_death_cols(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        strata_col,
+        sample_col,
+        death_col
+    )
+    with pytest.raises(TypeError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
+# --- Test validation fail if mismatched calibration cols [86] ---
+
+
+@pytest.mark.dependency()
+def test_params_mismatched_calibration_cols(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        strata_col,
+        sample_col,
+        calibration_group_col
+    )
+    with pytest.raises(TypeError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
+# --- Test if params not strings [108] ---
+
+
+@pytest.mark.dependency()
+def test_params_not_string(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        ["strata_col"],
+        sample_col
+    )
+    with pytest.raises(TypeError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
+# --- Test if params null [111] ---
+
+
+@pytest.mark.dependency()
+def test_params_null(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_params = (
+        period_col,
+        "",
+        sample_col
+    )
+    with pytest.raises(ValueError):
+        estimation.estimate(test_dataframe, *bad_params)
+
+
+# --- Test validation fail if nulls in data [116] ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_nulls_in_data(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "null_value_present"
+    )
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(test_dataframe, *params)
+
+
+# --- Test if cols missing from input dataframe(s) [123] ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_column_missing(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    bad_dataframe = test_dataframe.drop(strata_col)
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(bad_dataframe, *params)
+
+
+# --- Test validation fail if non-boolean markers in data [129] ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_non_boolean_markers(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "non_boolean_markers"
+    )
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(test_dataframe, *params)
+
+
+# --- Test if output contents are as expected, both new columns and data ---
+
+
+@pytest.mark.dependency()
+def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    # Make sure that no extra columns pass through.
+    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
+    ret_val = estimation.estimate(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    assert isinstance(ret_val, type(test_dataframe))
+    ret_cols = ret_val.columns
+    assert "bonus_column" not in ret_cols
+
+
 @pytest.mark.parametrize(
     "scenario_type, scenario",
-    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1]))
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(

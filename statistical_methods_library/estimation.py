@@ -95,6 +95,7 @@ def estimate(
     ]
     if death_marker_col is not None:
         expected_cols += [death_marker_col, h_value_col]
+
     if auxiliary_col is not None:
         expected_cols.append(auxiliary_col)
 
