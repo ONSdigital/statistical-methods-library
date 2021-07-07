@@ -1,7 +1,8 @@
-import pytest
-import os
 import glob
+import os
 import pathlib
+
+import pytest
 from chispa import assert_approx_df_equality
 
 from statistical_methods_library import estimation
@@ -80,7 +81,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     estimation_kwargs = {
         "period_col": period_col,
         "strata_col": strata_col,
-        "sample_marker_col": sample_col
+        "sample_marker_col": sample_col,
     }
     if death_col in test_dataframe.columns:
         estimation_kwargs["death_marker_col"] = death_col
