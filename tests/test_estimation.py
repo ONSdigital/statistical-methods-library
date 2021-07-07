@@ -1,8 +1,11 @@
+import pytest
+import os
+import glob
+import pathlib
 from chispa import assert_approx_df_equality
 
 from statistical_methods_library import estimation
 
-reference_col = "ref"
 period_col = "period"
 strata_col = "strata"
 sample_col = "sample_mkr"
@@ -10,11 +13,10 @@ death_col = "death_mkr"
 h_col = "H"
 auxiliary_col = "aux"
 calibration_group_col = "cal_group"
-design_weight = "design_weight"
-calibration_weight = "calibration_weight"
+design_weight_col = "design_weight"
+calibration_weight_col = "calibration_weight"
 
 dataframe_columns = (
-    reference_col,
     period_col,
     strata_col,
     sample_col,
@@ -22,66 +24,89 @@ dataframe_columns = (
     h_col,
     auxiliary_col,
     calibration_group_col,
+    design_weight_col,
+    calibration_weight_col,
 )
 
 dataframe_types = {
-    reference_col: "string",
     period_col: "string",
     strata_col: "string",
     sample_col: "int",
     death_col: "int",
-    h_col: "int",
+    h_col: "double",
     auxiliary_col: "double",
     calibration_group_col: "string",
+    design_weight_col: "double",
+    calibration_weight_col: "double",
 }
 
-dataframe_columns_other = (
-    period_col,
-    strata_col,
-    calibration_group_col,
-    design_weight,
-    calibration_weight,
+
+test_scenarios = []
+
+for scenario_type in ("dev", "methodology"):
+    for file_name in glob.iglob(
+        str(
+            pathlib.Path(
+                "tests",
+                "fixture_data",
+                "estimation",
+                f"{scenario_type}_scenarios",
+                "*_input.csv",
+            )
+        )
+    ):
+        test_scenarios.append(
+            (
+                f"{scenario_type}_scenarios",
+                os.path.basename(file_name).replace("_input.csv", ""),
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "scenario_type, scenario",
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
-
-dataframe_types_other = {
-    period_col: "string",
-    strata_col: "string",
-    calibration_group_col: "string",
-    design_weight: "double",
-    calibration_weight: "double",
-}
-
-
-def test_calculations(fxt_load_test_csv):
+def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "estimation",
-        "unit",
-        "combined_estimation_input",
+        scenario_type,
+        f"{scenario}_input",
     )
+
+    # We use estimation_kwargs to allow us to pass in the appropriate columns.
+    estimation_kwargs = {
+        "period_col": period_col,
+        "strata_col": strata_col,
+        "sample_marker_col": sample_col
+    }
+    if death_col in test_dataframe.columns:
+        estimation_kwargs["death_marker_col"] = death_col
+        estimation_kwargs["h_value_col"] = h_col
+
+    if auxiliary_col in test_dataframe.columns:
+        estimation_kwargs["auxiliary_col"] = auxiliary_col
+
+    if calibration_group_col in test_dataframe.columns:
+        estimation_kwargs["calibration_group_col"] = calibration_group_col
 
     exp_val = fxt_load_test_csv(
-        dataframe_columns_other,
-        dataframe_types_other,
+        dataframe_columns,
+        dataframe_types,
         "estimation",
-        "unit",
-        "combined_estimation_output",
+        scenario_type,
+        f"{scenario}_output",
     )
 
-    ret_val = estimation.estimate(
-        test_dataframe,
-        period_col,
-        strata_col,
-        sample_col,
-        death_col,
-        h_col,
-        auxiliary_col,
-        calibration_group_col,
-    )
+    ret_val = estimation.estimate(test_dataframe, **estimation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["period", "strata"]
+    if calibration_group_col in test_dataframe.columns:
+        sort_col_list.append(calibration_group_col)
+
     assert_approx_df_equality(
         ret_val.sort(sort_col_list),
         exp_val.sort(sort_col_list),
