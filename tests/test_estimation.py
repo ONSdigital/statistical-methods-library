@@ -42,11 +42,11 @@ dataframe_types = {
     calibration_weight_col: "double",
 }
 
-params = {
+params = (
         period_col,
         strata_col,
         sample_col
-    }
+    )
 
 test_scenarios = []
 
