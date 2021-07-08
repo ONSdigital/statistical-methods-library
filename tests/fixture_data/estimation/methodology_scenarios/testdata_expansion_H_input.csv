@@ -1,4 +1,4 @@
-ruref,period,cell,sample_inclusion_marker,H,death_marker
+reference,period,strata,sample_inclusion_marker,H,death_marker
 49999999101,202012,0001,1,0,0
 49999999102,202012,0001,1,0,0
 49999999103,202012,0001,1,0,0

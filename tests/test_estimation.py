@@ -10,11 +10,11 @@ from statistical_methods_library import estimation
 
 period_col = "period"
 strata_col = "strata"
-sample_col = "sample_mkr"
-death_col = "death_mkr"
+sample_col = "sample_inclusion_marker"
+death_col = "death_marker"
 h_col = "H"
-auxiliary_col = "aux"
-calibration_group_col = "cal_group"
+auxiliary_col = "auxiliary"
+calibration_group_col = "calibration_group"
 design_weight_col = "design_weight"
 calibration_weight_col = "calibration_weight"
 
