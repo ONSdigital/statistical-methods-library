@@ -47,7 +47,7 @@ dataframe_types = {
     construction_col: "double",
 }
 
-# Params used when calling imputation
+# Params used when calling impute
 params = (
     reference_col,
     period_col,
