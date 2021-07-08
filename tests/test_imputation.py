@@ -1,5 +1,6 @@
 import glob
 import os
+import pathlib
 
 import pytest
 from chispa.dataframe_comparer import assert_approx_df_equality
@@ -62,8 +63,7 @@ params = (
 # ====================================================================================
 
 # --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents is as expected, both new columns and data content ---
-# --- Test any other error based outputs ---
+# --- Test if output contents are as expected, both new columns and data content ---
 
 # IMPORTANT:
 # 1) If the test contains any form of condition or loop, you must test the logical
@@ -80,12 +80,14 @@ params = (
 
 # ====================================================================================
 
+
 # --- Test type validation on the input dataframe(s) ---
 
 
 @pytest.mark.dependency()
 def test_dataframe_not_a_dataframe():
     with pytest.raises(TypeError):
+        # noinspection PyTypeChecker
         imputation.imputation("not_a_dataframe", *params)
 
 
@@ -95,7 +97,7 @@ def test_dataframe_not_a_dataframe():
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
@@ -108,7 +110,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_blank(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_params = (
         reference_col,
@@ -126,7 +128,7 @@ def test_params_blank(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_missing_link_column(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     with pytest.raises(TypeError):
         imputation.imputation(
@@ -137,7 +139,7 @@ def test_missing_link_column(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_params = (
         reference_col,
@@ -152,12 +154,13 @@ def test_params_not_string(fxt_load_test_csv):
         imputation.imputation(test_dataframe, *bad_params)
 
 
-# --- Test if output is a dataframe (or the expected type)---
 # --- Test if output contents are as expected, both new columns and data ---
+
+
 @pytest.mark.dependency()
 def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "unit/basic_functionality.csv"
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
@@ -169,27 +172,33 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents are as expected, both new columns and data ---
-
-test_scenarios = [("unit/ratio_calculation", ["forward", "backward", "construction"])]
-for scenario_type in ("dev", "methodology"):
+test_scenarios = [
+    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
+]
+for scenario_category in ("dev", "methodology"):
     for file_name in glob.iglob(
-        f"tests/imputation/fixture_data/{scenario_type}_scenarios/*_input.csv"
+        str(
+            pathlib.Path(
+                "tests",
+                "fixture_data",
+                "imputation",
+                f"{scenario_category}_scenarios",
+                "*_input.csv",
+            )
+        )
     ):
         test_scenarios.append(
             (
-                os.path.join(
-                    f"{scenario_type}_scenarios",
-                    os.path.basename(file_name).replace("_input.csv", ""),
-                ),
+                f"{scenario_category}_scenarios",
+                os.path.basename(file_name).replace("_input.csv", ""),
                 ["output", "marker"],
             )
         )
 
 
 @pytest.mark.parametrize(
-    "scenario, selection", sorted(test_scenarios, key=lambda t: t[0])
+    "scenario_type, scenario, selection",
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
 @pytest.mark.dependency(
     depends=[
@@ -201,9 +210,13 @@ for scenario_type in ("dev", "methodology"):
         "test_dataframe_not_a_dataframe",
     ]
 )
-def test_calculations(fxt_load_test_csv, scenario, selection):
+def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, f"{scenario}_input.csv"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_input",
     )
 
     # We use imputation_kwargs to allow us to pass in the forward, backward
@@ -219,7 +232,11 @@ def test_calculations(fxt_load_test_csv, scenario, selection):
         imputation_kwargs = {}
 
     exp_val = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, f"{scenario}_output.csv"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_output",
     )
 
     ret_val = imputation.imputation(test_dataframe, *params, **imputation_kwargs)
@@ -232,8 +249,3 @@ def test_calculations(fxt_load_test_csv, scenario, selection):
         0.0001,
         ignore_nullable=True,
     )
-
-
-# --- Test any other error based outputs ---
-
-# No error based outputs to test at this time
