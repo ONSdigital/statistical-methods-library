@@ -9,7 +9,7 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
-# Documented after the variable as per pdoc syntax for documenting variables.
+# Documented after the variable as per Pdoc syntax for documenting variables.
 
 
 class Marker(Enum):
