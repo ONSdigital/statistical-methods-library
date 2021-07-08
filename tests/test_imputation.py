@@ -88,7 +88,7 @@ params = (
 def test_dataframe_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        imputation.imputation("not_a_dataframe", *params)
+        imputation.impute("not_a_dataframe", *params)
 
 
 # --- Test if cols missing from input dataframe(s) ---
@@ -101,7 +101,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
-        imputation.imputation(bad_dataframe, *params)
+        imputation.impute(bad_dataframe, *params)
 
 
 # --- Test if params null ---
@@ -122,7 +122,7 @@ def test_params_blank(fxt_load_test_csv):
         marker_col,
     )
     with pytest.raises(ValueError):
-        imputation.imputation(test_dataframe, *bad_params)
+        imputation.impute(test_dataframe, *bad_params)
 
 
 @pytest.mark.dependency()
@@ -131,7 +131,7 @@ def test_missing_link_column(fxt_load_test_csv):
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     with pytest.raises(TypeError):
-        imputation.imputation(
+        imputation.impute(
             test_dataframe, *params, construction_link_col=construction_col
         )
 
@@ -151,7 +151,7 @@ def test_params_not_string(fxt_load_test_csv):
         marker_col,
     )
     with pytest.raises(TypeError):
-        imputation.imputation(test_dataframe, *bad_params)
+        imputation.impute(test_dataframe, *bad_params)
 
 
 # --- Test if output contents are as expected, both new columns and data ---
@@ -164,7 +164,7 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = imputation.imputation(test_dataframe, *params)
+    ret_val = imputation.impute(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     assert isinstance(ret_val, type(test_dataframe))
@@ -239,7 +239,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
         f"{scenario}_output",
     )
 
-    ret_val = imputation.imputation(test_dataframe, *params, **imputation_kwargs)
+    ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
