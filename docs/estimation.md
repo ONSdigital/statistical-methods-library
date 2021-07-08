@@ -15,6 +15,16 @@ adjustment.
 * Expansion and Separate Ratio Estimation calculate values by Strata. Combined Ration calculates the Calibration 
 Weight by Calibration Group (Its Unadjusted Design Weight is still by Strata).
 
+Required Inputs
+---------------
+
+Depending on type of Estimation that a user wishes to run there are different required inputs.
+All types of Estimation require the parameters, `input_df`,  `period_col`, `strata_col` and `sample_marker_col`.
+
+* Expansion - Birth/Death Adjustment is optional for this Estimation types and as such the `death_marker_col` and `h_value_col` are optional parameters.
+* Separate Ratio - Only additional requirement is the `auxiliary_col`.
+* Combined Ratio - Required both the `auxiliary_col` and the `calibration_group_col`.
+
 Unadjusted Design Weight
 ========================
 
