@@ -53,7 +53,7 @@ class DataIntegrityError(ImputationError):
     pass
 
 
-def imputation(
+def impute(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
@@ -364,7 +364,7 @@ def imputation(
     imputed_df = None
     null_response_df = None
 
-    def impute(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
+    def impute_helper(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
         if direction:
@@ -452,10 +452,10 @@ def imputation(
         )
 
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
-        return impute(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
+        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
-        return impute(df, "backward", Marker.BACKWARD_IMPUTE, False)
+        return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
     def construct_values(df: DataFrame) -> DataFrame:
         construction_df = df.filter(df.output.isNull()).select(
@@ -504,7 +504,7 @@ def imputation(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-        return impute(df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
+        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
 
     # ----------
 
