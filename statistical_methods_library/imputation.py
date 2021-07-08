@@ -4,28 +4,33 @@ Sums) imputation is implemented.
 """
 
 import typing
-
+from enum import Enum
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
-# Documented after the variable as per pdoc syntax for documenting variables.
+# Documented after the variable as per Pdoc syntax for documenting variables.
 
-MARKER_RESPONSE = "R"
-"""Marker showing that the value is a response."""
 
-MARKER_FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
-"""Marker showing that the value has been forward imputed from a response."""
+class Marker(Enum):
+    """Values for the marker column created during imputation."""
 
-MARKER_BACKWARD_IMPUTE = "BI"
-"""Marker showing that the value has been backward imputed from a response,
-backward imputation from construction is not permitted."""
+    RESPONSE = "R"
+    """The value is a response."""
 
-MARKER_CONSTRUCTED = "C"
-"""Marker showing that the value is constructed."""
+    FORWARD_IMPUTE_FROM_RESPONSE = "FIR"
+    """The value has been forward imputed from a response."""
 
-MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
-"""Marker showing that the value has been forward imputed from a constructed value."""
+    BACKWARD_IMPUTE = "BI"
+    """The value has been backward imputed from a response,
+    backward imputation from construction is not permitted."""
+
+    CONSTRUCTED = "C"
+    """The value is constructed."""
+
+    FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
+    """The value has been forward imputed from a constructed value."""
+
 
 # --- Imputation errors ---
 
@@ -49,7 +54,7 @@ class DataIntegrityError(ImputationError):
     pass
 
 
-def imputation(
+def impute(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
@@ -118,8 +123,8 @@ def imputation(
     All or none of `forward_link_col`, `backward_link_col` and
     `construction_link_col` must be specified.
 
-    `marker_col` will contain one of the marker constants defined in this
-    module.
+    `marker_col` will contain one of the marker constants defined in the
+    `Marker` enum.
 
     This method implements rolling imputation, that is imputed values chain
     together until either a return is present or the contributor is not present
@@ -210,7 +215,7 @@ def imputation(
         prepared_df = df.select(col_list)
         return (
             prepared_df.withColumn(
-                "marker", when(~col("output").isNull(), MARKER_RESPONSE)
+                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
             )
             .withColumn("previous_period", calculate_previous_period(col("period")))
             .withColumn("next_period", calculate_next_period(col("period")))
@@ -360,7 +365,9 @@ def imputation(
     imputed_df = None
     null_response_df = None
 
-    def impute(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
+    def impute_helper(
+        df: DataFrame, link_col: str, marker: Marker, direction: bool
+    ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
         if direction:
@@ -417,7 +424,7 @@ def imputation(
                     "ref",
                     "period",
                     (col(link_col) * col("other_output")).alias("output"),
-                    lit(marker).alias("marker"),
+                    lit(marker.value).alias("marker"),
                     "previous_period",
                     "next_period",
                     "forward",
@@ -448,10 +455,10 @@ def imputation(
         )
 
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
-        return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_RESPONSE, True)
+        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
-        return impute(df, "backward", MARKER_BACKWARD_IMPUTE, False)
+        return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
     def construct_values(df: DataFrame) -> DataFrame:
         construction_df = df.filter(df.output.isNull()).select(
@@ -470,7 +477,7 @@ def imputation(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
             (col("aux") * col("construction")).alias("constructed_output"),
-            lit(MARKER_CONSTRUCTED).alias("constructed_marker"),
+            lit(Marker.CONSTRUCTED).alias("constructed_marker"),
         )
 
         return (
@@ -500,7 +507,9 @@ def imputation(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-        return impute(df, "forward", MARKER_FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
+        return impute_helper(
+            df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
+        )
 
     # ----------
 
