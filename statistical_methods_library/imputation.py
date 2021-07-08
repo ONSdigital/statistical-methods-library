@@ -14,6 +14,7 @@ from pyspark.sql.functions import col, lit, when
 
 class Marker(Enum):
     """Values for the marker column created during imputation."""
+
     RESPONSE = "R"
     """The value is a response."""
 
@@ -364,7 +365,9 @@ def impute(
     imputed_df = None
     null_response_df = None
 
-    def impute_helper(df: DataFrame, link_col: str, marker: str, direction: bool) -> DataFrame:
+    def impute_helper(
+        df: DataFrame, link_col: str, marker: str, direction: bool
+    ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
         if direction:
@@ -504,7 +507,9 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True)
+        return impute_helper(
+            df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
+        )
 
     # ----------
 
