@@ -69,7 +69,8 @@ Calibration Weight
 ==================
 
 Estimation uses the `unadjusted_design_weight` again and uses the Auxiliary value for the responders to turn it 
-into a Calibration Weight. Where the numerator is over the whole population, and the denominator is over the sample.
+into a Calibration Weight. Note that in the calculation below, the numerator is calculated from the whole population of
+a grouping (strata or calibration group), whereas the denominator is calculated for the sampled subset of that grouping.
 
 ```
 calibration_weight = sum(auxiliary_value)/sum((unadjusted_design_weight * auxiliary_value))
