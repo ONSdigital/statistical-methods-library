@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, first, lit, sum
+from pyspark.sql.functions import col, count, first, lit, sum, when
 
 
 class ValidationError(Exception):
@@ -212,7 +212,8 @@ def estimate(
         group_cols = ["period", group_col]
         return (
             df.withColumn(
-                "aux_design", col("auxiliary") * col("unadjusted_design_weight")
+                "aux_design",
+                col("auxiliary") * col("unadjusted_design_weight") * col("sample_marker")
             )
             .groupBy(group_cols)
             .agg({"auxiliary": "sum", "aux_design": "sum"})
