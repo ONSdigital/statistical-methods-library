@@ -29,7 +29,7 @@ Unadjusted Design Weight
 ========================
 
 Estimation calculates this first as it is used in all types of estimation. It uses the sample_marker column, which 
-can only contain a 0 or a 1, allowing it to easily work out the total population and sample population using a count 
+can only contain a 0 or a 1. This allows it to easily work out the total population and sample population using a count 
 and a sum.
 
 The calculation is:
@@ -62,18 +62,18 @@ The `death_marker` and `h_value` are optional parameters as a birth/death adjust
 Leaving them blank will set a `h_value` of 0. This means the `undajusted_design_weight` is always 'adjusted' by 
 a factor of 1, i.e. it isn't adjusted.
 
-Estimation runs a validation check to ensure that if `death_marker` or `h_value` columns are supplied, the 
-corresponding column is also supplied, and will throw an Error if there is a violation of this requirement.
+Estimation runs a validation check to ensure that if `death_marker` or `h_value` columns have been supplied, the 
+corresponding column must also be supplied, and will throw an Error if this requirement has been violated.
 
 Calibration Weight
 ==================
 
 Estimation uses the `unadjusted_design_weight` again and uses the Auxiliary value for the responders to turn it 
-into a Calibration Weight.
+into a Calibration Weight. Where the numerator is over the whole population, and the denominator is over the sample.
 
 ```
 calibration_weight = sum(auxiliary_value)/sum((unadjusted_design_weight * auxiliary_value))
 ```
 
 Estimation runs a validation check to ensure that if `calibration_group` is supplied, then the `auxiliary` column 
-is also supplied, and will throw an Error if there is a violation of this requirement.
+must also be supplied, and will throw an Error if there is a violation of this requirement.
