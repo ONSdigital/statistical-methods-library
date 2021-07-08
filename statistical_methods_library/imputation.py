@@ -215,7 +215,7 @@ def impute(
         prepared_df = df.select(col_list)
         return (
             prepared_df.withColumn(
-                "marker", when(~col("output").isNull(), Marker.RESPONSE)
+                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
             )
             .withColumn("previous_period", calculate_previous_period(col("period")))
             .withColumn("next_period", calculate_next_period(col("period")))
@@ -366,7 +366,7 @@ def impute(
     null_response_df = None
 
     def impute_helper(
-        df: DataFrame, link_col: str, marker: str, direction: bool
+        df: DataFrame, link_col: str, marker: Marker, direction: bool
     ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
@@ -424,7 +424,7 @@ def impute(
                     "ref",
                     "period",
                     (col(link_col) * col("other_output")).alias("output"),
-                    lit(marker).alias("marker"),
+                    lit(marker.value).alias("marker"),
                     "previous_period",
                     "next_period",
                     "forward",
