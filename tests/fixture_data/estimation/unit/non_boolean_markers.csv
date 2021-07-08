@@ -1,4 +1,4 @@
-ref,period,strata,sample_mkr,death_mkr,H,aux,cal_group
+reference,period,strata,sample_inclusion_marker,death_marker,H,auxiliary,calibration_group
 1,202009,10,2,0,1,10,10
 2,202009,10,1,0,1,10,10
 3,202009,10,1,1,1,10,10
