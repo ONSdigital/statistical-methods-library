@@ -230,6 +230,6 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     assert_approx_df_equality(
         ret_val.sort(sort_col_list),
         exp_val.sort(sort_col_list),
-        0.0001,
+        0.01,
         ignore_nullable=True,
     )
