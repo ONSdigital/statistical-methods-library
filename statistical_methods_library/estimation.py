@@ -150,7 +150,7 @@ def estimate(
         col(sample_marker_col).alias("sample_marker"),
     ]
 
-    if death_marker_col is not None:
+    if death_marker_col is not None and h_value_col is not None:
         col_list += [
             col(death_marker_col).alias("death_marker"),
             col(h_value_col).alias("h_value"),
