@@ -137,16 +137,11 @@ def estimate(
             )
 
     # h values must not change within a stratum
-    if (
-        h_value_col is not None
-        and (
-            input_df.select(strata_col).distinct().count()
-            != input_df.select(strata_col, h_value_col).distinct().count()
-        )
+    if h_value_col is not None and (
+        input_df.select(strata_col).distinct().count()
+        != input_df.select(strata_col, h_value_col).distinct().count()
     ):
-        raise ValidationError(
-            "The h value must be the same for an entire stratum."
-        )
+        raise ValidationError("The h value must be the same for an entire stratum.")
 
     # --- prepare our working data frame ---
     col_list = [
