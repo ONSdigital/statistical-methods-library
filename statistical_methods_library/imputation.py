@@ -5,6 +5,7 @@ Sums) imputation is implemented.
 
 import typing
 from enum import Enum
+
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 
@@ -477,7 +478,7 @@ def impute(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
             (col("aux") * col("construction")).alias("constructed_output"),
-            lit(Marker.CONSTRUCTED).alias("constructed_marker"),
+            lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         )
 
         return (
