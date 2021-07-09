@@ -61,7 +61,8 @@ def estimate(
 
     Either both or neither of `death_marker_col` and `h_value_col` must be specified.
     If they are then the design weight is adjusted using birth-death
-    adjustment, otherwise it is not.
+    adjustment, otherwise it is not. In addition, since birth-death adjustment
+    is per-stratum, the `h_value_col` must not change within a given stratum.
 
     If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
     estimation is performed. This depends on whether `calibration_group_col`
@@ -134,6 +135,18 @@ def estimate(
             raise ValidationError(
                 f"Input column {col_name} must only contain values of 0 or 1."
             )
+
+    # h values must not change within a stratum
+    if (
+        h_value_col is not None
+        and (
+            input_df.select(strata_col).distinct().count()
+            != input_df.select(strata_col, h_value_col).distinct().count()
+        )
+    ):
+        raise ValidationError(
+            "The h value must be the same for an entire stratum."
+        )
 
     # --- prepare our working data frame ---
     col_list = [
