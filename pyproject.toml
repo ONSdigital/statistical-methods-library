@@ -20,6 +20,7 @@ chispa = "*"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.2"
 pdoc3 = "^0.9.2"
+mkdocs = "^1.2.1"
 
 [tool.isort]
 profile = "black"
