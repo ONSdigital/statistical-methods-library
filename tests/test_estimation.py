@@ -175,10 +175,11 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         dataframe_types,
         "estimation",
         "unit",
-        "mixed_h-values_in_strata"
+        "mixed_h-values_in_strata",
     )
     with pytest.raises(estimation.ValidationError):
-        estimation.estimate(test_dataframe, *params)
+        estimation_params = [*params, death_col, h_col]
+        estimation.estimate(test_dataframe, *estimation_params)
 
 
 # --- Test if output contents are as expected, both new columns and data ---
