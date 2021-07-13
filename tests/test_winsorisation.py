@@ -132,3 +132,19 @@ def test_params_null(fxt_load_test_csv):
     )
     with pytest.raises(ValueError):
         winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
+
+
+# --- Test validation fail if nulls in data  ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_nulls_in_data(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "null_value_present"
+    )
+    with pytest.raises(winsorisation.ValidationError):
+        winsorisation.one_sided_winsorise(test_dataframe, *params)
