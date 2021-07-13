@@ -58,12 +58,13 @@ def one_sided_winsorise(
         if not col_name:
             raise ValueError("Provided column names must not be empty.")
 
-        if input_df.filter(col(col_name).isNull()).count() > 0:
-            raise ValidationError(f"Column {col_name} must not contain null values.")
-
     missing_cols = expected_cols - set(input_df.columns)
     if missing_cols:
         raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
+
+    for col_name in expected_cols:
+        if input_df.filter(col(col_name).isNull()).count() > 0:
+            raise ValidationError(f"Column {col_name} must not contain null values.")
 
     col_list = [
         col(reference_col).alias("reference"),
