@@ -121,3 +121,6 @@ venv.bak/
 .devcontainer/
 # Editor backup files
 *~
+# mkdocs and pdoc3 generated files
+docs/statistical_methods_library/
+site/
