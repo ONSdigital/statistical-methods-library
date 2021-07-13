@@ -1,7 +1,8 @@
 """
-This module performs outliering. Currently 1-sided Winsorisation is
+This module performs Winsorisation. Currently only One-sided Winsorisation is
 implemented.
 """
+
 import typing
 
 from pyspark.sql import DataFrame
@@ -14,7 +15,7 @@ class ValidationError(Exception):
     pass
 
 
-def one_sided_winsorisation(
+def one_sided_winsorise(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
