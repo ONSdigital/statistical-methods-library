@@ -8,24 +8,59 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 
 
+class ValidationError(Exception):
+    """Error raised when data frame validation fails."""
+
+    pass
+
+
 def one_sided_winsorisation(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
     grouping_col: str,
     target_col: str,
-    design_weight_col: str,
+    design_col: str,
     l_value_col: str,
-    outlier_weight_col: str,
-    calibration_weight_col: typing.Optional[str] = None,
+    outlier_col: str,
+    calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
 ):
+    expected_cols = {
+        reference_col,
+        period_col,
+        grouping_col,
+        target_col,
+        design_col,
+        l_value_col,
+    }
+
+    if calibration_col is not None:
+        expected_cols.add(calibration_col)
+
+    if auxiliary_col is not None:
+        expected_cols.add(auxiliary_col)
+
+    for col_name in expected_cols:
+        if not isinstance(col_name, str):
+            raise TypeError("Provided column names must be strings.")
+
+        if not col_name:
+            raise ValueError("Provided column names must not be empty.")
+
+        if input_df.filter(col(col_name).isNull()).count() > 0:
+            raise ValidationError(f"Column {col_name} must not contain null values.")
+
+    missing_cols = expected_cols - set(input_df.columns)
+    if missing_cols:
+        raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
+
     col_list = [
         col(reference_col).alias("reference"),
         col(period_col).alias("period"),
         col(grouping_col).alias("grouping"),
         col(target_col).alias("target"),
-        col(design_weight_col).alias("design"),
+        col(design_col).alias("design"),
         col(l_value_col).alias("l_value"),
     ]
 
@@ -35,14 +70,15 @@ def one_sided_winsorisation(
     else:
         col_list.append(lit(1.0).alias("auxiliary"))
 
-    if calibration_weight_col is not None:
-        col_list.append(col(calibration_weight_col).alias("calibration"))
+    if calibration_col is not None:
+        col_list.append(col(calibration_col).alias("calibration"))
 
     else:
         col_list.append(lit(1.0).alias("calibration"))
 
     group_cols = ["period", "grouping"]
     df = input_df.select(col_list)
+
     return (
         df.join(
             df.groupBy(group_cols).withColumn(
@@ -73,6 +109,6 @@ def one_sided_winsorisation(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
             col("grouping").alias(grouping_col),
-            col("outlier").alias(outlier_weight_col),
+            col("outlier").alias(outlier_col),
         )
     )
