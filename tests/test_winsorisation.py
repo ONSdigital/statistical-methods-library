@@ -4,7 +4,6 @@ import pathlib
 
 import pytest
 from chispa import assert_approx_df_equality
-from pyspark.sql.functions import lit
 
 from statistical_methods_library import winsorisation
 
@@ -191,3 +190,43 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
+
+
+@pytest.mark.parametrize(
+    "scenario_type, scenario",
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
+)
+def test_calculations(fxt_load_test_csv, scenario_type, scenario):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        scenario_type,
+        f"{scenario}_input",
+    )
+
+    winsorisation_kwargs = {}
+    if auxiliary_col in test_dataframe.columns:
+        winsorisation_kwargs["auxiliary_col"] = auxiliary_col
+        winsorisation_kwargs["calibration_col"] = calibration_weight_col
+
+    exp_val = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        scenario_type,
+        f"{scenario}_output",
+    )
+
+    ret_val = winsorisation.one_sided_winsorise(
+        test_dataframe, *params, **winsorisation_kwargs
+    )
+
+    assert isinstance(ret_val, type(test_dataframe))
+    sort_col_list = ["period", "grouping"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list),
+        exp_val.sort(sort_col_list),
+        0.01,
+        ignore_nullable=True,
+    )
