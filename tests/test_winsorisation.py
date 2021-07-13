@@ -148,3 +148,20 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
     )
     with pytest.raises(winsorisation.ValidationError):
         winsorisation.one_sided_winsorise(test_dataframe, *params)
+
+
+# --- Test if cols missing from input dataframe(s)  ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_column_missing(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality"
+    )
+    bad_dataframe = test_dataframe.drop(target_col)
+    with pytest.raises(winsorisation.ValidationError):
+        winsorisation.one_sided_winsorise(bad_dataframe, *params)
