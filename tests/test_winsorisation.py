@@ -82,3 +82,53 @@ def test_dataframe_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         winsorisation.one_sided_winsorise("not_a_dataframe", *params)
+
+
+# --- Test if params not strings  ---
+
+
+@pytest.mark.dependency()
+def test_params_not_string(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality"
+    )
+    bad_params = (
+        reference_col,
+        period_col,
+        grouping_col,
+        ["target_col"],
+        design_weight_col,
+        l_value_col,
+        outlier_weight_col,
+    )
+    with pytest.raises(TypeError):
+        winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
+
+
+# --- Test if params null  ---
+
+
+@pytest.mark.dependency()
+def test_params_null(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality"
+    )
+    bad_params = (
+        reference_col,
+        period_col,
+        grouping_col,
+        "",
+        design_weight_col,
+        l_value_col,
+        outlier_weight_col,
+    )
+    with pytest.raises(ValueError):
+        winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
