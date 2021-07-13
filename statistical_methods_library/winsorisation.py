@@ -30,6 +30,12 @@ def one_sided_winsorise(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame.")
 
+    ratio_cols = [auxiliary_col, calibration_col]
+    if any(ratio_cols) and not all(ratio_cols):
+        raise TypeError(
+            "Both or neither of auxiliary_col and calibration_col must be specified."
+        )
+
     expected_cols = {
         reference_col,
         period_col,
