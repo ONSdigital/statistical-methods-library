@@ -27,6 +27,9 @@ def one_sided_winsorise(
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
 ):
+    if not isinstance(input_df, DataFrame):
+        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame.")
+
     expected_cols = {
         reference_col,
         period_col,
