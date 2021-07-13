@@ -94,7 +94,7 @@ def test_params_not_string(fxt_load_test_csv):
         dataframe_types,
         "winsorisation",
         "unit",
-        "basic_functionality"
+        "basic_functionality",
     )
     bad_params = (
         reference_col,
@@ -119,7 +119,7 @@ def test_params_null(fxt_load_test_csv):
         dataframe_types,
         "winsorisation",
         "unit",
-        "basic_functionality"
+        "basic_functionality",
     )
     bad_params = (
         reference_col,
@@ -144,7 +144,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         dataframe_types,
         "winsorisation",
         "unit",
-        "null_value_present"
+        "null_value_present",
     )
     with pytest.raises(winsorisation.ValidationError):
         winsorisation.one_sided_winsorise(test_dataframe, *params)
@@ -160,7 +160,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         dataframe_types,
         "winsorisation",
         "unit",
-        "basic_functionality"
+        "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(target_col)
     with pytest.raises(winsorisation.ValidationError):
@@ -177,7 +177,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         dataframe_types,
         "winsorisation",
         "unit",
-        "basic_functionality"
+        "basic_functionality",
     )
     bad_params = (
         reference_col,
@@ -190,4 +190,4 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         calibration_weight_col,
     )
     with pytest.raises(TypeError):
-        winsorisation.one_sided_winsori(test_dataframe, *bad_params)
+        winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
