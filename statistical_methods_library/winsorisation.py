@@ -85,9 +85,15 @@ def one_sided_winsorise(
 
     return (
         df.join(
-            df.groupBy(group_cols).withColumn(
-                "ratio_sum_target_sum_aux",
-                expr("sum(target * design)/sum(auxiliary * design)"),
+            (
+                df.withColumn("target_design", expr("target * design"))
+                .withColumn("aux_design", expr("auxiliary * design"))
+                .groupBy(group_cols)
+                .agg({"target_design": "sum", "aux_design": "sum"})
+                .withColumn(
+                    "ratio_sum_target_sum_aux",
+                    col("sum(target_design)") / col("sum(aux_design)"),
+                )
             ),
             group_cols,
         )
