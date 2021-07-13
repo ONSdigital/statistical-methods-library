@@ -200,7 +200,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
-        "estimation",
+        "winsorisation",
         scenario_type,
         f"{scenario}_input",
     )
