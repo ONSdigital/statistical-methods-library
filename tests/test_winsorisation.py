@@ -165,3 +165,29 @@ def test_dataframe_column_missing(fxt_load_test_csv):
     bad_dataframe = test_dataframe.drop(target_col)
     with pytest.raises(winsorisation.ValidationError):
         winsorisation.one_sided_winsorise(bad_dataframe, *params)
+
+
+# --- Test validation fail if mismatched calibration cols  ---
+
+
+@pytest.mark.dependency()
+def test_params_mismatched_calibration_cols(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality"
+    )
+    bad_params = (
+        reference_col,
+        period_col,
+        grouping_col,
+        target_col,
+        design_weight_col,
+        l_value_col,
+        outlier_weight_col,
+        calibration_weight_col,
+    )
+    with pytest.raises(TypeError):
+        winsorisation.one_sided_winsori(test_dataframe, *bad_params)

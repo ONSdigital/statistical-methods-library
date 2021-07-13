@@ -165,7 +165,7 @@ def test_dataframe_non_boolean_markers(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *params)
 
 
-# --- Test validation fail if non-boolean markers in data  ---
+# --- Test validation fail if mixed h values in a strata  ---
 
 
 @pytest.mark.dependency()
