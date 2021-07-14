@@ -70,7 +70,7 @@ for scenario_category in ("dev", "methodology"):
 
 
 @pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
+def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         estimation.estimate("not_a_dataframe", *params)
@@ -186,7 +186,22 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    # Make sure that no extra columns pass through.
+    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
+    ret_val = estimation.estimate(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    assert isinstance(ret_val, type(test_dataframe))
+    ret_cols = ret_val.columns
+    assert "bonus_column" not in ret_cols
+
+
+@pytest.mark.dependency()
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
@@ -206,7 +221,7 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
 )
 @pytest.mark.dependency(
     depends=[
-        "test_dataframe_not_a_dataframe",
+        "test_input_not_a_dataframe",
         "test_params_mismatched_death_cols",
         "test_params_mismatched_calibration_cols",
         "test_params_not_string",
@@ -215,7 +230,7 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_dataframe_non_boolean_markers",
         "test_dataframe_mixed_h_values_in_strata",
-        "test_return_has_no_unexpected_columns",
+        "test_dataframe_returned_as_expected",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):

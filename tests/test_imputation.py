@@ -108,7 +108,7 @@ for scenario_category in ("dev", "methodology"):
 
 
 @pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
+def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         imputation.impute("not_a_dataframe", *params)
@@ -131,7 +131,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_params_blank(fxt_load_test_csv):
+def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -149,7 +149,7 @@ def test_params_blank(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_missing_link_column(fxt_load_test_csv):
+def test_params_missing_link_column(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -181,7 +181,7 @@ def test_params_not_string(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -201,12 +201,12 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
 )
 @pytest.mark.dependency(
     depends=[
-        "test_dataframe_returned",
+        "test_dataframe_returned_as_expected",
         "test_params_not_string",
-        "test_params_blank",
-        "test_missing_link_column",
+        "test_params_null",
+        "test_params_missing_link_column",
         "test_dataframe_column_missing",
-        "test_dataframe_not_a_dataframe",
+        "test_input_not_a_dataframe",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):

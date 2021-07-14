@@ -78,7 +78,7 @@ for scenario_category in ("dev", "methodology"):
 
 
 @pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
+def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         winsorisation.one_sided_winsorise("not_a_dataframe", *params)
@@ -134,6 +134,32 @@ def test_params_null(fxt_load_test_csv):
         winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
 
 
+# --- Test validation fail if mismatched calibration cols  ---
+
+
+@pytest.mark.dependency()
+def test_params_mismatched_calibration_cols(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality",
+    )
+    bad_params = (
+        reference_col,
+        period_col,
+        grouping_col,
+        target_col,
+        design_weight_col,
+        l_value_col,
+        outlier_weight_col,
+        calibration_weight_col,
+    )
+    with pytest.raises(TypeError):
+        winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
+
+
 # --- Test validation fail if nulls in data  ---
 
 
@@ -167,37 +193,11 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         winsorisation.one_sided_winsorise(bad_dataframe, *params)
 
 
-# --- Test validation fail if mismatched calibration cols  ---
-
-
-@pytest.mark.dependency()
-def test_params_mismatched_calibration_cols(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "winsorisation",
-        "unit",
-        "basic_functionality",
-    )
-    bad_params = (
-        reference_col,
-        period_col,
-        grouping_col,
-        target_col,
-        design_weight_col,
-        l_value_col,
-        outlier_weight_col,
-        calibration_weight_col,
-    )
-    with pytest.raises(TypeError):
-        winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
-
-
 # --- Test if output contents are as expected, both new columns and data ---
 
 
 @pytest.mark.dependency()
-def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -222,13 +222,13 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
 )
 @pytest.mark.dependency(
     depends=[
-        "test_dataframe_not_a_dataframe",
+        "test_input_not_a_dataframe",
         "test_params_not_string",
         "test_params_null",
         "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
         "test_params_mismatched_calibration_cols",
-        "test_return_has_no_unexpected_columns",
+        "test_dataframe_returned_as_expected",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
