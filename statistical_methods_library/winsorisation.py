@@ -112,7 +112,7 @@ def one_sided_winsorise(
         .withColumn(
             "modified_target",
             when(
-                "target > k_value",
+                (col("target") > col("k_value")),
                 expr(
                     """
                         (target/(design*calibration))
