@@ -1,18 +1,13 @@
 #!/bin/sh
-poetry_run()
-{
-    python3 -m poetry run "$@"
-}
-
 run_mkdocs()
 {
-    poetry_run mkdocs "$@"
+    poetry run mkdocs "$@"
 }
 
 prepare_api_docs()
 {
     rm -rf docs/statistical_methods_library
-    poetry_run pdoc3 -o docs statistical_methods_library
+    poetry run pdoc3 -o docs statistical_methods_library
 }
 
 serve_docs()
