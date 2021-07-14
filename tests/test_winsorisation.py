@@ -220,6 +220,17 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
+@pytest.mark.dependency(
+    depends=[
+        "test_dataframe_not_a_dataframe",
+        "test_params_not_string",
+        "test_params_null",
+        "test_dataframe_nulls_in_data",
+        "test_dataframe_column_missing",
+        "test_params_mismatched_calibration_cols",
+        "test_return_has_no_unexpected_columns",
+    ]
+)
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
