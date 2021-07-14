@@ -4,6 +4,7 @@ import pathlib
 
 import pytest
 from chispa import assert_approx_df_equality
+from pyspark.sql.functions import lit
 
 from statistical_methods_library import winsorisation
 
@@ -190,6 +191,29 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         winsorisation.one_sided_winsorise(test_dataframe, *bad_params)
+
+
+# --- Test if output contents are as expected, both new columns and data ---
+
+
+@pytest.mark.dependency()
+def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality",
+    )
+    # Make sure that no extra columns pass through.
+    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
+    ret_val = winsorisation.one_sided_winsorise(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation...
+    ret_val.count()
+    # ...and then check
+    assert isinstance(ret_val, type(test_dataframe))
+    ret_cols = ret_val.columns
+    assert "bonus_column" not in ret_cols
 
 
 @pytest.mark.parametrize(
