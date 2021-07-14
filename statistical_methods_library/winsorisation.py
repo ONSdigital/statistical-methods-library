@@ -125,7 +125,6 @@ def one_sided_winsorise(
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
-            col("grouping").alias(grouping_col),
             col("outlier").alias(outlier_col),
         )
     )
