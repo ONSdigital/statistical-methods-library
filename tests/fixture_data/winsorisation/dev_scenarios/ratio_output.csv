@@ -1,4 +1,4 @@
-ref,period,o_weight
+ref,period,outlier_weight
 1,202001,10
 1,202002,10
 1,202003,15

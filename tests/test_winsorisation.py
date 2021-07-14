@@ -247,7 +247,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     )
 
     assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["period", "grouping"]
+    sort_col_list = [reference_col, period_col]
     assert_approx_df_equality(
         ret_val.sort(sort_col_list),
         exp_val.sort(sort_col_list),
