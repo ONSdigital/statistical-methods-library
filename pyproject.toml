@@ -26,7 +26,7 @@ mkdocs = "^1.2.1"
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "--cov=statistical_methods_library"
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
