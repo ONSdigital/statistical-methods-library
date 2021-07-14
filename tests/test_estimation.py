@@ -188,7 +188,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
