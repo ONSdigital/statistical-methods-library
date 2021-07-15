@@ -28,6 +28,9 @@ addopts = "--exitfirst --tap-stream --cov=statistical_methods_library"
 
 [tool.portray.mkdocs]
 site_name = "Statistical Methods Library"
+edit_uri = ""
+repo_name = "Statistical Methods Library GitHub Repo"
+site_url = "https://example.com/statistical-methods-library/"
 
 [tool.portray.pdocs]
 exclude_source = true
