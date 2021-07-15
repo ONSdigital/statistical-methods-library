@@ -1,6 +1,7 @@
 """
-This module performs Winsorisation. Currently only One-sided Winsorisation is
-implemented.
+This module performs Winsorisation.
+
+Currently only One-sided Winsorisation is implemented.
 """
 
 import typing
@@ -27,6 +28,46 @@ def one_sided_winsorise(
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
 ):
+    """
+    Perform One-sided Winsorisation.
+
+    ###Arguments
+    * input_df: The input data frame.
+    * reference_col: The name of the column to reference a unique contributor.
+    * period_col: The name of the column containing the period
+      information for the contributor.
+    grouping_col: The name of the column containing the grouping information
+      for a contributor.
+    * target_col: The name of the column containing the target variable.
+    * design_col: The name of the column containing the design weight.
+    * l_value_col: The name of the column containing the l values.
+    * outlier_col: The name of the column which will contain the calculated
+      outlier weight.
+    * calibration_col: The name of the column containing the calibration weight
+      if Ratio Winsorisation is to be performed.
+    * auxiliary_col: The name of the column containing the auxiliary values if
+      Ratio Winsorisation is to be performed.
+
+    ###Returns
+    A new data frame containing:
+
+    * `reference_col`
+    * `period_col`
+    * `outlier_col`
+
+    ###Notes
+
+    All of the provided columns must be fully populated. Otherwise an error is
+    raised.
+
+    Both or neither of `calibration_col` and `auxiliary_col` must be
+    specified. Specifying one without the other raises an error.
+
+    If these columns are specified then they are used in calculations so
+    Ratio Winsorisation is performed. If not then Expansion Winsorisation is
+    performed.
+    """
+
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame.")
 
@@ -75,6 +116,9 @@ def one_sided_winsorise(
         col(l_value_col).alias("l_value"),
     ]
 
+    # If we don't have a calibration weight and auxiliary value then set to 1.
+    # This cancels out the ratio part of Winsorisation which means that
+    # Expansion Winsorisation is performed.
     if auxiliary_col is not None:
         col_list.append(col(auxiliary_col).alias("auxiliary"))
 
@@ -90,6 +134,8 @@ def one_sided_winsorise(
     group_cols = ["period", "grouping"]
     df = input_df.select(col_list)
 
+    # The design ratio needs to be calculated by grouping whereas the outlier
+    # weight calculation is per contributor.
     return (
         df.join(
             (
