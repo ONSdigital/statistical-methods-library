@@ -1,6 +1,7 @@
 """
-Perform imputation on a data frame. Currently only Ratio of Means (or Ratio of
-Sums) imputation is implemented.
+Perform imputation on a data frame.
+
+Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 """
 
 import typing
