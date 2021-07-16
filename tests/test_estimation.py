@@ -186,21 +186,6 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
-    )
-    # Make sure that no extra columns pass through.
-    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = estimation.estimate(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
-    ret_cols = ret_val.columns
-    assert "bonus_column" not in ret_cols
-
-
-@pytest.mark.dependency()
 def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
