@@ -81,28 +81,6 @@ for scenario_category in ("dev", "methodology"):
             )
         )
 
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents are as expected, both new columns and data content ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 4) Avoid referring to specific rows of test data where possible, they may change.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes;  this helps
-# avoid having to use escape characters.
-
-# ====================================================================================
-
 
 # --- Test type validation on the input dataframe(s) ---
 
