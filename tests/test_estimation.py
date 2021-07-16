@@ -70,7 +70,7 @@ for scenario_category in ("dev", "methodology"):
 
 
 @pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
+def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         estimation.estimate("not_a_dataframe", *params)
@@ -165,7 +165,7 @@ def test_dataframe_non_boolean_markers(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *params)
 
 
-# --- Test validation fail if non-boolean markers in data  ---
+# --- Test validation fail if mixed h values in a strata  ---
 
 
 @pytest.mark.dependency()
@@ -186,7 +186,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
@@ -203,6 +203,20 @@ def test_return_has_no_unexpected_columns(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.parametrize(
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
+)
+@pytest.mark.dependency(
+    depends=[
+        "test_input_not_a_dataframe",
+        "test_params_mismatched_death_cols",
+        "test_params_mismatched_calibration_cols",
+        "test_params_not_string",
+        "test_params_null",
+        "test_dataframe_nulls_in_data",
+        "test_dataframe_column_missing",
+        "test_dataframe_non_boolean_markers",
+        "test_dataframe_mixed_h_values_in_strata",
+        "test_dataframe_returned_as_expected",
+    ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(

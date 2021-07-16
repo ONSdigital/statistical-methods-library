@@ -58,34 +58,35 @@ params = (
     marker_col,
 )
 
-# ====================================================================================
-# --------------- TESTING TEMPLATE ---------------------------
-# ====================================================================================
-
-# --- Test if output is a dataframe (or the expected type)---
-# --- Test if output contents are as expected, both new columns and data content ---
-
-# IMPORTANT:
-# 1) If the test contains any form of condition or loop, you must test the logical
-#    branches to ensure that each assert is actually being performed.
-# 2) Do not test internal structure of functions, it may be refactored. Stick
-#    to the inputs and outputs.
-# 3) If you load the test data in for each test rather than as a module level
-#    constant, you can amend data in the tests without needing new test data.
-# 4) Avoid referring to specific rows of test data where possible, they may change.
-# 5) Don't test for python language errors. :)
-
-# We're using double-quotes for strings since SQL requires single-quotes;  this helps
-# avoid having to use escape characters.
-
-# ====================================================================================
+test_scenarios = [
+    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
+]
+for scenario_category in ("dev", "methodology"):
+    for file_name in glob.iglob(
+        str(
+            pathlib.Path(
+                "tests",
+                "fixture_data",
+                "imputation",
+                f"{scenario_category}_scenarios",
+                "*_input.csv",
+            )
+        )
+    ):
+        test_scenarios.append(
+            (
+                f"{scenario_category}_scenarios",
+                os.path.basename(file_name).replace("_input.csv", ""),
+                ["output", "marker"],
+            )
+        )
 
 
 # --- Test type validation on the input dataframe(s) ---
 
 
 @pytest.mark.dependency()
-def test_dataframe_not_a_dataframe():
+def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
         imputation.impute("not_a_dataframe", *params)
@@ -108,7 +109,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_params_blank(fxt_load_test_csv):
+def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -126,7 +127,7 @@ def test_params_blank(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_missing_link_column(fxt_load_test_csv):
+def test_params_missing_link_column(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -158,7 +159,7 @@ def test_params_not_string(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
@@ -172,42 +173,18 @@ def test_dataframe_returned(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
-test_scenarios = [
-    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
-]
-for scenario_category in ("dev", "methodology"):
-    for file_name in glob.iglob(
-        str(
-            pathlib.Path(
-                "tests",
-                "fixture_data",
-                "imputation",
-                f"{scenario_category}_scenarios",
-                "*_input.csv",
-            )
-        )
-    ):
-        test_scenarios.append(
-            (
-                f"{scenario_category}_scenarios",
-                os.path.basename(file_name).replace("_input.csv", ""),
-                ["output", "marker"],
-            )
-        )
-
-
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
 @pytest.mark.dependency(
     depends=[
-        "test_dataframe_returned",
+        "test_dataframe_returned_as_expected",
         "test_params_not_string",
-        "test_params_blank",
-        "test_missing_link_column",
+        "test_params_null",
+        "test_params_missing_link_column",
         "test_dataframe_column_missing",
-        "test_dataframe_not_a_dataframe",
+        "test_input_not_a_dataframe",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):

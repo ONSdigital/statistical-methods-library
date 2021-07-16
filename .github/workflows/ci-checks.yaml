@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: test
-        run: poetry run pytest -x --tap-stream
+        run: poetry run pytest
   flake8:
     runs-on: ubuntu-latest
     strategy:
