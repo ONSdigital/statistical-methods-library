@@ -136,6 +136,9 @@ def one_sided_winsorise(
 
     # The design ratio needs to be calculated by grouping whereas the outlier
     # weight calculation is per contributor.
+    # If the outlier weight can't be calculated default to 1.
+    # If design * calibration is less than 1 then set k value to target column
+    # so that the outlier weight becomes 1.
     return (
         df.join(
             (
@@ -152,8 +155,16 @@ def one_sided_winsorise(
         )
         .withColumn("winsorisation_value", expr("ratio_sum_target_sum_aux * auxiliary"))
         .withColumn(
+            "design_calibration",
+            expr("design * calibration"),
+        )
+        .withColumn(
             "k_value",
-            expr("winsorisation_value + (l_value/((design * calibration) -1))"),
+            when(
+                (col("design_calibration") > 1.0),
+                expr("winsorisation_value + (l_value/(design_calibration - 1))")
+            )
+            .otherwise(col("target"))
         )
         .withColumn(
             "modified_target",
@@ -161,8 +172,8 @@ def one_sided_winsorise(
                 (col("target") > col("k_value")),
                 expr(
                     """
-                        (target/(design*calibration))
-                        + (k_value - (k_value/(design*calibration)))
+                        (target/design_calibration)
+                        + (k_value - (k_value/design_calibration))
                     """
                 ),
             ).otherwise(col("target")),
