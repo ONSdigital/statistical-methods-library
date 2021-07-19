@@ -162,9 +162,8 @@ def one_sided_winsorise(
             "k_value",
             when(
                 (col("design_calibration") > 1.0),
-                expr("winsorisation_value + (l_value/(design_calibration - 1))")
-            )
-            .otherwise(col("target"))
+                expr("winsorisation_value + (l_value/(design_calibration - 1))"),
+            ).otherwise(col("target")),
         )
         .withColumn(
             "modified_target",
