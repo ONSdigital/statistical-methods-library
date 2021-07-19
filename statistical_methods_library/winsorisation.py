@@ -168,6 +168,7 @@ def one_sided_winsorise(
             ).otherwise(col("target")),
         )
         .withColumn("outlier", expr("modified_target/target"))
+        .fillna(1.0, ["outlier"])
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
