@@ -353,13 +353,10 @@ def impute(
 
         # Join the strata ratios onto the input such that each contributor has
         # a set of ratios.
-        ret_df = df.join(strata_ratio_df, ["period", "strata"]).select(
-            "*",
-            strata_ratio_df.forward,
-            strata_ratio_df.backward,
-            strata_ratio_df.construction,
-        ).fillna(1.0, ["forward", "backward", "construction"])
-        return ret_df
+        return (
+            df.join(strata_ratio_df, ["period", "strata"], "leftouter")
+            .fillna(1.0, ["forward", "backward", "construction"])
+        )
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
