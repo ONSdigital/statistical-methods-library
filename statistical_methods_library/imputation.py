@@ -321,7 +321,6 @@ def impute(
                 col("sum(output_for_construction)")
                 / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
             )
-            .fillna(1.0, ["forward", "construction"])
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
@@ -350,7 +349,6 @@ def impute(
                 (lit(1.0) / col("next_forward")).alias("backward"),
                 col("construction"),
             )
-            .fillna(1.0, "backward")
         )
 
         # Join the strata ratios onto the input such that each contributor has
@@ -360,7 +358,7 @@ def impute(
             strata_ratio_df.forward,
             strata_ratio_df.backward,
             strata_ratio_df.construction,
-        )
+        ).fillna(1.0, ["forward", "backward", "construction"])
         return ret_df
 
     # Caching for both imputed and unimputed data.
