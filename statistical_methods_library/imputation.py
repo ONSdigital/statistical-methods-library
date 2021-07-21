@@ -321,7 +321,6 @@ def impute(
                 col("sum(output_for_construction)")
                 / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
             )
-            .fillna(1.0, ["forward", "construction"])
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
@@ -330,38 +329,30 @@ def impute(
 
         # Calculate backward ratio as 1/forward for the next period for each
         # strata.
-        strata_ratio_df = (
-            forward_df.join(
-                forward_df.select(
-                    col("period").alias("other_period"),
-                    col("forward").alias("next_forward"),
-                    col("strata").alias("other_strata"),
-                ),
-                [
-                    col("next_period") == col("other_period"),
-                    col("strata") == col("other_strata"),
-                ],
-                "leftouter",
-            )
-            .select(
-                col("period"),
-                col("strata"),
-                col("forward"),
-                (lit(1.0) / col("next_forward")).alias("backward"),
-                col("construction"),
-            )
-            .fillna(1.0, "backward")
+        strata_ratio_df = forward_df.join(
+            forward_df.select(
+                col("period").alias("other_period"),
+                col("forward").alias("next_forward"),
+                col("strata").alias("other_strata"),
+            ),
+            [
+                col("next_period") == col("other_period"),
+                col("strata") == col("other_strata"),
+            ],
+            "leftouter",
+        ).select(
+            col("period"),
+            col("strata"),
+            col("forward"),
+            (lit(1.0) / col("next_forward")).alias("backward"),
+            col("construction"),
         )
 
         # Join the strata ratios onto the input such that each contributor has
         # a set of ratios.
-        ret_df = df.join(strata_ratio_df, ["period", "strata"]).select(
-            "*",
-            strata_ratio_df.forward,
-            strata_ratio_df.backward,
-            strata_ratio_df.construction,
+        return df.join(strata_ratio_df, ["period", "strata"], "leftouter").fillna(
+            1.0, ["forward", "backward", "construction"]
         )
-        return ret_df
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
