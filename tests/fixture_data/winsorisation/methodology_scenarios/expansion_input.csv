@@ -1,4 +1,4 @@
-period,reference,strata,target,design_weight,l_value
+period,ref,grouping,target,design_weight,l_value
 1900,123456,1001,92,50,5007.270089
 1900,234567,1001,500,50,5007.270089
 1900,345678,1001,96,50,5007.270089
