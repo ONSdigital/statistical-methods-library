@@ -196,7 +196,7 @@ def estimate(
                 * (
                     1
                     + (
-                        col("first(h_value, false)")
+                        col("first(h_value)")
                         * col("sum(death_marker)")
                         / (col("sum(sample_marker)") - col("sum(death_marker)"))
                     )
@@ -206,7 +206,7 @@ def estimate(
         .drop(
             "sum(sample_marker)",
             "sum(death_marker)",
-            "first(h_value, false)",
+            "first(h_value)",
             "count(sample_marker)",
         )
     )
