@@ -281,7 +281,7 @@ def impute(
         # for all contributors in a period as the values now line up.
         working_df = filtered_df.alias("current")
         working_df = working_df.join(
-            filtered_df.select("ref", "period", "output").alias("prev"),
+            filtered_df.select("ref", "period", "output", "strata").alias("prev"),
             [
                 col("current.ref") == col("prev.ref"),
                 col("current.previous_period") == col("prev.period"),
