@@ -375,7 +375,7 @@ def impute(
             working_df = df.select(
                 "ref",
                 "period",
-                "strata"
+                "strata",
                 "output",
                 "marker",
                 "previous_period",
