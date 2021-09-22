@@ -419,6 +419,7 @@ def impute(
                 .select(
                     "ref",
                     "period",
+                    "strata",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker.value).alias("marker"),
                     "previous_period",
