@@ -285,6 +285,7 @@ def impute(
             [
                 col("current.ref") == col("prev.ref"),
                 col("current.previous_period") == col("prev.period"),
+                col("current.strata") == col("prev.strata"),
             ],
             "leftouter",
         ).select(
