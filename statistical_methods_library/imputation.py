@@ -459,15 +459,16 @@ def impute(
 
     def construct_values(df: DataFrame) -> DataFrame:
         construction_df = df.filter(df.output.isNull()).select(
-            "ref", "period", "aux", "construction", "previous_period"
+            "ref", "period", "strata", "aux", "construction", "previous_period"
         )
-        other_df = construction_df.select("ref", "period").alias("other")
+        other_df = construction_df.select("ref", "period", "strata").alias("other")
         construction_df = construction_df.alias("construction")
         construction_df = construction_df.join(
             other_df,
             [
                 col("construction.ref") == col("other.ref"),
                 col("construction.previous_period") == col("other.period"),
+                col("construction.strata") == col("other.strata"),
             ],
             "leftanti",
         ).select(
