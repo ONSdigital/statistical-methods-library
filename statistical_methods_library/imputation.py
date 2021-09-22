@@ -405,7 +405,10 @@ def impute(
 
         while True:
             other_df = imputed_df.selectExpr(
-                "ref AS other_ref", "period AS other_period", "output AS other_output", "strata AS other_strata"
+                "ref AS other_ref",
+                "period AS other_period",
+                "output AS other_output",
+                "strata AS other_strata",
             )
             calculation_df = (
                 null_response_df.join(
