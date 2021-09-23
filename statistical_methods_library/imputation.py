@@ -281,10 +281,11 @@ def impute(
         # for all contributors in a period as the values now line up.
         working_df = filtered_df.alias("current")
         working_df = working_df.join(
-            filtered_df.select("ref", "period", "output").alias("prev"),
+            filtered_df.select("ref", "period", "output", "strata").alias("prev"),
             [
                 col("current.ref") == col("prev.ref"),
                 col("current.previous_period") == col("prev.period"),
+                col("current.strata") == col("prev.strata"),
             ],
             "leftouter",
         ).select(
@@ -374,6 +375,7 @@ def impute(
             working_df = df.select(
                 "ref",
                 "period",
+                "strata",
                 "output",
                 "marker",
                 "previous_period",
@@ -403,7 +405,10 @@ def impute(
 
         while True:
             other_df = imputed_df.selectExpr(
-                "ref AS other_ref", "period AS other_period", "output AS other_output"
+                "ref AS other_ref",
+                "period AS other_period",
+                "output AS other_output",
+                "strata AS other_strata",
             )
             calculation_df = (
                 null_response_df.join(
@@ -411,11 +416,13 @@ def impute(
                     [
                         col(other_period_col) == col("other_period"),
                         col("ref") == col("other_ref"),
+                        col("strata") == col("other_strata"),
                     ],
                 )
                 .select(
                     "ref",
                     "period",
+                    "strata",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker.value).alias("marker"),
                     "previous_period",
@@ -455,15 +462,16 @@ def impute(
 
     def construct_values(df: DataFrame) -> DataFrame:
         construction_df = df.filter(df.output.isNull()).select(
-            "ref", "period", "aux", "construction", "previous_period"
+            "ref", "period", "strata", "aux", "construction", "previous_period"
         )
-        other_df = construction_df.select("ref", "period").alias("other")
+        other_df = construction_df.select("ref", "period", "strata").alias("other")
         construction_df = construction_df.alias("construction")
         construction_df = construction_df.join(
             other_df,
             [
                 col("construction.ref") == col("other.ref"),
                 col("construction.previous_period") == col("other.period"),
+                col("construction.strata") == col("other.strata"),
             ],
             "leftanti",
         ).select(
