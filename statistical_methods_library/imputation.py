@@ -304,23 +304,18 @@ def impute(
                 "output_for_construction": "sum",
             }
         )
-        # Calculate the forward ratio for every period using 1 in the
-        # case of a 0 denominator. We also calculate construction
+        # Calculate the forward ratio for every period using 1 as the link in
+        # the case of a 0 denominator. We also calculate construction
         # links at the same time for efficiency reasons. This shares
         # the same behaviour of defaulting to a 1 in the case of a 0
         # denominator.
         forward_df = (
             working_df.withColumn(
-                "forward",
-                col("sum(output)")
-                / when(col("sum(other_output)") == 0, lit(1.0)).otherwise(
-                    col("sum(other_output)")
-                ),
+                "forward", col("sum(output)") / col("sum(other_output)")
             )
             .withColumn(
                 "construction",
-                col("sum(output_for_construction)")
-                / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
+                col("sum(output_for_construction)") / col("sum(aux)"),
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
