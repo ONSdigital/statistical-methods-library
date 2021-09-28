@@ -119,6 +119,10 @@ def impute(
     other required input data.
 
     ###Notes
+    Under the circumstances that no Imputation needs to take place the forward,
+    backward and construction columns returned will be filled with 1.0 as no links
+    will have be calculated.
+
     The existence of `output_col` and `marker_col` in the input data is
     an error.
 
@@ -233,13 +237,18 @@ def impute(
         # Either we've calculated all or none of our ratios or alternatively
         # we've not done any imputation.
         if forward_link_col is None:
-            if "forward" in df.columns:
-                select_col_list += [
-                    col("forward"),
-                    col("backward"),
-                    col("construction"),
-                ]
+            if "forward" not in df.columns:
+                df = (
+                    df.withColumn("forward", lit(1.0))
+                    .withColumn("backward", lit(1.0))
+                    .withColumn("construction", lit(1.0))
+                )
 
+            select_col_list += [
+                col("forward"),
+                col("backward"),
+                col("construction"),
+            ]
         else:
             select_col_list += [
                 col("forward").alias(forward_link_col),
