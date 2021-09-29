@@ -74,30 +74,30 @@ def impute(
     dataframe.
 
     ###Arguments
-    * input_df: The input dataframe
-    * reference_col: The name of the column to reference a unique
+    * `input_df`: The input dataframe
+    * `reference_col`: The name of the column to reference a unique
       contributor
-    * period_col: The name of the column containing the period
+    * `period_col`: The name of the column containing the period
       information for the contributor
-    * strata_col: The Name of the column containing the strata information
+    * `strata_col`: The Name of the column containing the strata information
       for the contributor
-    * target_col: The name of the column containing the target
+    * `target_col`: The name of the column containing the target
       variable
-    * auxiliary_col: The name of the column containing the auxiliary
+    * `auxiliary_col`: The name of the column containing the auxiliary
       variable
-    * output_col: The name of the column which will contain the
+    * `output_col`: The name of the column which will contain the
       output
-    * marker_col: The name of the column which will contain the marker
+    * `marker_col`: The name of the column which will contain the marker
       information for a given value
-    * forward_link_col: If specified, the name of an existing column
+    * `forward_link_col`: If specified, the name of an existing column
       containing forward ratio (or link) information
       Defaults to None which means that a default column name of "forward" will
       be created and the forward ratios will be calculated
-    * backward_link_col: If specified, the name of an existing column
+    * `backward_link_col`: If specified, the name of an existing column
       containing backward ratio (or link) information
       Defaults to None which means that a default column name of "backward"
       will be created and the backward ratios will be calculated
-    * construction_link_col: If specified, the name of an existing column
+    * `construction_link_col`: If specified, the name of an existing column
       containing construction ratio (or link) information
       Defaults to None which means that a default column name of "construction"
       will be created and the construction ratios will be calculated.
@@ -119,9 +119,9 @@ def impute(
     other required input data.
 
     ###Notes
-    Under the circumstances that no Imputation needs to take place the forward,
-    backward and construction columns returned will be filled with 1.0 as no links
-    will have be calculated.
+    If no Imputation needs to take place, the forward, backward and
+    construction columns returned will still be calculated if they are not
+    passed in.
 
     The existence of `output_col` and `marker_col` in the input data is
     an error.
