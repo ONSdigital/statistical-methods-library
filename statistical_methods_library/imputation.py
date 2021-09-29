@@ -264,6 +264,7 @@ def impute(
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
+            df = df.fillna(1.0, ["forward", "backward", "construction"])
             return df
 
         # Since we're going to join on to the main df at the end filtering for
