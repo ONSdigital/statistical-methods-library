@@ -218,11 +218,13 @@ def impute(
             ]
 
         prepared_df = df.select(col_list)
-        prepared_df = prepared_df.withColumn(
-            "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
-        ).withColumn(
-            "previous_period", calculate_previous_period(col("period"))
-        ).withColumn("next_period", calculate_next_period(col("period")))
+        prepared_df = (
+            prepared_df.withColumn(
+                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+            )
+            .withColumn("previous_period", calculate_previous_period(col("period")))
+            .withColumn("next_period", calculate_next_period(col("period")))
+        )
 
         return calculate_ratios(prepared_df)
 
