@@ -25,7 +25,7 @@ the specified period for responders in both the current and previous
 periods. If there are no matching responders this will be null. A responder
 is a contributor for whom the value is a response rather than imputed or
 constructed. If the denominator = 0 (null return from contributors_in_both
-or 0 sum) then the denominator = 1. If there are no matching contributors
+or 0 sum) then the ratio is set to 1. If there are no matching contributors
 then `ratio(current_period)` returns 1.
 
 Imputation
@@ -85,12 +85,8 @@ the current period, `auxiliaries_for_responders(current_period)` returns the
 auxiliary values for the responders in the current period and
 `auxiliary(current_period)` is the auxiliary value for the contributor being
 constructed for the current period. If the denominator is 0 then the
-denominator defaults to 1. If any values in the auxiliary column are null a
+ratio defaults to 1. If any values in the auxiliary column are null a
 runtime error is raised. The marker for constructed values is "C".
-
-A construction filter can also be provided. In this case construction is
-only performed when the filter returns true. Otherwise construction is
-skipped for the contributor and period.
 
 Overall Algorithm
 =================

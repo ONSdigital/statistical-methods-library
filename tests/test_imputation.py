@@ -58,6 +58,18 @@ params = (
     marker_col,
 )
 
+# Mapping for which columns we should select per scenario category
+selection_map = {
+    "dev": [output_col, marker_col],
+    "methodology": [
+        output_col,
+        marker_col,
+        forward_col,
+        backward_col,
+        construction_col,
+    ],
+}
+
 test_scenarios = [
     ("unit", "ratio_calculation", ["forward", "backward", "construction"])
 ]
@@ -77,7 +89,7 @@ for scenario_category in ("dev", "methodology"):
             (
                 f"{scenario_category}_scenarios",
                 os.path.basename(file_name).replace("_input.csv", ""),
-                ["output", "marker"],
+                selection_map[scenario_category],
             )
         )
 

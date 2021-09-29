@@ -74,30 +74,30 @@ def impute(
     dataframe.
 
     ###Arguments
-    * input_df: The input dataframe
-    * reference_col: The name of the column to reference a unique
+    * `input_df`: The input dataframe
+    * `reference_col`: The name of the column to reference a unique
       contributor
-    * period_col: The name of the column containing the period
+    * `period_col`: The name of the column containing the period
       information for the contributor
-    * strata_col: The Name of the column containing the strata information
+    * `strata_col`: The Name of the column containing the strata information
       for the contributor
-    * target_col: The name of the column containing the target
+    * `target_col`: The name of the column containing the target
       variable
-    * auxiliary_col: The name of the column containing the auxiliary
+    * `auxiliary_col`: The name of the column containing the auxiliary
       variable
-    * output_col: The name of the column which will contain the
+    * `output_col`: The name of the column which will contain the
       output
-    * marker_col: The name of the column which will contain the marker
+    * `marker_col`: The name of the column which will contain the marker
       information for a given value
-    * forward_link_col: If specified, the name of an existing column
+    * `forward_link_col`: If specified, the name of an existing column
       containing forward ratio (or link) information
       Defaults to None which means that a default column name of "forward" will
       be created and the forward ratios will be calculated
-    * backward_link_col: If specified, the name of an existing column
+    * `backward_link_col`: If specified, the name of an existing column
       containing backward ratio (or link) information
       Defaults to None which means that a default column name of "backward"
       will be created and the backward ratios will be calculated
-    * construction_link_col: If specified, the name of an existing column
+    * `construction_link_col`: If specified, the name of an existing column
       containing construction ratio (or link) information
       Defaults to None which means that a default column name of "construction"
       will be created and the construction ratios will be calculated.
@@ -119,6 +119,10 @@ def impute(
     other required input data.
 
     ###Notes
+    If no Imputation needs to take place, the forward, backward and
+    construction columns returned will still be calculated if they are not
+    passed in.
+
     The existence of `output_col` and `marker_col` in the input data is
     an error.
 
@@ -144,7 +148,6 @@ def impute(
         validate_df(df)
         stages = (
             prepare_df,
-            calculate_ratios,
             forward_impute_from_response,
             backward_impute,
             construct_values,
@@ -215,13 +218,15 @@ def impute(
             ]
 
         prepared_df = df.select(col_list)
-        return (
+        prepared_df = (
             prepared_df.withColumn(
                 "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
             )
             .withColumn("previous_period", calculate_previous_period(col("period")))
             .withColumn("next_period", calculate_next_period(col("period")))
         )
+
+        return calculate_ratios(prepared_df)
 
     def create_output(df: DataFrame) -> DataFrame:
         select_col_list = [
@@ -233,13 +238,11 @@ def impute(
         # Either we've calculated all or none of our ratios or alternatively
         # we've not done any imputation.
         if forward_link_col is None:
-            if "forward" in df.columns:
-                select_col_list += [
-                    col("forward"),
-                    col("backward"),
-                    col("construction"),
-                ]
-
+            select_col_list += [
+                col("forward"),
+                col("backward"),
+                col("construction"),
+            ]
         else:
             select_col_list += [
                 col("forward").alias(forward_link_col),
@@ -261,6 +264,7 @@ def impute(
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
+            df = df.fillna(1.0, ["forward", "backward", "construction"])
             return df
 
         # Since we're going to join on to the main df at the end filtering for
@@ -304,23 +308,18 @@ def impute(
                 "output_for_construction": "sum",
             }
         )
-        # Calculate the forward ratio for every period using 1 in the
-        # case of a 0 denominator. We also calculate construction
+        # Calculate the forward ratio for every period using 1 as the link in
+        # the case of a 0 denominator. We also calculate construction
         # links at the same time for efficiency reasons. This shares
         # the same behaviour of defaulting to a 1 in the case of a 0
         # denominator.
         forward_df = (
             working_df.withColumn(
-                "forward",
-                col("sum(output)")
-                / when(col("sum(other_output)") == 0, lit(1.0)).otherwise(
-                    col("sum(other_output)")
-                ),
+                "forward", col("sum(output)") / col("sum(other_output)")
             )
             .withColumn(
                 "construction",
-                col("sum(output_for_construction)")
-                / when(col("sum(aux)") == 0, lit(1.0)).otherwise(col("sum(aux)")),
+                col("sum(output_for_construction)") / col("sum(aux)"),
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
