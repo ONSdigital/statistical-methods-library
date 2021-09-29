@@ -148,7 +148,6 @@ def impute(
         validate_df(df)
         stages = (
             prepare_df,
-            calculate_ratios,
             forward_impute_from_response,
             backward_impute,
             construct_values,
@@ -219,13 +218,13 @@ def impute(
             ]
 
         prepared_df = df.select(col_list)
-        return (
-            prepared_df.withColumn(
-                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
-            )
-            .withColumn("previous_period", calculate_previous_period(col("period")))
-            .withColumn("next_period", calculate_next_period(col("period")))
-        )
+        prepared_df = prepared_df.withColumn(
+            "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+        ).withColumn(
+            "previous_period", calculate_previous_period(col("period"))
+        ).withColumn("next_period", calculate_next_period(col("period")))
+
+        return calculate_ratios(prepared_df)
 
     def create_output(df: DataFrame) -> DataFrame:
         select_col_list = [
@@ -237,13 +236,6 @@ def impute(
         # Either we've calculated all or none of our ratios or alternatively
         # we've not done any imputation.
         if forward_link_col is None:
-            if "forward" not in df.columns:
-                df = (
-                    df.withColumn("forward", lit(1.0))
-                    .withColumn("backward", lit(1.0))
-                    .withColumn("construction", lit(1.0))
-                )
-
             select_col_list += [
                 col("forward"),
                 col("backward"),
