@@ -170,7 +170,7 @@ def impute(
 
         return create_output(df)
 
-    def validate_df(df: DataFrame, allow_nulls: bool = True, expect_marker: bool = True) -> None:
+    def validate_df(df: DataFrame, allow_nulls: bool = True, expect_marker: bool = False) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
