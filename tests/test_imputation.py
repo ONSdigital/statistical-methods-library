@@ -218,7 +218,7 @@ def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
         "back_data_bad_schema"
     )
     with pytest.raises(TypeError):
-        imputation.impute(test_dataframe, *params, back_data_dfbad_back_data)
+        imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
 @pytest.mark.dependency()
@@ -234,7 +234,7 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     )
 
     with pytest.raises(imputation.ValidationError):
-        imputation.impute(test_dataframe, *params, back_data_dfbad_back_data)
+        imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
 @pytest.mark.parametrize(
