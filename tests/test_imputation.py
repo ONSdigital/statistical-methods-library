@@ -209,7 +209,7 @@ def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
             "period": "int",
             "strata": "string",
             "target": "string",
-            "aux": "int"
+            "auxiliary": "int"
         },
         "imputation",
         "unit", 
