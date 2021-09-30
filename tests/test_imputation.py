@@ -196,6 +196,31 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
+# --- Test that when provided back data does not match input schema then fails ---
+@pytest.mark.dependency()
+def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    bad_back_data = fxt_load_test_csv(
+        [
+            "reference","period","strata"
+        ],
+        {
+            "reference": "int",
+            "period": "int",
+            "strata": "string"
+        },
+        "imputation",
+        "unit", 
+        "bad_back_data"
+    )
+    with pytest.raises(TypeError):
+        imputation.impute(test_dataframe, *params, back_data=bad_back_data)
+
+
+
+
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
