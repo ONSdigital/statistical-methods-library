@@ -68,7 +68,7 @@ def impute(
     forward_link_col: typing.Optional[str] = None,
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
-    back_data: typing.Optional[DataFrame] = None,
+    back_data_df: typing.Optional[DataFrame] = None,
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
@@ -102,7 +102,7 @@ def impute(
       containing construction ratio (or link) information
       Defaults to None which means that a default column name of "construction"
       will be created and the construction ratios will be calculated.
-    * `back_data`: If specified, will use this to base the initial imputation
+    * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
 
     ###Returns
@@ -142,13 +142,21 @@ def impute(
     from before or after periods where they were dropped from the sample). In
     the case of rolling imputation, the markers will be the same for chains of
     imputed values.
+
+    If `back_data_df` is provided it must have the same schema as `input_df`.
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
-    def run(df: DataFrame) -> DataFrame:
-        validate_df(df)
+    def run() -> DataFrame:
+        validate_df(input_df)
+        if back_data_df:
+            if input_df.schema != back_data_df.schema:
+                raise TypeError("Schema mismatch between input and back data")
+
+            validate_df(back_data_df, allow_nulls=False, expect_marker=True)
+
         stages = (
             prepare_df,
             forward_impute_from_response,
@@ -156,7 +164,7 @@ def impute(
             construct_values,
             forward_impute_from_construction,
         )
-
+        df = input_df
         for stage in stages:
             df = stage(df).localCheckpoint(eager=False)
             if df.filter(col("output").isNull()).count() == 0:
@@ -164,7 +172,7 @@ def impute(
 
         return create_output(df)
 
-    def validate_df(df: DataFrame) -> None:
+    def validate_df(df: DataFrame, allow_nulls: bool = True, expect_marker: bool = True) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
@@ -174,6 +182,8 @@ def impute(
             auxiliary_col,
         }
 
+        if expect_marker:
+            expected_cols.add(marker_col)
         link_cols = [
             link_col is not None
             for link_col in [forward_link_col, backward_link_col, construction_link_col]
@@ -202,6 +212,12 @@ def impute(
         if missing_cols:
             msg = f"Missing columns: {', '.join(c for c in missing_cols)}"
             raise ValidationError(msg)
+
+        if not allow_nulls:
+            for col_name in expected_cols:
+                if df.filter(col(col_name).isNull()).count() > 0:
+                    msg = f"Column {col_name} must not contain nulls"
+                    raise ValidationError(msg)
 
     def prepare_df(df: DataFrame) -> DataFrame:
         col_list = [
@@ -518,4 +534,4 @@ def impute(
 
     # ----------
 
-    return run(input_df)
+    return run()
