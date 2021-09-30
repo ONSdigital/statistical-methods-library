@@ -255,7 +255,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     "scenario_type, scenario, selection",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
 )
-def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
+def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -264,7 +264,7 @@ def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, sel
         f"{scenario}_input",
     )
 
-    nth_period_cols = [
+    back_data_cols = [
         reference_col,
         period_col,
         strata_col,
@@ -272,7 +272,7 @@ def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, sel
         target_col,
     ]
 
-    nth_period_types = {
+    back_data_types = {
         reference_col: reference_type,
         period_col: period_type,
         strata_col: strata_type,
@@ -280,11 +280,11 @@ def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, sel
         target_col: target_type,
     }
 
-    nth_period = fxt_load_test_csv(
-        nth_period_cols,
-        nth_period_types,
+    back_data = fxt_load_test_csv(
+        back_data_cols,
+        back_data_types,
         "imputation",
-        "nth_period",
+        "back_data",
         "201912",
     )
 
@@ -296,11 +296,11 @@ def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, sel
             "forward_link_col": forward_col,
             "backward_link_col": backward_col,
             "construction_link_col": construction_col,
-            "nth_period": nth_period,
+            "back_data": back_data,
         }
     else:
         imputation_kwargs = {
-            "nth_period": nth_period,
+            "back_data": back_data,
         }
 
     exp_val = fxt_load_test_csv(
@@ -308,7 +308,7 @@ def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, sel
         dataframe_types,
         "imputation",
         scenario_type,
-        f"{scenario}_output_nth_period",
+        f"{scenario}_output_back_data",
     )
 
     ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
