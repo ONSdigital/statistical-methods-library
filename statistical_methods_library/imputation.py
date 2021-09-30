@@ -68,6 +68,7 @@ def impute(
     forward_link_col: typing.Optional[str] = None,
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
+    nth_period: typing.Optional[DataFrame] = None,
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
@@ -101,6 +102,8 @@ def impute(
       containing construction ratio (or link) information
       Defaults to None which means that a default column name of "construction"
       will be created and the construction ratios will be calculated.
+    * `nth_period`: If specified, will use this to base the initial imputation
+      calculations on.
 
     ###Returns
     A new dataframe containing:
@@ -279,11 +282,11 @@ def impute(
             "previous_period",
             "next_period",
         )
+        working_df = filtered_df.alias("current")
 
         # Put the values from the current and previous periods for a
         # contributor on the same row. Then calculate the sum for both
         # for all contributors in a period as the values now line up.
-        working_df = filtered_df.alias("current")
         working_df = working_df.join(
             filtered_df.select("ref", "period", "output", "strata").alias("prev"),
             [
@@ -300,6 +303,33 @@ def impute(
             col("prev.output").alias("other_output"),
             col("current.output").alias("output_for_construction"),
         )
+
+        # Handle nth period - add in other output from nth
+        # period
+        if nth_period:
+            working_df = working_df.join(
+                nth_period.select.select("ref", "period", "output", "strata").alias(
+                    "nth_period"
+                ),
+                [
+                    col("current.ref") == col("nth_period.ref"),
+                    col("current.previous_period") == col("nth_period.period"),
+                    col("current.strata") == col("nth_period.strata"),
+                ],
+                "leftouter",
+            ).select(
+                col("current.strata").alias("strata"),
+                col("current.period").alias("period"),
+                when(
+                    (col("current.previous_period") == col("nth_period.period")),
+                    col("nth_period.output"),
+                )
+                .otherwise(col("current.output"))
+                .alias("output"),
+                col("current.aux").alias("aux"),
+                col("current.other_output").alias("other_output"),
+            )
+
         working_df = working_df.groupBy("period", "strata").agg(
             {
                 "output": "sum",

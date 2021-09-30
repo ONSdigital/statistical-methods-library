@@ -19,6 +19,17 @@ strata_col = "strata"
 target_col = "target"
 construction_col = "construction"
 
+reference_type = "string"
+period_type = "string"
+strata_type = "string"
+target_type = "double"
+auxiliary_type = "double"
+output_type = "double"
+marker_type = "string"
+backward_type = "double"
+forward_type = "double"
+construction_type = "double"
+
 # Columns we expect in either our input or output test dataframes and their
 # respective types
 dataframe_columns = (
@@ -35,16 +46,16 @@ dataframe_columns = (
 )
 
 dataframe_types = {
-    reference_col: "string",
-    period_col: "string",
-    strata_col: "string",
-    target_col: "double",
-    auxiliary_col: "double",
-    output_col: "double",
-    marker_col: "string",
-    backward_col: "double",
-    forward_col: "double",
-    construction_col: "double",
+    reference_col: reference_type,
+    period_col: period_type,
+    strata_col: strata_type,
+    target_col: target_type,
+    auxiliary_col: auxiliary_type,
+    output_col: output_type,
+    marker_col: marker_type,
+    backward_col: backward_type,
+    forward_col: forward_type,
+    construction_col: construction_type,
 }
 
 # Params used when calling impute
@@ -226,6 +237,78 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
         "imputation",
         scenario_type,
         f"{scenario}_output",
+    )
+
+    ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
+
+    assert isinstance(ret_val, type(test_dataframe))
+    sort_col_list = ["reference", "period"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list).select(selection),
+        exp_val.sort(sort_col_list).select(selection),
+        0.0001,
+        ignore_nullable=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "scenario_type, scenario, selection",
+    sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
+)
+def test_nth_period_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_input",
+    )
+
+    nth_period_cols = [
+        reference_col,
+        period_col,
+        strata_col,
+        marker_col,
+        target_col,
+    ]
+
+    nth_period_types = {
+        reference_col: reference_type,
+        period_col: period_type,
+        strata_col: strata_type,
+        marker_col: marker_type,
+        target_col: target_type,
+    }
+
+    nth_period = fxt_load_test_csv(
+        nth_period_cols,
+        nth_period_types,
+        "imputation",
+        "nth_period",
+        "201912",
+    )
+
+    # We use imputation_kwargs to allow us to pass in the forward, backward
+    # and construction link columns which are usually defaulted to None. This
+    # means that we can autodetect when we should pass these.
+    if forward_col in test_dataframe.columns:
+        imputation_kwargs = {
+            "forward_link_col": forward_col,
+            "backward_link_col": backward_col,
+            "construction_link_col": construction_col,
+            "nth_period": nth_period,
+        }
+    else:
+        imputation_kwargs = {
+            "nth_period": nth_period,
+        }
+
+    exp_val = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        scenario_type,
+        f"{scenario}_output_nth_period",
     )
 
     ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
