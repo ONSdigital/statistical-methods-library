@@ -209,16 +209,32 @@ def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
         {
             "reference": "int",
             "period": "int",
-            "strata": "string"
+            "strata": "string",
+            "target": "string",
+            "aux": "int"
         },
         "imputation",
         "unit", 
-        "bad_back_data"
+        "back_data_bad_schema"
     )
     with pytest.raises(TypeError):
         imputation.impute(test_dataframe, *params, back_data=bad_back_data)
 
 
+@pytest.mark.dependency()
+def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    bad_back_data = fxt_load_test_csv(
+        dataframe_columns, dataframe_types,
+        "imputation",
+        "unit", 
+        "back_data_nulls"
+    )
+
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe, *params, back_data=bad_back_data)
 
 
 @pytest.mark.parametrize(
