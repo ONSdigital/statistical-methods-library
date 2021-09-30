@@ -143,7 +143,8 @@ def impute(
     the case of rolling imputation, the markers will be the same for chains of
     imputed values.
 
-    If `back_data_df` is provided it must have the same schema as `input_df`.
+    If `back_data_df` is provided it must contain the same columns as the output
+    from this function.
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
@@ -152,9 +153,6 @@ def impute(
     def run() -> DataFrame:
         validate_df(input_df)
         if back_data_df:
-            if input_df.schema != back_data_df.schema:
-                raise TypeError("Schema mismatch between input and back data")
-
             validate_df(back_data_df, allow_nulls=False, expect_marker=True)
 
         stages = (
