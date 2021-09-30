@@ -198,26 +198,18 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
 
 # --- Test that when provided back data does not match input schema then fails ---
 @pytest.mark.dependency()
-def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
+def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_back_data = fxt_load_test_csv(
         dataframe_columns,
-        {
-            "reference": "int",
-            "period": "int",
-            "strata": "string",
-            "target": "string",
-            "auxiliary": "int",
-            "marker": "string",
-
-        },
+        dataframe_types,
         "imputation",
-        "unit", 
-        "back_data_bad_schema"
+        "unit",
+        "back_data_missing_column"
     )
-    with pytest.raises(TypeError):
+    with pytest.raises(imputation.ValidationError):
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
