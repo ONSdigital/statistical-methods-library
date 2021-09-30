@@ -203,9 +203,7 @@ def test_back_data_type_mismatch(fxt_load_test_csv, fxt_spark_session):
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_back_data = fxt_load_test_csv(
-        [
-            "reference","period","strata"
-        ],
+        dataframe_columns,
         {
             "reference": "int",
             "period": "int",

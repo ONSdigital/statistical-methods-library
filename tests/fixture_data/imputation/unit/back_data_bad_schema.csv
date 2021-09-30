@@ -1,4 +1,4 @@
-reference,period,strata,target,auxiliary,marker
-1,202010,1,1,2,FI
-2,202010,1,1,2,R
-3,202010,1,1,2,C
+reference,period,strata,target,auxiliary
+1,202010,1,1,2
+2,202010,1,1,2
+3,202010,1,1,2
