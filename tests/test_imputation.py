@@ -207,7 +207,7 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
         dataframe_types,
         "imputation",
         "unit",
-        "back_data_missing_column"
+        "back_data_missing_column",
     )
     with pytest.raises(imputation.ValidationError):
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
@@ -219,10 +219,7 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_back_data = fxt_load_test_csv(
-        dataframe_columns, dataframe_types,
-        "imputation",
-        "unit", 
-        "back_data_nulls"
+        dataframe_columns, dataframe_types, "imputation", "unit", "back_data_nulls"
     )
 
     with pytest.raises(imputation.ValidationError):

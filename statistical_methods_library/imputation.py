@@ -170,7 +170,9 @@ def impute(
 
         return create_output(df)
 
-    def validate_df(df: DataFrame, allow_nulls: bool = True, expect_marker: bool = False) -> None:
+    def validate_df(
+        df: DataFrame, allow_nulls: bool = True, expect_marker: bool = False
+    ) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
@@ -317,7 +319,6 @@ def impute(
             col("prev.output").alias("other_output"),
             col("current.output").alias("output_for_construction"),
         )
-
 
         working_df = working_df.groupBy("period", "strata").agg(
             {
