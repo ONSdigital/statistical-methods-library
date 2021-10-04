@@ -180,6 +180,7 @@ def impute(
             }
         )
 
+    # --- Run ---
     def run() -> DataFrame:
         validate_df(input_df)
         if back_data_df:
@@ -200,6 +201,7 @@ def impute(
 
         return create_output(df)
 
+    # --- Validate DF ---
     def validate_df(
         df: DataFrame, allow_nulls: bool = True, expect_marker: bool = False
     ) -> None:
@@ -249,23 +251,11 @@ def impute(
                     msg = f"Column {col_name} must not contain nulls"
                     raise ValidationError(msg)
 
-    def prepare_back_data_df(df: DataFrame, prepared_input_df: DataFrame) -> DataFrame:
-        return (
-            select_cols(
-                df.join(
-                    prepared_input_df.selectExpr("min(previous_period)"),
-                    [col(period_col) == col("min(previous_period)")],
-                    "inner",
-                ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-            )
-            .withColumn("output", col("target"))
-            .withColumn("previous_period", calculate_previous_period(col("period")))
-            .withColumn("next_period", calculate_next_period(col("period")))
-        )
-
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
+
+    # --- Prepare DF ---
 
     def prepare_df(
         back_data_df: typing.Optional[DataFrame],
@@ -282,7 +272,18 @@ def impute(
 
             nonlocal prepared_back_data_df
             if back_data_df:
-                prepared_back_data_df = prepare_back_data_df(back_data_df, prepared_df)
+                prepared_back_data_df = (
+                    select_cols(
+                        back_data_df.join(
+                            prepared_df.selectExpr("min(previous_period)"),
+                            [col(period_col) == col("min(previous_period)")],
+                            "inner",
+                        ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+                    )
+                    .withColumn("output", col("target"))
+                    .withColumn("previous_period", calculate_previous_period(col("period")))
+                    .withColumn("next_period", calculate_next_period(col("period")))
+                )
             else:
                 # Set the prepared_back_data_df to be empty when back_data not
                 # supplied.
@@ -301,32 +302,7 @@ def impute(
 
         return prepare
 
-    def create_output(df: DataFrame) -> DataFrame:
-        return select_cols(df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False).withColumnRenamed("output", output_col)
-
-    def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
-        col_mapping = (
-            {v: k for k, v in full_col_mapping.items()}
-            if reversed
-            else full_col_mapping
-        )
-
-        return df.select(
-            [
-                col(k).alias(col_mapping[k])
-                for k in set(col_mapping.keys()) & set(df.columns)
-            ]
-        )
-
-    def calculate_previous_period(period: Column) -> Column:
-        return when(
-            period.endswith("01"), (period.cast("int") - 89).cast("string")
-        ).otherwise((period.cast("int") - 1).cast("string"))
-
-    def calculate_next_period(period: Column) -> Column:
-        return when(
-            period.endswith("12"), (period.cast("int") + 89).cast("string")
-        ).otherwise((period.cast("int") + 1).cast("string"))
+    # --- Calculate Ratios ---
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
@@ -425,6 +401,8 @@ def impute(
     imputed_df = None
     null_response_df = None
 
+
+    # --- Impute helper ---
     def impute_helper(
         df: DataFrame, link_col: str, marker: Marker, direction: bool
     ) -> DataFrame:
@@ -520,6 +498,7 @@ def impute(
             "leftouter",
         )
 
+    # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
         # Add the forward imputes from responses from the back data
         df = df.unionByName(
@@ -532,6 +511,7 @@ def impute(
     def backward_impute(df: DataFrame) -> DataFrame:
         return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
+    # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
         # Add in the constructions and forward imputes from construction in the back data
         df = df.unionByName(
@@ -591,6 +571,34 @@ def impute(
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
+
+    # --- Utility functions ---
+    def create_output(df: DataFrame) -> DataFrame:
+        return select_cols(df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False).withColumnRenamed("output", output_col)
+
+    def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
+        col_mapping = (
+            {v: k for k, v in full_col_mapping.items()}
+            if reversed
+            else full_col_mapping
+        )
+
+        return df.select(
+            [
+                col(k).alias(col_mapping[k])
+                for k in set(col_mapping.keys()) & set(df.columns)
+            ]
+        )
+
+    def calculate_previous_period(period: Column) -> Column:
+        return when(
+            period.endswith("01"), (period.cast("int") - 89).cast("string")
+        ).otherwise((period.cast("int") - 1).cast("string"))
+
+    def calculate_next_period(period: Column) -> Column:
+        return when(
+            period.endswith("12"), (period.cast("int") + 89).cast("string")
+        ).otherwise((period.cast("int") + 1).cast("string"))
 
     # ----------
 
