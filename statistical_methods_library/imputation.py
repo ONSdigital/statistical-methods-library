@@ -288,7 +288,7 @@ def impute(
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
 
-            return calculate_ratios(prepared_df)
+            return calculate_ratios(prepared_df, prepared_back_data_df)
 
         return prepare
 
@@ -326,7 +326,7 @@ def impute(
             period.endswith("12"), (period.cast("int") + 89).cast("string")
         ).otherwise((period.cast("int") + 1).cast("string"))
 
-    def calculate_ratios(df: DataFrame) -> DataFrame:
+    def calculate_ratios(df: DataFrame, prepared_back_data_df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
             df = df.fillna(1.0, ["forward", "backward", "construction"])
             return df
