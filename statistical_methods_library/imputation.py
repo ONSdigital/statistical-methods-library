@@ -294,19 +294,21 @@ def impute(
         return prepare
 
     def create_output(df: DataFrame) -> DataFrame:
-        return select_cols(df)
+        return select_cols(df, reversed=False)
 
-    def select_cols(df: DataFrame, reversed: bool = False) -> DataFrame:
+    def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
         col_mapping = (
             full_col_mapping
             if not reversed
             else {v: k for k, v in full_col_mapping.items()}
         )
 
+        print(set(col_mapping.keys()) & set(df.columns))
+
         return df.select(
             [
                 col(k).alias(col_mapping[k])
-                for k in set(col_mapping.keys()) - set(df.columns)
+                for k in set(col_mapping.keys()) & set(df.columns)
             ]
         )
 
