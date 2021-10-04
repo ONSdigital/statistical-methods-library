@@ -263,6 +263,10 @@ def impute(
             .withColumn("next_period", calculate_next_period(col("period")))
         )
 
+    # Cache the prepared back data df since we'll need a few differently
+    # filtered versions
+    prepared_back_data_df = None
+
     def prepare_df(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
@@ -276,23 +280,27 @@ def impute(
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
 
+            nonlocal prepared_back_data_df
             if back_data_df:
-                prepared_back_data_df = prepare_back_data_df(
-                    back_data_df, prepared_df
-                )
+                prepared_back_data_df = prepare_back_data_df(back_data_df, prepared_df)
             else:
                 # Set the prepared_back_data_df to be empty when back_data not
                 # supplied.
                 prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
 
-            prepared_df = prepared_df.unionByName(prepared_back_data_df)
+            # Ratio calculation needs all the responses from the back data
+            prepared_df = prepared_df.unionByName(
+                prepared_back_data_df.filter(
+                    col("marker") == lit(Marker.RESPONSE.value)
+                )
+            )
 
             return calculate_ratios(prepared_df)
 
         return prepare
 
     def create_output(df: DataFrame) -> DataFrame:
-        return select_cols(df, reversed=False).withColumnRenamed("output", output_col)
+        return select_cols(df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False).withColumnRenamed("output", output_col)
 
     def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
         col_mapping = (
@@ -511,12 +519,26 @@ def impute(
         )
 
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
+        # Add the forward imputes from responses from the back data
+        df = df.unionByName(
+            prepared_back_data_df.filter(
+                col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
+            ), True
+        )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
         return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
     def construct_values(df: DataFrame) -> DataFrame:
+        # Add in the constructions and forward imputes from construction in the back data
+        df = df.unionByName(
+            prepared_back_data_df.filter(
+                col("marker")
+                == lit(Marker.CONSTRUCTED.value) | col("marker")
+                == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+            ), True
+        )
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "strata", "aux", "construction", "previous_period"
         )
