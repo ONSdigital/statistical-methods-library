@@ -215,7 +215,7 @@ def impute(
 
         if not allow_nulls:
             for col_name in expected_cols:
-                if df.filter(col(col_name).isNull()).count() > 0:
+                if any(df.filter(col(col_name).isNull())):
                     msg = f"Column {col_name} must not contain nulls"
                     raise ValidationError(msg)
 
