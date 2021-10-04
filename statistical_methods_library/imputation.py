@@ -281,12 +281,11 @@ def impute(
             if back_data_df:
                 prepared_back_data_df = prepare_back_data_df(
                     back_data_df, prepared_df
-                ).withColumn("output", col("target"))
+                )
             else:
                 # Set the prepared_back_data_df to be empty when back_data not
                 # supplied.
                 prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
-                assert prepared_back_data_df.count() == 0
 
             prepared_df = prepared_df.unionByName(prepared_back_data_df)
 
