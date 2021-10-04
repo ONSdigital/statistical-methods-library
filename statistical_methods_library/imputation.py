@@ -250,12 +250,10 @@ def impute(
                     raise ValidationError(msg)
 
     def prepare_back_data_df(df: DataFrame, prepared_input_df: DataFrame) -> DataFrame:
-        period_df = prepared_input_df.selectExpr("min(previous_period)")
-
         return (
             select_cols(
                 df.join(
-                    period_df,
+                    prepared_input_df.selectExpr("min(previous_period)"),
                     [col(period_col) == col("min(previous_period)")],
                     "inner",
                 ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
