@@ -268,7 +268,9 @@ def impute(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
         def prepare(df: DataFrame) -> DataFrame:
-            prepared_df = select_cols(df)
+            prepared_df = select_cols(df).withColumn(
+                "output", col("target")
+            )
             prepared_df = (
                 prepared_df.withColumn(
                     "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
@@ -298,12 +300,10 @@ def impute(
 
     def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
         col_mapping = (
-            full_col_mapping
-            if not reversed
-            else {v: k for k, v in full_col_mapping.items()}
+            {v: k for k, v in full_col_mapping.items()}
+            if reversed
+            else full_col_mapping
         )
-
-        print(set(col_mapping.keys()) & set(df.columns))
 
         return df.select(
             [
