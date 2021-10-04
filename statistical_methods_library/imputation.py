@@ -288,6 +288,8 @@ def impute(
                 # supplied.
                 prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
 
+            prepared_back_data_df = prepared_back_data_df.persist()
+
             # Ratio calculation needs all the responses from the back data
             prepared_df = prepared_df.unionByName(
                 prepared_back_data_df.filter(
