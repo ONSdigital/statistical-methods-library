@@ -151,6 +151,34 @@ def impute(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
+    # Mapping of column aliases to parameters
+    full_col_mapping = {
+        "ref": reference_col,
+        "period": period_col,
+        "output": output_col,
+        "marker": marker_col,
+        "target": target_col,
+        "strata": strata_col,
+        "aux": auxiliary_col,
+    }
+    if forward_link_col is None:
+        full_col_mapping.update(
+            {
+                "forward": "forward",
+                "backward": "backward",
+                "construction": "construction",
+            }
+        )
+
+    else:
+        full_col_mapping.update(
+            {
+                "forward": forward_link_col,
+                "backward": backward_link_col,
+                "construction": construction_link_col,
+            }
+        )
+
     def run() -> DataFrame:
         validate_df(input_df)
         if back_data_df:
@@ -315,6 +343,14 @@ def impute(
             ]
 
         return df.select(select_col_list)
+
+    def select_cols(df: DataFrame, col_mapping: typing.Dict[str, str]) -> DataFrame:
+        return df.select(
+            [
+                col(k).alias(col_mapping[k])
+                for k in set(col_mapping.keys()) - set(df.columns)
+            ]
+        )
 
     def calculate_previous_period(period: Column) -> Column:
         return when(
