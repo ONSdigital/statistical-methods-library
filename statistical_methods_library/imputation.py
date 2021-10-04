@@ -249,29 +249,27 @@ def impute(
                     msg = f"Column {col_name} must not contain nulls"
                     raise ValidationError(msg)
 
-    def prepare_back_data_df(
-        df: DataFrame, prepared_input_df: DataFrame
-    ) -> DataFrame:
+    def prepare_back_data_df(df: DataFrame, prepared_input_df: DataFrame) -> DataFrame:
         period_df = prepared_input_df.selectExpr("min(previous_period)")
 
         return (
-            select_cols(df)
-            .join(
-                period_df,
-                [col(period_col) == col("min(previous_period)")],
-                "inner",
+            select_cols(
+                df.join(
+                    period_df,
+                    [col(period_col) == col("min(previous_period)")],
+                    "inner",
+                ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
             )
-            .filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-            .drop("min(previous_period)")
+            .withColumn("output", col("target"))
+            .withColumn("previous_period", calculate_previous_period(col("period")))
+            .withColumn("next_period", calculate_next_period(col("period")))
         )
 
     def prepare_df(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
         def prepare(df: DataFrame) -> DataFrame:
-            prepared_df = select_cols(df).withColumn(
-                "output", col("target")
-            )
+            prepared_df = select_cols(df).withColumn("output", col("target"))
             prepared_df = (
                 prepared_df.withColumn(
                     "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
@@ -281,22 +279,13 @@ def impute(
             )
 
             if back_data_df:
-                prepared_back_data_df = (
-                    prepare_back_data_df(
-                        back_data_df, prepared_df
-                    )
-                    .withColumn(
-                        "output", col("target")
-                    )
-                    .withColumn("previous_period", calculate_previous_period(col("period")))
-                    .withColumn("next_period", calculate_next_period(col("period")))
-                )
+                prepared_back_data_df = prepare_back_data_df(
+                    back_data_df, prepared_df
+                ).withColumn("output", col("target"))
             else:
                 # Set the prepared_back_data_df to be empty when back_data not
                 # supplied.
-                prepared_back_data_df = prepared_df.filter(
-                    col(period_col).isNull()
-                )
+                prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
                 assert prepared_back_data_df.count() == 0
 
             prepared_df = prepared_df.unionByName(prepared_back_data_df)
