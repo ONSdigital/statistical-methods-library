@@ -255,7 +255,7 @@ def impute(
         period_df = prepared_input_df.selectexpr("min(previous_period)")
 
         return (
-            select_cols(df, reversed=True)
+            select_cols(df)
             .join(
                 period_df,
                 [col(period_col) == col("min(previous_period)")],
@@ -268,7 +268,7 @@ def impute(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
         def prepare(df: DataFrame) -> DataFrame:
-            prepared_df = select_cols(df, reversed=True)
+            prepared_df = select_cols(df)
             prepared_df = (
                 prepared_df.withColumn(
                     "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
