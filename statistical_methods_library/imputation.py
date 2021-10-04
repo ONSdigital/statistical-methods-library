@@ -296,7 +296,7 @@ def impute(
         return prepare
 
     def create_output(df: DataFrame) -> DataFrame:
-        return select_cols(df, reversed=False)
+        return select_cols(df, reversed=False).withColumnRenamed("output", output_col)
 
     def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
         col_mapping = (
