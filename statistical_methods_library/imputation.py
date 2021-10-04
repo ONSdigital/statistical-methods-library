@@ -337,11 +337,11 @@ def impute(
             "previous_period",
             "next_period",
         )
-        working_df = filtered_df.alias("current")
 
         # Put the values from the current and previous periods for a
         # contributor on the same row. Then calculate the sum for both
         # for all contributors in a period as the values now line up.
+        working_df = filtered_df.alias("current")
         working_df = working_df.join(
             filtered_df.select("ref", "period", "output", "strata").alias("prev"),
             [
