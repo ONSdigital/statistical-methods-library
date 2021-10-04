@@ -252,7 +252,7 @@ def impute(
     def prepare_back_data_df(
         df: DataFrame, prepared_input_df: DataFrame
     ) -> DataFrame:
-        period_df = prepared_input_df.selectexpr("min(previous_period)")
+        period_df = prepared_input_df.selectExpr("min(previous_period)")
 
         return (
             select_cols(df)
@@ -262,6 +262,7 @@ def impute(
                 "inner",
             )
             .filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+            .drop("min(previous_period)")
         )
 
     def prepare_df(
@@ -280,8 +281,15 @@ def impute(
             )
 
             if back_data_df:
-                prepared_back_data_df = prepare_back_data_df(
-                    back_data_df, prepared_df
+                prepared_back_data_df = (
+                    prepare_back_data_df(
+                        back_data_df, prepared_df
+                    )
+                    .withColumn(
+                        "output", col("target")
+                    )
+                    .withColumn("previous_period", calculate_previous_period(col("period")))
+                    .withColumn("next_period", calculate_next_period(col("period")))
                 )
             else:
                 # Set the prepared_back_data_df to be empty when back_data not
@@ -291,7 +299,9 @@ def impute(
                 )
                 assert prepared_back_data_df.count() == 0
 
-            return calculate_ratios(prepared_df, prepared_back_data_df)
+            prepared_df = prepared_df.unionByName(prepared_back_data_df)
+
+            return calculate_ratios(prepared_df)
 
         return prepare
 
@@ -322,7 +332,7 @@ def impute(
             period.endswith("12"), (period.cast("int") + 89).cast("string")
         ).otherwise((period.cast("int") + 1).cast("string"))
 
-    def calculate_ratios(df: DataFrame, prepared_back_data_df: DataFrame) -> DataFrame:
+    def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
             df = df.fillna(1.0, ["forward", "backward", "construction"])
             return df
