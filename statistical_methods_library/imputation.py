@@ -7,8 +7,9 @@ Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 import typing
 from enum import Enum
 
+import pyspark.sql.functions as sql_functions
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when
+from pyspark.sql.functions import col, isnull, lit, when
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
@@ -156,7 +157,7 @@ def impute(
             validate_df(back_data_df, allow_nulls=False, expect_marker=True)
 
         stages = (
-            prepare_df,
+            prepare_df(back_data_df),
             forward_impute_from_response,
             backward_impute,
             construct_values,
@@ -219,33 +220,77 @@ def impute(
                     msg = f"Column {col_name} must not contain nulls"
                     raise ValidationError(msg)
 
-    def prepare_df(df: DataFrame) -> DataFrame:
-        col_list = [
-            col(reference_col).alias("ref"),
-            col(period_col).alias("period"),
-            col(strata_col).alias("strata"),
-            col(target_col).alias("target"),
-            col(auxiliary_col).alias("aux"),
-            col(target_col).alias("output"),
-        ]
-
-        if forward_link_col is not None:
-            col_list += [
-                col(forward_link_col).alias("forward"),
-                col(backward_link_col).alias("backward"),
-                col(construction_link_col).alias("construction"),
-            ]
-
-        prepared_df = df.select(col_list)
-        prepared_df = (
-            prepared_df.withColumn(
-                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+    def prepare_back_data_df(
+        df: DataFrame, period_df: DataFrame, col_list: typing.List[Column]
+    ) -> DataFrame:
+        return (
+            df.select(col_list)
+            .join(
+                period_df,
+                [col(period_col) == col("min_previous_period")],
+                "leftouter",
             )
-            .withColumn("previous_period", calculate_previous_period(col("period")))
-            .withColumn("next_period", calculate_next_period(col("period")))
+            .filter(~col("min_previous_period").isNull())
+            .filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+            .drop(col("min_previous_period"))
         )
 
-        return calculate_ratios(prepared_df)
+    def prepare_df(
+        back_data_df: typing.Optional[DataFrame],
+    ) -> typing.Callable[[DataFrame], DataFrame]:
+        def prepare(df: DataFrame) -> DataFrame:
+            col_list = [
+                col(reference_col).alias("ref"),
+                col(period_col).alias("period"),
+                col(strata_col).alias("strata"),
+                col(target_col).alias("target"),
+                col(auxiliary_col).alias("aux"),
+                col(target_col).alias("output"),
+            ]
+
+            back_data_col_list = [marker_col, *col_list]
+
+            if back_data_df:
+                first_period_df = (
+                    df.select(
+                        sql_functions.min(col(period_col).cast("int")).alias("period")
+                    )
+                    .withColumn(
+                        "min_previous_period", calculate_previous_period(col("period"))
+                    )
+                    .drop("period")
+                )
+
+                prepared_back_data_df = prepare_back_data_df(
+                    back_data_df, first_period_df, back_data_col_list
+                )
+            else:
+                # Set the prepared_back_data_df to be empty when back_data not
+                # supplied.
+                prepared_back_data_df = df.select(col_list).filter(
+                    col(period_col).isNull()
+                )
+                assert prepared_back_data_df.count() == 0
+
+            if forward_link_col is not None:
+                col_list += [
+                    col(forward_link_col).alias("forward"),
+                    col(backward_link_col).alias("backward"),
+                    col(construction_link_col).alias("construction"),
+                ]
+
+            prepared_df = df.select(col_list)
+            prepared_df = (
+                prepared_df.withColumn(
+                    "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+                )
+                .withColumn("previous_period", calculate_previous_period(col("period")))
+                .withColumn("next_period", calculate_next_period(col("period")))
+            )
+
+            return calculate_ratios(prepared_df)
+
+        return prepare
 
     def create_output(df: DataFrame) -> DataFrame:
         select_col_list = [

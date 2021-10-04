@@ -281,6 +281,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     )
 
 
+@pytest.mark.dependency(depends=["test_back_data_contains_nulls"])
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
@@ -300,6 +301,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         strata_col,
         marker_col,
         target_col,
+        auxiliary_col,
     ]
 
     back_data_types = {
@@ -308,14 +310,15 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         strata_col: strata_type,
         marker_col: marker_type,
         target_col: target_type,
+        auxiliary_col: auxiliary_type,
     }
 
     back_data = fxt_load_test_csv(
         back_data_cols,
-        back_data_types,
+        dataframe_types,
         "imputation",
         "back_data",
-        "201912",
+        "202012",
     )
 
     # We use imputation_kwargs to allow us to pass in the forward, backward
@@ -326,12 +329,13 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
             "forward_link_col": forward_col,
             "backward_link_col": backward_col,
             "construction_link_col": construction_col,
-            "back_data": back_data,
+            "back_data_df": back_data,
         }
     else:
         imputation_kwargs = {
-            "back_data": back_data,
+            "back_data_df": back_data,
         }
+    ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
@@ -340,8 +344,6 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         scenario_type,
         f"{scenario}_output_back_data",
     )
-
-    ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
