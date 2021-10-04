@@ -161,6 +161,7 @@ def impute(
         "strata": strata_col,
         "aux": auxiliary_col,
     }
+
     if forward_link_col is None:
         full_col_mapping.update(
             {
@@ -249,65 +250,25 @@ def impute(
                     raise ValidationError(msg)
 
     def prepare_back_data_df(
-        df: DataFrame, period_df: DataFrame, col_list: typing.List[Column]
+        df: DataFrame, prepared_input_df: DataFrame
     ) -> DataFrame:
+        period_df = prepared_input_df.selectexpr("min(previous_period)")
+
         return (
-            df.select(col_list)
+            select_cols(df, reversed=True)
             .join(
                 period_df,
-                [col(period_col) == col("min_previous_period")],
-                "leftouter",
+                [col(period_col) == col("min(previous_period)")],
+                "inner",
             )
-            .filter(~col("min_previous_period").isNull())
             .filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-            .drop(col("min_previous_period"))
         )
 
     def prepare_df(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
         def prepare(df: DataFrame) -> DataFrame:
-            col_list = [
-                col(reference_col).alias("ref"),
-                col(period_col).alias("period"),
-                col(strata_col).alias("strata"),
-                col(target_col).alias("target"),
-                col(auxiliary_col).alias("aux"),
-                col(target_col).alias("output"),
-            ]
-
-            back_data_col_list = [marker_col, *col_list]
-
-            if back_data_df:
-                first_period_df = (
-                    df.select(
-                        sql_functions.min(col(period_col).cast("int")).alias("period")
-                    )
-                    .withColumn(
-                        "min_previous_period", calculate_previous_period(col("period"))
-                    )
-                    .drop("period")
-                )
-
-                prepared_back_data_df = prepare_back_data_df(
-                    back_data_df, first_period_df, back_data_col_list
-                )
-            else:
-                # Set the prepared_back_data_df to be empty when back_data not
-                # supplied.
-                prepared_back_data_df = df.select(col_list).filter(
-                    col(period_col).isNull()
-                )
-                assert prepared_back_data_df.count() == 0
-
-            if forward_link_col is not None:
-                col_list += [
-                    col(forward_link_col).alias("forward"),
-                    col(backward_link_col).alias("backward"),
-                    col(construction_link_col).alias("construction"),
-                ]
-
-            prepared_df = df.select(col_list)
+            prepared_df = select_cols(df, reversed=True)
             prepared_df = (
                 prepared_df.withColumn(
                     "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
@@ -316,35 +277,32 @@ def impute(
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
 
+            if back_data_df:
+                prepared_back_data_df = prepare_back_data_df(
+                    back_data_df, prepared_df
+                )
+            else:
+                # Set the prepared_back_data_df to be empty when back_data not
+                # supplied.
+                prepared_back_data_df = prepared_df.filter(
+                    col(period_col).isNull()
+                )
+                assert prepared_back_data_df.count() == 0
+
             return calculate_ratios(prepared_df, prepared_back_data_df)
 
         return prepare
 
     def create_output(df: DataFrame) -> DataFrame:
-        select_col_list = [
-            col("ref").alias(reference_col),
-            col("period").alias(period_col),
-            col("output").alias(output_col),
-            col("marker").alias(marker_col),
-        ]
-        # Either we've calculated all or none of our ratios or alternatively
-        # we've not done any imputation.
-        if forward_link_col is None:
-            select_col_list += [
-                col("forward"),
-                col("backward"),
-                col("construction"),
-            ]
-        else:
-            select_col_list += [
-                col("forward").alias(forward_link_col),
-                col("backward").alias(backward_link_col),
-                col("construction").alias(construction_link_col),
-            ]
+        return select_cols(df)
 
-        return df.select(select_col_list)
+    def select_cols(df: DataFrame, reversed: bool = False) -> DataFrame:
+        col_mapping = (
+            full_col_mapping
+            if not reversed
+            else {v: k for k, v in full_col_mapping.items()}
+        )
 
-    def select_cols(df: DataFrame, col_mapping: typing.Dict[str, str]) -> DataFrame:
         return df.select(
             [
                 col(k).alias(col_mapping[k])
