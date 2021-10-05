@@ -260,7 +260,7 @@ def impute(
         back_data_df: typing.Optional[DataFrame],
     ) -> typing.Callable[[DataFrame], DataFrame]:
         def prepare(df: DataFrame) -> DataFrame:
-            prepared_df = select_cols(df).withColumn("output", col("target"))
+            prepared_df = select_cols(df).withColumn("output", col("target")).drop("target")
             prepared_df = (
                 prepared_df.withColumn(
                     "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
@@ -279,7 +279,7 @@ def impute(
                             "inner",
                         ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
-                    .withColumn("output", col("target"))
+                    .withColumn("output", col("target")).drop("target")
                     .withColumn(
                         "previous_period", calculate_previous_period(col("period"))
                     )
