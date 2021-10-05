@@ -7,9 +7,8 @@ Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 import typing
 from enum import Enum
 
-import pyspark.sql.functions as sql_functions
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, isnull, lit, when
+from pyspark.sql.functions import col, lit, when
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
@@ -281,7 +280,9 @@ def impute(
                         ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
                     .withColumn("output", col("target"))
-                    .withColumn("previous_period", calculate_previous_period(col("period")))
+                    .withColumn(
+                        "previous_period", calculate_previous_period(col("period"))
+                    )
                     .withColumn("next_period", calculate_next_period(col("period")))
                 )
             else:
@@ -401,7 +402,6 @@ def impute(
     imputed_df = None
     null_response_df = None
 
-
     # --- Impute helper ---
     def impute_helper(
         df: DataFrame, link_col: str, marker: Marker, direction: bool
@@ -504,7 +504,8 @@ def impute(
         df = df.unionByName(
             prepared_back_data_df.filter(
                 col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
-            ), True
+            ),
+            True,
         )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
@@ -519,7 +520,8 @@ def impute(
                 col("marker")
                 == lit(Marker.CONSTRUCTED.value) | col("marker")
                 == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
-            ), True
+            ),
+            True,
         )
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "strata", "aux", "construction", "previous_period"
@@ -574,7 +576,9 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
-        return select_cols(df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False).withColumnRenamed("output", output_col)
+        return select_cols(
+            df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False
+        ).withColumnRenamed("output", output_col)
 
     def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
         col_mapping = (
