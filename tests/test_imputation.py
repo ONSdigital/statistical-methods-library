@@ -135,6 +135,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 
 # --- Test if target missing from input dataframe(s) ---
 
+
 @pytest.mark.dependency()
 def test_dataframe_target_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -249,14 +250,11 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
     )
     bad_back_data = fxt_load_test_csv(
-        [
-            reference_col,
-            period_col,
-            strata_col,
-            target_col,
-            marker_col,
-            auxiliary_col
-        ], dataframe_types, "imputation", "unit", "back_data_no_output"
+        [reference_col, period_col, strata_col, target_col, marker_col, auxiliary_col],
+        dataframe_types,
+        "imputation",
+        "unit",
+        "back_data_no_output",
     )
 
     with pytest.raises(imputation.ValidationError):
@@ -324,7 +322,12 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     )
 
 
-@pytest.mark.dependency(depends=["test_back_data_missing_column", "test_back_data_without_output_is_invalid"])
+@pytest.mark.dependency(
+    depends=[
+        "test_back_data_missing_column",
+        "test_back_data_without_output_is_invalid",
+    ]
+)
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(
