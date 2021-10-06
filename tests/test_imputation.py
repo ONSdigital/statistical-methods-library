@@ -333,26 +333,23 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         col(auxiliary_col),
         col(output_col),
         col(output_col).alias(target_col),
-        when(col(marker_col).isNotNull(), col(marker_col)).otherwise("BI").alias(marker_col),
+        when(col(marker_col).isNotNull(), col(marker_col))
+        .otherwise("BI")
+        .alias(marker_col),
     ]
 
     min_period_df = scenario_output.selectExpr("min(period)")
 
     back_data_df = scenario_output.join(
-        min_period_df,
-        [col("period") == col("min(period)")]
+        min_period_df, [col("period") == col("min(period)")]
     )
 
     input_df = test_dataframe.join(
-        min_period_df,
-        [col("period") == col("min(period)")],
-        "leftanti"
+        min_period_df, [col("period") == col("min(period)")], "leftanti"
     ).drop("min(period)")
 
     senario_expected_output = scenario_output.join(
-        min_period_df,
-        [col("period") == col("min(period)")],
-        "leftanti"
+        min_period_df, [col("period") == col("min(period)")], "leftanti"
     ).drop("min(period)")
 
     # We use imputation_kwargs to allow us to pass in the forward, backward
@@ -360,8 +357,12 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
     # means that we can autodetect when we should pass these.
     if forward_col in test_dataframe.columns:
         select_back_data_cols += [
-            when(col(forward_col).isNotNull(), col(forward_col)).otherwise(1).alias(forward_col),
-            when(col(backward_col).isNotNull(), col(backward_col)).otherwise(1).alias(backward_col),
+            when(col(forward_col).isNotNull(), col(forward_col))
+            .otherwise(1)
+            .alias(forward_col),
+            when(col(backward_col).isNotNull(), col(backward_col))
+            .otherwise(1)
+            .alias(backward_col),
         ]
         imputation_kwargs = {
             "forward_link_col": forward_col,
