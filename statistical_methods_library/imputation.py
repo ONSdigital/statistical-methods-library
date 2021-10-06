@@ -281,7 +281,6 @@ def impute(
                             "inner",
                         ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
-                    .withColumn("output", col("target"))
                     .drop("target")
                     .withColumn(
                         "previous_period", calculate_previous_period(col("period"))
@@ -533,7 +532,7 @@ def impute(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "strata", "aux", "construction", "previous_period"
         )
-        other_df = construction_df.select("ref", "period", "strata").alias("other")
+        other_df = df.select("ref", "period", "strata").alias("other")
         construction_df = construction_df.alias("construction")
         construction_df = construction_df.join(
             other_df,

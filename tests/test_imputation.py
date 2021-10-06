@@ -330,9 +330,9 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         col(reference_col),
         col(period_col),
         col(strata_col),
-        when(col(target_col).isNotNull(), col(target_col)).otherwise(1).alias(target_col),
         col(auxiliary_col),
-        when(col(output_col).isNotNull(), col(output_col)).otherwise(1).alias(output_col),
+        col(output_col),
+        col(output_col).alias(target_col),
         when(col(marker_col).isNotNull(), col(marker_col)).otherwise("BI").alias(marker_col),
     ]
 
