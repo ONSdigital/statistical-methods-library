@@ -260,9 +260,6 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
     with pytest.raises(imputation.ValidationError):
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
-    with pytest.raises(imputation.ValidationError):
-        imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
-
 
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
