@@ -520,9 +520,13 @@ def impute(
         # Add in the constructions and forward imputes from construction in the back data
         df = df.unionByName(
             prepared_back_data_df.filter(
-                col("marker")
-                == lit(Marker.CONSTRUCTED.value) | col("marker")
-                == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+                (
+                    (col("marker") == lit(Marker.CONSTRUCTED.value))
+                    | (
+                        col("marker")
+                        == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+                    )
+                )
             ),
             True,
         )
