@@ -133,6 +133,18 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         imputation.impute(bad_dataframe, *params)
 
 
+# --- Test if target missing from input dataframe(s) ---
+
+@pytest.mark.dependency()
+def test_dataframe_target_missing(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    bad_dataframe = test_dataframe.drop(target_col)
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(bad_dataframe, *params)
+
+
 # --- Test if params null ---
 
 
@@ -231,6 +243,29 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
+@pytest.mark.dependency()
+def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    bad_back_data = fxt_load_test_csv(
+        [
+            reference_col,
+            period_col,
+            strata_col,
+            target_col,
+            marker_col,
+            auxiliary_col
+        ], dataframe_types, "imputation", "unit", "back_data_no_output"
+    )
+
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
+
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
+
+
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(
@@ -289,7 +324,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     )
 
 
-@pytest.mark.dependency(depends=["test_back_data_missing_column"])
+@pytest.mark.dependency(depends=["test_back_data_missing_column", "test_back_data_without_output_is_invalid"])
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(

@@ -183,7 +183,7 @@ def impute(
     def run() -> DataFrame:
         validate_df(input_df)
         if back_data_df:
-            validate_df(back_data_df, allow_nulls=False, expect_marker=True)
+            validate_df(back_data_df, allow_nulls=False, back_data=True)
 
         stages = (
             prepare_df(back_data_df),
@@ -202,19 +202,22 @@ def impute(
 
     # --- Validate DF ---
     def validate_df(
-        df: DataFrame, allow_nulls: bool = True, expect_marker: bool = False
+        df: DataFrame, allow_nulls: bool = True, back_data: bool = False
     ) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
             period_col,
             strata_col,
-            target_col,
             auxiliary_col,
         }
 
-        if expect_marker:
+        if back_data:
             expected_cols.add(marker_col)
+            expected_cols.add(output_col)
+        else:
+            expected_cols.add(target_col)
+
         link_cols = [
             link_col is not None
             for link_col in [forward_link_col, backward_link_col, construction_link_col]
