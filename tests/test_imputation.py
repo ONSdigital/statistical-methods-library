@@ -276,8 +276,8 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "unit",
         "basic_functionality"
     )
-    imputation.impute(test_dataframe, *params)
-    assert 1 == 0
+    with pytest.raises(imputation.ImputationError):
+        imputation.impute(test_dataframe, *params)
 
 
 # --- Test Scenarios.
@@ -298,6 +298,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "test_params_missing_link_column",
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
+        "test_incorrect_column_types",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
