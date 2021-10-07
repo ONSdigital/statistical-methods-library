@@ -263,7 +263,8 @@ def impute(
         input_types = set(df.dtypes)
         wrong_types = input_types - expected_types
         if wrong_types:
-            msg = f"Incorrect Column Types: {', '.join(c for c in wrong_types)}"
+            string_list = [' - '.join(d) for d in wrong_types]
+            msg = f"Incorrect Column Types: {', '.join(c for c in string_list)}"
             raise ValidationError(msg)
 
         if not allow_nulls:
