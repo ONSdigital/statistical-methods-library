@@ -267,9 +267,8 @@ def impute(
         ]
 
         if incorrect_types:
-            msg = '\n'.join(
-                "Column %s of type %s must be of type %s."
-                % (t[0], t[1], expected_types[t[0]])
+            msg = ', '.join(
+                f"Column {t[0]} of type {t[1]} must be of type {expected_types[t[0]]}"
                 for t in incorrect_types
             )
             raise ValidationError(msg)
