@@ -267,7 +267,7 @@ def impute(
         ]
 
         if incorrect_types:
-            msg = ', '.join(
+            msg = ", ".join(
                 f"Column {t[0]} of type {t[1]} must be of type {expected_types[t[0]]}"
                 for t in incorrect_types
             )
