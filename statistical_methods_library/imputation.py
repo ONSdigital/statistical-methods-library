@@ -258,15 +258,20 @@ def impute(
             marker_col: "string",
             forward_link_col: "double",
             backward_link_col: "double",
-            construction_link_col: "double"
+            construction_link_col: "double",
         }
 
         set_types = {a for a in expected_types.items()}
-        incorrect_types = [t for t in set(df.dtypes) - set_types if t[0] in expected_types]
+        incorrect_types = [
+            t for t in set(df.dtypes) - set_types if t[0] in expected_types
+        ]
 
         if incorrect_types:
-            msg = '\n'.join("Column %s of type %s must be of type %s." %
-                            (t[0], t[1], expected_types[t[0]]) for t in incorrect_types)
+            msg = '\n'.join(
+                "Column %s of type %s must be of type %s."
+                % (t[0], t[1], expected_types[t[0]])
+                for t in incorrect_types
+            )
             raise ValidationError(msg)
 
         if not allow_nulls:
