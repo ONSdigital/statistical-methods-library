@@ -249,22 +249,24 @@ def impute(
 
         # Check columns types of the input dataframes.
         expected_types = {
-            (reference_col, "string"),
-            (period_col, "string"),
-            (strata_col, "string"),
-            (target_col, "double"),
-            (auxiliary_col, "double"),
-            (output_col, "double"),
-            (marker_col, "string"),
-            (forward_link_col, "double"),
-            (backward_link_col, "double"),
-            (construction_link_col, "double")
+            reference_col: "string",
+            period_col: "string",
+            strata_col: "string",
+            target_col: "double",
+            auxiliary_col: "double",
+            output_col: "double",
+            marker_col: "string",
+            forward_link_col: "double",
+            backward_link_col: "double",
+            construction_link_col: "double"
         }
-        input_types = set(df.dtypes)
-        wrong_types = input_types - expected_types
-        if wrong_types:
-            string_list = [' - '.join(d) for d in wrong_types]
-            msg = f"Incorrect Column Types: {', '.join(c for c in string_list)}"
+
+        set_types = {a for a in expected_types.items()}
+        incorrect_types = [t for t in set(df.dtypes) - set_types if t[0] in expected_types]
+
+        if incorrect_types:
+            msg = '\n'.join("Column %s of type %s must be of type %s." %
+                            (t[0], t[1], expected_types[t[0]]) for t in incorrect_types)
             raise ValidationError(msg)
 
         if not allow_nulls:
