@@ -274,9 +274,9 @@ def test_incorrect_column_types(fxt_load_test_csv):
         bad_dataframe_types,
         "imputation",
         "unit",
-        "basic_functionality"
+        "basic_functionality",
     )
-    with pytest.raises(imputation.ImputationError):
+    with pytest.raises(imputation.ValidationError):
         imputation.impute(test_dataframe, *params)
 
 
