@@ -247,7 +247,7 @@ def impute(
             msg = f"Missing columns: {', '.join(c for c in missing_cols)}"
             raise ValidationError(msg)
 
-        # Check columns types of the input dataframes.
+        # Check the types of the columns in the input dataframe.
         expected_types = {
             reference_col: "string",
             period_col: "string",
