@@ -58,7 +58,7 @@ dataframe_types = {
     construction_col: construction_type,
 }
 
-bad_dataframe_types = dataframe_types
+bad_dataframe_types = dataframe_types.copy()
 bad_dataframe_types[target_col] = reference_type
 
 # Params used when calling impute
