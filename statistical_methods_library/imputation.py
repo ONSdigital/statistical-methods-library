@@ -409,6 +409,7 @@ def impute(
                 col("period").alias("other_period"),
                 col("forward").alias("next_forward"),
                 col("strata").alias("other_strata"),
+                col("sum(other_output)").alias("sum_output"),
             ),
             [
                 col("next_period") == col("other_period"),
@@ -419,8 +420,9 @@ def impute(
             col("period"),
             col("strata"),
             col("forward"),
-            when(col("sum(output)") == 0, lit(0.0))
-            .otherwise(lit(1.0) / col("next_forward")).alias("backward"),
+            when(col("sum_output") == 0, lit(0.0))
+            .otherwise(lit(1.0) / col("next_forward"))
+            .alias("backward"),
             col("construction"),
         )
 
