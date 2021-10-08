@@ -247,6 +247,32 @@ def impute(
             msg = f"Missing columns: {', '.join(c for c in missing_cols)}"
             raise ValidationError(msg)
 
+        # Check the types of the columns in the input dataframe.
+        expected_types = {
+            reference_col: "string",
+            period_col: "string",
+            strata_col: "string",
+            target_col: "double",
+            auxiliary_col: "double",
+            output_col: "double",
+            marker_col: "string",
+            forward_link_col: "double",
+            backward_link_col: "double",
+            construction_link_col: "double",
+        }
+
+        set_types = {a for a in expected_types.items()}
+        incorrect_types = [
+            t for t in set(df.dtypes) - set_types if t[0] in expected_types
+        ]
+
+        if incorrect_types:
+            msg = ", ".join(
+                f"Column {t[0]} of type {t[1]} must be of type {expected_types[t[0]]}"
+                for t in incorrect_types
+            )
+            raise ValidationError(msg)
+
         if not allow_nulls:
             for col_name in expected_cols:
                 if df.filter(col(col_name).isNull()).count() > 0:

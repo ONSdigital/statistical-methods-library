@@ -58,6 +58,9 @@ dataframe_types = {
     construction_col: construction_type,
 }
 
+bad_dataframe_types = dataframe_types.copy()
+bad_dataframe_types[target_col] = reference_type
+
 # Params used when calling impute
 params = (
     reference_col,
@@ -261,6 +264,25 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
+# --- Test if columns of the incorrect type are caught.
+
+
+@pytest.mark.dependency()
+def test_incorrect_column_types(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        bad_dataframe_types,
+        "imputation",
+        "unit",
+        "basic_functionality",
+    )
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe, *params)
+
+
+# --- Test Scenarios.
+
+
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
     sorted(
@@ -276,6 +298,7 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         "test_params_missing_link_column",
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
+        "test_incorrect_column_types",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
