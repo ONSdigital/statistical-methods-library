@@ -407,8 +407,9 @@ def impute(
         strata_ratio_df = forward_df.join(
             forward_df.select(
                 col("period").alias("other_period"),
-                col("forward").alias("next_forward"),
                 col("strata").alias("other_strata"),
+                col("sum(other_output)").alias("sum_output"),
+                col("sum(output)").alias("sum_other_output"),
             ),
             [
                 col("next_period") == col("other_period"),
@@ -419,7 +420,7 @@ def impute(
             col("period"),
             col("strata"),
             col("forward"),
-            (lit(1.0) / col("next_forward")).alias("backward"),
+            (col("sum_output") / col("sum_other_output")).alias("backward"),
             col("construction"),
         )
 
