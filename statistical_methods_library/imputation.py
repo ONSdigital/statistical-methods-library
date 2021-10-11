@@ -534,7 +534,7 @@ def impute(
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
         # Add the forward imputes from responses from the back data
         df = df.unionByName(
-            prepared_back_data_df.filter(
+            filter_back_data(
                 col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
             ),
             True,
@@ -548,7 +548,7 @@ def impute(
     def construct_values(df: DataFrame) -> DataFrame:
         # Add in the constructions and forward imputes from construction in the back data
         df = df.unionByName(
-            prepared_back_data_df.filter(
+            filter_back_data(
                 (
                     (col("marker") == lit(Marker.CONSTRUCTED.value))
                     | (
@@ -639,6 +639,16 @@ def impute(
         return when(
             period.endswith("12"), (period.cast("int") + 89).cast("string")
         ).otherwise((period.cast("int") + 1).cast("string"))
+
+    def filter_back_data(filter_col: Column) -> DataFrame:
+        nonlocal prepared_back_data_df
+        filtered_df = prepared_back_data_df.filter(filter_col).localCheckpoint(
+            eager=True
+        )
+        prepared_back_data_df = prepared_back_data_df.join(
+            filtered_df, ["ref", "period"], "leftanti"
+        ).localCheckpoint(eager=True)
+        return filtered_df
 
     # ----------
 
