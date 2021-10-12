@@ -282,6 +282,9 @@ def impute(
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
+    # Store the value for the period prior to the start of imputation.
+    # Stored as a value to avoid a join in output creation.
+    prior_period = None
 
     # --- Prepare DF ---
 
@@ -300,15 +303,23 @@ def impute(
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
 
+            nonlocal prior_period
+            # We know this will be a single value so use collect as then we
+            # can filter directly.
+            prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][
+                0
+            ]
+
             nonlocal prepared_back_data_df
             if back_data_df:
                 prepared_back_data_df = (
                     select_cols(
-                        back_data_df.join(
-                            prepared_df.selectExpr("min(previous_period)"),
-                            [col(period_col) == col("min(previous_period)")],
-                            "inner",
-                        ).filter(col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+                        back_data_df.filter(
+                            (
+                                (col(period_col) == lit(prior_period))
+                                & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+                            )
+                        )
                     )
                     .drop("target")
                     .withColumn(
@@ -322,12 +333,9 @@ def impute(
                 prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
 
             prepared_back_data_df = prepared_back_data_df.localCheckpoint(eager=True)
-
             # Ratio calculation needs all the responses from the back data
             prepared_df = prepared_df.unionByName(
-                prepared_back_data_df.filter(
-                    col("marker") == lit(Marker.RESPONSE.value)
-                )
+                filter_back_data(col("marker") == lit(Marker.RESPONSE.value))
             )
 
             return calculate_ratios(prepared_df)
@@ -613,7 +621,7 @@ def impute(
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
         return select_cols(
-            df.join(prepared_back_data_df, ["period"], "leftanti"), reversed=False
+            df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)
 
     def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
@@ -641,14 +649,7 @@ def impute(
         ).otherwise((period.cast("int") + 1).cast("string"))
 
     def filter_back_data(filter_col: Column) -> DataFrame:
-        nonlocal prepared_back_data_df
-        filtered_df = prepared_back_data_df.filter(filter_col).localCheckpoint(
-            eager=True
-        )
-        prepared_back_data_df = prepared_back_data_df.join(
-            filtered_df, ["ref", "period"], "leftanti"
-        ).localCheckpoint(eager=True)
-        return filtered_df
+        return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)
 
     # ----------
 
