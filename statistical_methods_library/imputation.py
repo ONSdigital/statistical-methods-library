@@ -306,7 +306,9 @@ def impute(
             nonlocal prior_period
             # We know this will be a single value so use collect as then we
             # can filter directly.
-            prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
+            prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][
+                0
+            ]
 
             nonlocal prepared_back_data_df
             if back_data_df:
@@ -647,9 +649,7 @@ def impute(
         ).otherwise((period.cast("int") + 1).cast("string"))
 
     def filter_back_data(filter_col: Column) -> DataFrame:
-        return prepared_back_data_df.filter(filter_col).localCheckpoint(
-            eager=True
-        )
+        return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)
 
     # ----------
 
