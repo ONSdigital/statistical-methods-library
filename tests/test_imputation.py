@@ -264,6 +264,27 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         imputation.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
+# --- Test if back data has link cols then these are ignored
+
+@pytest.mark.dependency()
+def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+
+    back_data = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "unit",
+        "back_data_with_link_cols",
+    )
+
+    ret_val = imputation.impute(test_dataframe, *params, back_data_df=back_data)
+
+    assert len(ret_val) == 1
+
+
 # --- Test if columns of the incorrect type are caught.
 
 
