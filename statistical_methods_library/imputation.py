@@ -163,6 +163,7 @@ def impute(
 
     # --- Run ---
     def run() -> DataFrame:
+        nonlocal back_data_df
         validate_df(input_df)
         if back_data_df:
             validate_df(back_data_df, allow_nulls=False, back_data=True)

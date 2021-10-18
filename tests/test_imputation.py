@@ -266,6 +266,7 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
 
 # --- Test if back data has link cols and not in input then these are ignored
 
+
 @pytest.mark.dependency()
 def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
@@ -287,14 +288,17 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
 
 # --- Test when input has link cols and back data does not have link cols
 
+
 @pytest.mark.dependency()
-def test_input_has_link_cols_and_back_data_does_not_have_link_cols(fxt_load_test_csv, fxt_spark_session):
+def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
+        fxt_load_test_csv, fxt_spark_session
+):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
         "unit",
-        "basic_functionality_with_link_cols"
+        "basic_functionality_with_link_cols",
     )
 
     back_data = fxt_load_test_csv(
