@@ -318,12 +318,12 @@ def impute(
             nonlocal prepared_back_data_df
             if back_data_df:
                 prepared_back_data_df = (
-                        back_data_df.filter(
-                            (
-                                (col(period_col) == lit(prior_period))
-                                & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-                            )
+                    back_data_df.filter(
+                        (
+                            (col(period_col) == lit(prior_period))
+                            & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                         )
+                    )
                     .drop("target")
                     .withColumn(
                         "previous_period", calculate_previous_period(col("period"))
@@ -339,7 +339,7 @@ def impute(
             # Ratio calculation needs all the responses from the back data
             prepared_df = prepared_df.unionByName(
                 filter_back_data(col("marker") == lit(Marker.RESPONSE.value)),
-                allowMissingColumns=True
+                allowMissingColumns=True,
             )
 
             return calculate_ratios(prepared_df)
@@ -549,7 +549,7 @@ def impute(
             filter_back_data(
                 col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
             ),
-            allowMissingColumns=True
+            allowMissingColumns=True,
         )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
@@ -569,7 +569,7 @@ def impute(
                     )
                 )
             ),
-            allowMissingColumns=True
+            allowMissingColumns=True,
         )
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "strata", "aux", "construction", "previous_period"
