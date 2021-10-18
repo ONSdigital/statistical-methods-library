@@ -150,6 +150,9 @@ def impute(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
+    if not isinstance(back_data_df, DataFrame):
+        raise TypeError("back_data_df must be an instance of pyspark.sql.DataFrame")
+
     # Mapping of column aliases to parameters
     full_col_mapping = {
         "ref": reference_col,

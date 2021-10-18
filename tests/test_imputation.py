@@ -123,6 +123,19 @@ def test_input_not_a_dataframe():
         imputation.impute("not_a_dataframe", *params)
 
 
+# --- Test type validation on the back_data dataframe(s) ---
+
+
+@pytest.mark.dependency()
+def test_back_data_not_a_dataframe(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    with pytest.raises(TypeError):
+        # noinspection PyTypeChecker
+        imputation.impute(test_dataframe, *params, back_data_df="not_a_dataframe")
+
+
 # --- Test if cols missing from input dataframe(s) ---
 
 
@@ -394,7 +407,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
 
 @pytest.mark.dependency(
     depends=[
+        "test_back_data_not_a_dataframe",
         "test_back_data_missing_column",
+        "test_back_data_contains_nulls",
         "test_back_data_without_output_is_invalid",
         "test_back_data_drops_link_cols_when_present",
         "test_input_has_link_cols_and_back_data_does_not_have_link_cols",
