@@ -367,6 +367,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     depends=[
         "test_back_data_missing_column",
         "test_back_data_without_output_is_invalid",
+        "test_back_data_drops_link_cols_when_present",
     ]
 )
 @pytest.mark.parametrize(
