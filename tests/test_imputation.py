@@ -296,7 +296,7 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
 
     ret_val = imputation.impute(test_dataframe, *params, back_data_df=back_data)
 
-    assert len(ret_val) == 1
+    assert ret_val.count() == 1
 
 
 # --- Test when input has link cols and back data does not have link cols
@@ -324,7 +324,7 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
 
     ret_val = imputation.impute(test_dataframe, *params, back_data_df=back_data)
 
-    assert len(ret_val) == 1
+    assert ret_val.count() == 1
 
 
 # --- Test if columns of the incorrect type are caught.
