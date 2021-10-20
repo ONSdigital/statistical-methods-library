@@ -232,7 +232,7 @@ def impute(
         if any(link_cols) and not all(link_cols):
             raise TypeError("Either all or no link columns must be specified")
 
-        if forward_link_col is not None:
+        if forward_link_col is not None and not back_data:
             expected_cols.add(forward_link_col)
             expected_cols.add(backward_link_col)
             expected_cols.add(construction_link_col)
