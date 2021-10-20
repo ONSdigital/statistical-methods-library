@@ -330,7 +330,9 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
         "construction_link_col": construction_col,
     }
 
-    ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs, back_data_df=back_data)
+    ret_val = imputation.impute(
+        test_dataframe, *params, **imputation_kwargs, back_data_df=back_data
+    )
 
     assert ret_val.count() == 1
 
