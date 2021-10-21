@@ -289,7 +289,12 @@ def impute(
         # many rows are part of each group. Filters for > 1 which are non distinct pairs.
         # Final count tells us the number of distinct pairs.
         # Python treats 0 as False and > 0 as True
-        if df.groupby(reference_col, period_col).count().filter(col("count") > 1).count():
+        if (
+            df.groupby(reference_col, period_col)
+            .count()
+            .filter(col("count") > 1)
+            .count()
+        ):
             raise ValidationError("References must be unique within periods.")
 
     # Cache the prepared back data df since we'll need a few differently
