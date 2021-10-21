@@ -295,7 +295,7 @@ def impute(
             .filter(col("count") > 1)
             .count()
         ):
-            raise ValidationError("References must be unique within periods.")
+            raise ValidationError("References must be unique within periods")
 
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
