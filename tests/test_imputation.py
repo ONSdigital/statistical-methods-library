@@ -157,7 +157,7 @@ def test_dataframe_duplicate_rows(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "imputation", "unit", "duplicate_rows"
     )
-    with pytest.raises(imputation.DataIntegrityError):
+    with pytest.raises(imputation.ValidationError):
         imputation.impute(test_dataframe, *params)
 
 
