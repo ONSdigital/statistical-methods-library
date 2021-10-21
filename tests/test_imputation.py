@@ -149,6 +149,18 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         imputation.impute(bad_dataframe, *params)
 
 
+# --- Test if dataframe has duplicate rows ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_duplicate_rows(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "duplicate_rows"
+    )
+    with pytest.raises(imputation.DataIntegrityError):
+        imputation.impute(test_dataframe, *params)
+
+
 # --- Test if target missing from input dataframe(s) ---
 
 
