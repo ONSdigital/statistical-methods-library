@@ -277,12 +277,12 @@ def impute(
             )
             raise ValidationError(msg)
 
-        for col_name in expected_cols:
-            # Only the target column on the input data may be null.
-            # Once Mean/Medium auxiliary can be null as well.
-            if not back_data and col_name == target_col:
-                continue
+        # Only the target column on the input data may be null.
+        # Once Mean/Medium auxiliary can be null as well.
+        if not back_data:
+            expected_cols.remove(target_col)
 
+        for col_name in expected_cols:
             if df.filter(col(col_name).isNull()).count() > 0:
                 msg = f"Column {col_name} must not contain nulls"
                 raise ValidationError(msg)
