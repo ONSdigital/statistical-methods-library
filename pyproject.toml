@@ -18,7 +18,7 @@ coverage = "^6.0"
 pytest-cov = "^3.0.0"
 chispa = "*"
 pytest-dependency = "^0.5.1"
-pytest-tap = "^3.2"
+pytest-tap = "^3.3"
 portray = "^1.7.0"
 [tool.isort]
 profile = "black"
