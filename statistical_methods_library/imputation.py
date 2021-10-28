@@ -207,9 +207,7 @@ def impute(
         return create_output(df)
 
     # --- Validate DF ---
-    def validate_df(
-        df: DataFrame, back_data: bool = False
-    ) -> None:
+    def validate_df(df: DataFrame, back_data: bool = False) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
