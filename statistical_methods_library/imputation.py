@@ -170,7 +170,7 @@ def impute(
         nonlocal back_data_df
         validate_df(input_df)
         if back_data_df:
-            validate_df(back_data_df, allow_nulls=False, back_data=True)
+            validate_df(back_data_df, back_data=True)
             back_data_df = select_cols(back_data_df)
 
         if forward_link_col is None:
@@ -208,7 +208,7 @@ def impute(
 
     # --- Validate DF ---
     def validate_df(
-        df: DataFrame, allow_nulls: bool = True, back_data: bool = False
+        df: DataFrame, back_data: bool = False
     ) -> None:
         input_cols = set(df.columns)
         expected_cols = {
@@ -279,11 +279,15 @@ def impute(
             )
             raise ValidationError(msg)
 
-        if not allow_nulls:
-            for col_name in expected_cols:
-                if df.filter(col(col_name).isNull()).count() > 0:
-                    msg = f"Column {col_name} must not contain nulls"
-                    raise ValidationError(msg)
+        for col_name in expected_cols:
+            # Only the target column on the input data may be null.
+            # Once Mean/Medium auxiliary can be null as well.
+            if not back_data and col_name == target_col:
+                continue
+
+            if df.filter(col(col_name).isNull()).count() > 0:
+                msg = f"Column {col_name} must not contain nulls"
+                raise ValidationError(msg)
 
         # For clarity. Dataframe is grouped and then gains a count column for how
         # many rows are part of each group. Filters for > 1 which are non distinct pairs.
