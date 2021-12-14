@@ -24,7 +24,7 @@ portray = "^1.7.0"
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "--exitfirst --tap-stream --cov=statistical_methods_library"
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
 
 [tool.portray.mkdocs]
 site_name = "Statistical Methods Library"
