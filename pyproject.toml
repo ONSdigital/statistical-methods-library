@@ -10,21 +10,21 @@ python = "^3.7"
 pyspark = "3.1.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-black = "^21.9b0"
-isort = "^5.8.0"
+pytest = "^7.0.0"
+black = "^22.1"
+isort = "^5.10.1"
 flake8 = "^4.0.1"
-coverage = "^6.0"
+coverage = "^6.3"
 pytest-cov = "^3.0.0"
 chispa = "*"
 pytest-dependency = "^0.5.1"
-pytest-tap = "^3.2"
+pytest-tap = "^3.3"
 portray = "^1.7.0"
 [tool.isort]
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "--exitfirst --tap-stream --cov=statistical_methods_library"
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
 
 [tool.portray.mkdocs]
 site_name = "Statistical Methods Library"
