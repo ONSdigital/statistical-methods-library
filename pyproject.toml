@@ -10,7 +10,7 @@ python = "^3.7"
 pyspark = "3.1.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.0.0"
+pytest = "^7.0.1"
 black = "^22.1"
 isort = "^5.10.1"
 flake8 = "^4.0.1"
