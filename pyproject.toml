@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "statistical_methods_library"
-version = "3.5.6"
+version = "3.6.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -23,14 +23,14 @@ portray = "^1.7.0"
 [tool.isort]
 profile = "black"
 
-[tool.pytest.ini_options]
-addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
-
 [tool.portray.mkdocs]
 site_name = "Statistical Methods Library"
 edit_uri = ""
 repo_name = "Statistical Methods Library GitHub Repo"
 site_url = "https://example.com/statistical-methods-library/"
+
+[tool.pytest.ini_options]
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
 
 [tool.portray.pdocs]
 exclude_source = true
