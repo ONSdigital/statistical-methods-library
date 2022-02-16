@@ -274,7 +274,7 @@ def estimate(
 
         return_col_list += [
             col("design_weight").alias(design_weight_col),
-            col("calibration_weight").alias(calibration_weight_col)
+            col("calibration_weight").alias(calibration_weight_col),
         ]
 
     else:
