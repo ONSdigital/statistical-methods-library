@@ -67,8 +67,6 @@ for scenario_category in ("dev", "methodology"):
 
 
 # --- Test type validation on the input dataframe(s) ---
-
-
 @pytest.mark.dependency()
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
@@ -77,8 +75,6 @@ def test_input_not_a_dataframe():
 
 
 # --- Test validation fail if mismatched death cols  ---
-
-
 @pytest.mark.dependency()
 def test_params_mismatched_death_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -90,8 +86,6 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
 
 
 # --- Test validation fail if mismatched calibration cols  ---
-
-
 @pytest.mark.dependency()
 def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -103,8 +97,6 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
 
 
 # --- Test if params not strings  ---
-
-
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -116,8 +108,6 @@ def test_params_not_string(fxt_load_test_csv):
 
 
 # --- Test if params null  ---
-
-
 @pytest.mark.dependency()
 def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -129,8 +119,6 @@ def test_params_null(fxt_load_test_csv):
 
 
 # --- Test validation fail if nulls in data  ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_nulls_in_data(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -141,8 +129,6 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
 
 
 # --- Test if cols missing from input dataframe(s)  ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -154,8 +140,6 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 
 
 # --- Test validation fail if non-boolean markers in data  ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_non_boolean_markers(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -166,8 +150,6 @@ def test_dataframe_non_boolean_markers(fxt_load_test_csv):
 
 
 # --- Test validation fail if mixed h values in a strata  ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -183,28 +165,23 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 
 
 # --- Test output is correct type ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    # Make sure that no extra columns pass through.
+
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
     ret_val = estimation.estimate(test_dataframe, *params)
     assert isinstance(ret_val, type(test_dataframe))
 
 
 # --- Test no extra columns are copied to the output ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
     ret_val = estimation.estimate(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
@@ -214,8 +191,6 @@ def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
 
 
 # --- Test expected columns are in the output ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -241,8 +216,6 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
 
 
 # --- Test expected columns are in the output when default names aren't used ---
-
-
 @pytest.mark.dependency()
 def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -263,6 +236,7 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
     assert expected_cols == ret_cols
 
 
+# --- Test valid scenarios ---
 @pytest.mark.parametrize(
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
