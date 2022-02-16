@@ -225,7 +225,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     ret_val.count()
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = set(ret_val.columns)
-    expected_cols = {strata_col, calibration_weight_col, design_weight_col}
+    expected_cols = {period_col, strata_col, design_weight_col}
     assert expected_cols == ret_cols
 
 
