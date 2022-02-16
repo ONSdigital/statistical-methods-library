@@ -193,7 +193,7 @@ def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
     ret_val = estimation.estimate(test_dataframe, *params)
-    assert type(ret_val) == type(test_dataframe)
+    assert isinstance(ret_val, type(test_dataframe))
 
 
 # --- Test no extra columns are copied to the output ---
@@ -221,12 +221,11 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col, calibration_group_col)
+    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col=auxiliary_col, calibration_group_col=calibration_group_col)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
     ret_cols = set(ret_val.columns)
-    expected_cols = {period_col, strata_col, design_weight_col, calibration_weight_col}
+    expected_cols = {period_col, strata_col, calibration_group_col, design_weight_col, calibration_weight_col}
     assert expected_cols == ret_cols
 
 
@@ -238,12 +237,12 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col, calibration_group_col, design_weight_col="a", calibration_weight_col="g"
+    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col=auxiliary_col, calibration_group_col=calibration_group_col, design_weight_col="a", calibration_weight_col="g"
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     ret_cols = set(ret_val.columns)
-    expected_cols = {period_col, strata_col, "a", "g"}
+    expected_cols = {period_col, strata_col, calibration_group_col, "a", "g"}
     assert expected_cols == ret_cols
 
 
@@ -303,7 +302,6 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     ret_val = estimation.estimate(test_dataframe, **estimation_kwargs)
 
-    assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["period", "strata"]
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
