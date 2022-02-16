@@ -182,11 +182,24 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *estimation_params)
 
 
-# --- Test if output contents are as expected, both new columns and data ---
+# --- Test output is correct type ---
 
 
 @pytest.mark.dependency()
-def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
+def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    # Make sure that no extra columns pass through.
+    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
+    ret_val = estimation.estimate(test_dataframe, *params)
+    assert type(ret_val) == type(test_dataframe)
+
+# --- Test no extra columns are copied to the output ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
@@ -195,9 +208,49 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     ret_val = estimation.estimate(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
-    assert isinstance(ret_val, type(test_dataframe))
     ret_cols = ret_val.columns
     assert "bonus_column" not in ret_cols
+
+
+# --- Test expected columns are in the output ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    ret_val = estimation.estimate(test_dataframe, *params)
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    assert isinstance(ret_val, type(test_dataframe))
+    ret_cols = set(ret_val.columns)
+    expected_cols = {strata_col, calibration_weight_col, design_weight_col}
+    assert expected_cols == ret_cols
+
+
+# --- Test expected columns are in the output when default names aren't used ---
+
+
+@pytest.mark.dependency()
+def test_dataframe_expected_columns_not_defaults(
+    fxt_spark_session,
+    fxt_load_test_csv
+):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+    )
+    ret_val = estimation.estimate(
+        test_dataframe,
+        *params,
+        design_weight_col="a",
+        calibration_weight_col="g"
+    )
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    ret_cols = set(ret_val.columns)
+    expected_cols = {strata_col, "a", "g"}
+    assert expected_cols == ret_cols
 
 
 @pytest.mark.parametrize(
@@ -215,7 +268,10 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_dataframe_non_boolean_markers",
         "test_dataframe_mixed_h_values_in_strata",
-        "test_dataframe_returned_as_expected",
+        "test_dataframe_correct_type",
+        "test_dataframe_no_extra_columns",
+        "test_dataframe_expected_columns",
+        "test_dataframe_expected_columns_not_defaults",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):

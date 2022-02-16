@@ -25,6 +25,8 @@ def estimate(
     h_value_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
+    design_weight_col: typing.Optional[str] = "design_weight",
+    calibration_weight_col: typing.Optional[str] = "calibration_weight",
 ) -> DataFrame:
     """
     Perform estimation of design and calibration weights using Expansion and
@@ -48,14 +50,18 @@ def estimate(
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
       group for the contributor.
+    * design_weight_col: The name of the column which will contain the
+      design weight for the contributor. Defaults to `design_weight`.
+    * calibration_weight_col: The name of the column which will containthe
+      calibration weight for the contributor. Defaults to `calibration_weight`.
 
     ###Returns
     A data frame containing:
 
     * `period_col`
     * `strata_col`
-    * `design_weight`
-    * `calibration_weight`
+    * `design_weight_col`
+    * `calibration_weight_col`
 
     ###Notes
 
@@ -72,7 +78,10 @@ def estimate(
     specified then only Expansion estimation is performed and specifying
     `calibration_group_col` raises an error.
 
-    All specified columns must be fully populated. If not an error is raised.
+    All specified input columns must be fully populated. If not an error is
+    raised. Since `design_weight_col` and `calibration_weight_col` are both
+    output columns this does not apply to them, and any values they contain prior
+    to calling the method will be ignored.
     """
 
     # --- Validate params ---
@@ -263,11 +272,14 @@ def estimate(
                 calibration_calculation(working_df, "strata"), ["period", "strata"]
             )
 
-        return_col_list += [col("design_weight"), col("calibration_weight")]
+        return_col_list += [
+            col("design_weight").alias(design_weight_col),
+            col("calibration_weight").alias(calibration_weight_col)
+        ]
 
     else:
         # No auxiliary values so return the results of Expansion estimation.
-        return_col_list.append(col("design_weight"))
+        return_col_list.append(col("design_weight").alias(design_weight_col))
         estimated_df = design_df
 
     return estimated_df.select(return_col_list)
