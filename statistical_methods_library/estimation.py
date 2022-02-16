@@ -56,12 +56,27 @@ def estimate(
       calibration weight for the contributor. Defaults to `calibration_weight`.
 
     ###Returns
-    A data frame containing:
+
+    A data frame containing the estimated weights. The exact columns depend on
+    the type of estimation performed as specified below.
+
+    ####Common Columns
+
+    In all cases the data frame will contain:
 
     * `period_col`
     * `strata_col`
     * `design_weight_col`
-    * `calibration_weight_col`
+
+    ####Ratio Estimation    
+
+    In the case of either Separate or Combined Ratio Estimation, the data frame
+    will also contain the column specified by `calibration_weight_col`.
+
+    ####Combined Ratio Estimation
+
+    When Combined Ratio Estimation is performed, the data frame will also
+    contain the column specified by `calibration_weight_col`.
 
     ###Notes
 
