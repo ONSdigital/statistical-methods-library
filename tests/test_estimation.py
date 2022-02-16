@@ -195,6 +195,7 @@ def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     ret_val = estimation.estimate(test_dataframe, *params)
     assert type(ret_val) == type(test_dataframe)
 
+
 # --- Test no extra columns are copied to the output ---
 
 
@@ -220,12 +221,12 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(test_dataframe, *params)
+    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col, calibration_group_col)
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = set(ret_val.columns)
-    expected_cols = {period_col, strata_col, design_weight_col}
+    expected_cols = {period_col, strata_col, design_weight_col, calibration_weight_col}
     assert expected_cols == ret_cols
 
 
@@ -233,18 +234,11 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_expected_columns_not_defaults(
-    fxt_spark_session,
-    fxt_load_test_csv
-):
+def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(
-        test_dataframe,
-        *params,
-        design_weight_col="a",
-        calibration_weight_col="g"
+    ret_val = estimation.estimate(test_dataframe, *params, design_weight_col="a", calibration_weight_col="g"
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
