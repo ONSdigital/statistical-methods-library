@@ -68,7 +68,7 @@ def estimate(
     * `strata_col`
     * `design_weight_col`
 
-    ####Ratio Estimation    
+    ####Ratio Estimation
 
     In the case of either Separate or Combined Ratio Estimation, the data frame
     will also contain the column specified by `calibration_weight_col`.

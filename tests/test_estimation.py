@@ -221,11 +221,22 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col=auxiliary_col, calibration_group_col=calibration_group_col)
+    ret_val = estimation.estimate(
+        test_dataframe,
+        *params,
+        auxiliary_col=auxiliary_col,
+        calibration_group_col=calibration_group_col,
+    )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     ret_cols = set(ret_val.columns)
-    expected_cols = {period_col, strata_col, calibration_group_col, design_weight_col, calibration_weight_col}
+    expected_cols = {
+        period_col,
+        strata_col,
+        calibration_group_col,
+        design_weight_col,
+        calibration_weight_col,
+    }
     assert expected_cols == ret_cols
 
 
@@ -237,7 +248,13 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    ret_val = estimation.estimate(test_dataframe, *params, auxiliary_col=auxiliary_col, calibration_group_col=calibration_group_col, design_weight_col="a", calibration_weight_col="g"
+    ret_val = estimation.estimate(
+        test_dataframe,
+        *params,
+        auxiliary_col=auxiliary_col,
+        calibration_group_col=calibration_group_col,
+        design_weight_col="a",
+        calibration_weight_col="g",
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
