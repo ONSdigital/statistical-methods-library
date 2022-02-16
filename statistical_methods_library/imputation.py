@@ -150,6 +150,10 @@ def impute(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
+    if back_data_df:
+        if not isinstance(back_data_df, DataFrame):
+            raise TypeError("back_data_df must be an instance of pyspark.sql.DataFrame")
+
     # Mapping of column aliases to parameters
     full_col_mapping = {
         "ref": reference_col,
@@ -161,29 +165,31 @@ def impute(
         "aux": auxiliary_col,
     }
 
-    if forward_link_col is None:
-        full_col_mapping.update(
-            {
-                "forward": "forward",
-                "backward": "backward",
-                "construction": "construction",
-            }
-        )
-
-    else:
-        full_col_mapping.update(
-            {
-                "forward": forward_link_col,
-                "backward": backward_link_col,
-                "construction": construction_link_col,
-            }
-        )
-
     # --- Run ---
     def run() -> DataFrame:
+        nonlocal back_data_df
         validate_df(input_df)
         if back_data_df:
             validate_df(back_data_df, allow_nulls=False, back_data=True)
+            back_data_df = select_cols(back_data_df)
+
+        if forward_link_col is None:
+            full_col_mapping.update(
+                {
+                    "forward": "forward",
+                    "backward": "backward",
+                    "construction": "construction",
+                }
+            )
+
+        else:
+            full_col_mapping.update(
+                {
+                    "forward": forward_link_col,
+                    "backward": backward_link_col,
+                    "construction": construction_link_col,
+                }
+            )
 
         stages = (
             prepare_df(back_data_df),
@@ -226,7 +232,7 @@ def impute(
         if any(link_cols) and not all(link_cols):
             raise TypeError("Either all or no link columns must be specified")
 
-        if forward_link_col is not None:
+        if forward_link_col is not None and not back_data:
             expected_cols.add(forward_link_col)
             expected_cols.add(backward_link_col)
             expected_cols.add(construction_link_col)
@@ -279,6 +285,18 @@ def impute(
                     msg = f"Column {col_name} must not contain nulls"
                     raise ValidationError(msg)
 
+        # For clarity. Dataframe is grouped and then gains a count column for how
+        # many rows are part of each group. Filters for > 1 which are non distinct pairs.
+        # Final count tells us the number of distinct pairs.
+        # Python treats 0 as False and > 0 as True
+        if (
+            df.groupby(reference_col, period_col)
+            .count()
+            .filter(col("count") > 1)
+            .count()
+        ):
+            raise ValidationError("References must be unique within periods")
+
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
@@ -313,12 +331,10 @@ def impute(
             nonlocal prepared_back_data_df
             if back_data_df:
                 prepared_back_data_df = (
-                    select_cols(
-                        back_data_df.filter(
-                            (
-                                (col(period_col) == lit(prior_period))
-                                & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-                            )
+                    back_data_df.filter(
+                        (
+                            (col(period_col) == lit(prior_period))
+                            & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                         )
                     )
                     .drop("target")
@@ -335,7 +351,8 @@ def impute(
             prepared_back_data_df = prepared_back_data_df.localCheckpoint(eager=True)
             # Ratio calculation needs all the responses from the back data
             prepared_df = prepared_df.unionByName(
-                filter_back_data(col("marker") == lit(Marker.RESPONSE.value))
+                filter_back_data(col("marker") == lit(Marker.RESPONSE.value)),
+                allowMissingColumns=True,
             )
 
             return calculate_ratios(prepared_df)
@@ -545,7 +562,7 @@ def impute(
             filter_back_data(
                 col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
             ),
-            True,
+            allowMissingColumns=True,
         )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
@@ -565,7 +582,7 @@ def impute(
                     )
                 )
             ),
-            True,
+            allowMissingColumns=True,
         )
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "strata", "aux", "construction", "previous_period"
