@@ -29,6 +29,9 @@ edit_uri = ""
 repo_name = "Statistical Methods Library GitHub Repo"
 site_url = "https://example.com/statistical-methods-library/"
 
+[tool.pytest.ini_options]
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
+
 [tool.portray.pdocs]
 exclude_source = true
 [build-system]
