@@ -64,11 +64,11 @@ unicode_backport = ["unicodedata2"]
 
 [[package]]
 name = "chispa"
-version = "0.8.2"
+version = "0.8.3"
 description = "Pyspark test helper library"
 category = "dev"
 optional = false
-python-versions = ">2.7"
+python-versions = ">=3.5"
 
 [[package]]
 name = "click"
@@ -783,8 +783,8 @@ charset-normalizer = [
     {file = "charset_normalizer-2.0.4-py3-none-any.whl", hash = "sha256:0c8911edd15d19223366a194a513099a302055a962bca2cec0f54b8b63175d8b"},
 ]
 chispa = [
-    {file = "chispa-0.8.2-py2.py3-none-any.whl", hash = "sha256:a39af09632f09eae45a08fec316aee139357160fae979b9df6cce43f4f7a41de"},
-    {file = "chispa-0.8.2.tar.gz", hash = "sha256:f6d3037823ca30f636ad274b26331094f3d08798ea470bc5b5cd1be473972843"},
+    {file = "chispa-0.8.3-py3-none-any.whl", hash = "sha256:395a4582665a8fde3c16127313fe0bc294b6fd0a7e768b2d6bd5b0c7123d0ea4"},
+    {file = "chispa-0.8.3.tar.gz", hash = "sha256:979a12845e73a1aff525944c6cb0bd97c122f132ced8cfe7df485c680321432f"},
 ]
 click = [
     {file = "click-8.0.1-py3-none-any.whl", hash = "sha256:fba402a4a47334742d782209a7c79bc448911afe1149d07bdabdf480b3e2f4b6"},
