@@ -216,8 +216,7 @@ def one_sided_winsorise(
             col("marker").alias(marker_col),
         )
         .unionByName(
-            not_winsorised_df
-            .select(
+            not_winsorised_df.select(
                 col("reference").alias(reference_col),
                 col("period").alias(period_col),
                 col("outlier").alias(outlier_col),
