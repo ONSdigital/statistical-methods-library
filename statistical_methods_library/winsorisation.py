@@ -5,6 +5,7 @@ Currently only One-sided Winsorisation is implemented.
 """
 
 import typing
+from enum import Enum
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
@@ -14,6 +15,20 @@ class ValidationError(Exception):
     """Error raised when data frame validation fails."""
 
     pass
+
+
+class Marker(Enum):
+    """Values for the marker column created during winsorisation."""
+
+    WINSORISED = "W"
+    """The value has been winsorised."""
+
+    FULLY_ENUMERATED = "NW_FE"
+    """The value has not been winsorised because it makes up 100% of its stratum.
+    (design_weight = 1)"""
+
+    DESIGN_CALIBRATION = "NW_AG"
+    """The value has not been winsorised because design * calibration is <= 1."""
 
 
 def one_sided_winsorise(
@@ -27,6 +42,7 @@ def one_sided_winsorise(
     outlier_col: str,
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
+    marker_col: typing.Optional[str] = "winsorisation_marker",
 ):
     """
     Perform One-sided Winsorisation.
@@ -47,6 +63,8 @@ def one_sided_winsorise(
       if Ratio Winsorisation is to be performed.
     * auxiliary_col: The name of the column containing the auxiliary values if
       Ratio Winsorisation is to be performed.
+    * marker_col: If specified, the name of the column which will contain the
+      marker for winsorisation. Defaults to "winsorisation_marker"
 
     ###Returns
     A new data frame containing:
@@ -54,6 +72,7 @@ def one_sided_winsorise(
     * `reference_col`
     * `period_col`
     * `outlier_col`
+    * `marker_col`
 
     ###Notes
 
@@ -66,6 +85,9 @@ def one_sided_winsorise(
     If these columns are specified then they are used in calculations so
     Ratio Winsorisation is performed. If not then Expansion Winsorisation is
     performed.
+
+    `marker_col` will contain one of the marker constants defined in the
+    `Marker` enum.
     """
 
     if not isinstance(input_df, DataFrame):
@@ -132,7 +154,19 @@ def one_sided_winsorise(
         col_list.append(lit(1.0).alias("calibration"))
 
     group_cols = ["period", "grouping"]
-    df = input_df.select(col_list)
+    pre_marker_df = input_df.select(col_list)
+
+    df = pre_marker_df.withColumn(
+        "design_calibration",
+        expr("design * calibration"),
+    ).withColumn(
+        "marker",
+        when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
+        .otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+    )
+
+    not_winsorised_df = df.filter("marker" is not None).withColumn("outlier", lit(1.0))
+    to_be_winsorised_df = df.filter("marker" is None)
 
     # The design ratio needs to be calculated by grouping whereas the outlier
     # weight calculation is per contributor.
@@ -140,9 +174,9 @@ def one_sided_winsorise(
     # If design * calibration is less than 1 then set k value to target column
     # so that the outlier weight becomes 1.
     return (
-        df.join(
+        to_be_winsorised_df.join(
             (
-                df.withColumn("target_design", expr("target * design"))
+                to_be_winsorised_df.withColumn("target_design", expr("target * design"))
                 .withColumn("aux_design", expr("auxiliary * design"))
                 .groupBy(group_cols)
                 .agg({"target_design": "sum", "aux_design": "sum"})
@@ -155,15 +189,8 @@ def one_sided_winsorise(
         )
         .withColumn("winsorisation_value", expr("ratio_sum_target_sum_aux * auxiliary"))
         .withColumn(
-            "design_calibration",
-            expr("design * calibration"),
-        )
-        .withColumn(
             "k_value",
-            when(
-                (col("design_calibration") > 1.0),
-                expr("winsorisation_value + (l_value/(design_calibration - 1))"),
-            ).otherwise(col("target")),
+            expr("winsorisation_value + (l_value/(design_calibration - 1))"),
         )
         .withColumn(
             "modified_target",
@@ -179,9 +206,12 @@ def one_sided_winsorise(
         )
         .withColumn("outlier", expr("modified_target/target"))
         .fillna(1.0, ["outlier"])
+        .withColumn("marker", lit(Marker.WINSORISED.value))
+        .unionByName(not_winsorised_df)
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
             col("outlier").alias(outlier_col),
+            col("marker").alias(marker_col),
         )
     )

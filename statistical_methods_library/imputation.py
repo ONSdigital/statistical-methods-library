@@ -63,8 +63,8 @@ def impute(
     strata_col: str,
     target_col: str,
     auxiliary_col: str,
-    output_col: str,
-    marker_col: str,
+    output_col: typing.Optional[str] = "imputed",
+    marker_col: typing.Optional[str] = "imputation_marker",
     forward_link_col: typing.Optional[str] = None,
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
@@ -86,10 +86,10 @@ def impute(
       variable
     * `auxiliary_col`: The name of the column containing the auxiliary
       variable
-    * `output_col`: The name of the column which will contain the
-      output
-    * `marker_col`: The name of the column which will contain the marker
-      information for a given value
+    * `output_col`: If specified, the name of the column which will contain the
+      output. Defaults to "imputed"
+    * `marker_col`: If specified, the name of the column which will contain the marker
+      information for a given value. Defaults to "imputation_marker"
     * `forward_link_col`: If specified, the name of an existing column
       containing forward ratio (or link) information
       Defaults to None which means that a default column name of "forward" will
