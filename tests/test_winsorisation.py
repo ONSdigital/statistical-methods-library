@@ -17,6 +17,7 @@ calibration_weight_col = "calibration_weight"
 l_value_col = "l_value"
 target_col = "target"
 outlier_weight_col = "outlier_weight"
+winsorisation_marker_col = "winsorisation_marker"
 
 
 dataframe_columns = (
@@ -29,6 +30,7 @@ dataframe_columns = (
     l_value_col,
     target_col,
     outlier_weight_col,
+    winsorisation_marker_col,
 )
 
 dataframe_types = {
@@ -41,6 +43,7 @@ dataframe_types = {
     l_value_col: "double",
     target_col: "double",
     outlier_weight_col: "double",
+    winsorisation_marker_col: "string",
 }
 
 params = (
