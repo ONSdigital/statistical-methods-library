@@ -166,8 +166,10 @@ def one_sided_winsorise(
         ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
     )
 
-    not_winsorised_df = df.filter("marker" is not None).withColumn("outlier", lit(1.0))
-    to_be_winsorised_df = df.filter("marker" is None)
+    not_winsorised_df = df.filter(
+        col("marker").isNotNull()
+    ).withColumn("outlier", lit(1.0))
+    to_be_winsorised_df = df.filter(col("marker").isNull())
 
     # The design ratio needs to be calculated by grouping whereas the outlier
     # weight calculation is per contributor.
