@@ -209,11 +209,19 @@ def one_sided_winsorise(
         .withColumn("outlier", expr("modified_target/target"))
         .fillna(1.0, ["outlier"])
         .withColumn("marker", lit(Marker.WINSORISED.value))
-        .unionByName(not_winsorised_df)
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
             col("outlier").alias(outlier_col),
             col("marker").alias(marker_col),
+        )
+        .unionByName(
+            not_winsorised_df
+            .select(
+                col("reference").alias(reference_col),
+                col("period").alias(period_col),
+                col("outlier").alias(outlier_col),
+                col("marker").alias(marker_col),
+            )
         )
     )
