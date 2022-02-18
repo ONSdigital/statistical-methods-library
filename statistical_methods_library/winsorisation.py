@@ -161,8 +161,9 @@ def one_sided_winsorise(
         expr("design * calibration"),
     ).withColumn(
         "marker",
-        when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
-        .otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+        when(
+            col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)
+        ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
     )
 
     not_winsorised_df = df.filter("marker" is not None).withColumn("outlier", lit(1.0))
