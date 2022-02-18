@@ -157,20 +157,17 @@ def one_sided_winsorise(
     pre_marker_df = input_df.select(col_list)
 
     df = pre_marker_df.withColumn(
-        "design_calibration",
-        expr("design * calibration")
+        "design_calibration", expr("design * calibration")
     ).withColumn(
         "marker",
         when(
             col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)
-        ).otherwise(
-            when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value))
-        )
+        ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value))),
     )
 
-    not_winsorised_df = df.filter(
-        col("marker").isNotNull()
-    ).withColumn("outlier", lit(1.0))
+    not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
+        "outlier", lit(1.0)
+    )
     to_be_winsorised_df = df.filter(col("marker").isNull())
 
     # The design ratio needs to be calculated by grouping whereas the outlier
