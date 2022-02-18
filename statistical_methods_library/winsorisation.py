@@ -39,7 +39,7 @@ def one_sided_winsorise(
     target_col: str,
     design_col: str,
     l_value_col: str,
-    outlier_col: str,
+    outlier_col: typing.Optional[str] = "outlier_weight",
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     marker_col: typing.Optional[str] = "winsorisation_marker",
@@ -50,21 +50,21 @@ def one_sided_winsorise(
     ###Arguments
     * input_df: The input data frame.
     * reference_col: The name of the column to reference a unique contributor.
-    * period_col: The name of the column containing the period
-      information for the contributor.
-    grouping_col: The name of the column containing the grouping information
+    * period_col: The name of the column containing the period information for
+      a contributor.
+    * grouping_col: The name of the column containing the grouping information
       for a contributor.
     * target_col: The name of the column containing the target variable.
     * design_col: The name of the column containing the design weight.
-    * l_value_col: The name of the column containing the l values.
+    * l_value_col: The name of the column containing the l value.
     * outlier_col: The name of the column which will contain the calculated
-      outlier weight.
+      outlier weight. Defaults to `outlier_weight`.
     * calibration_col: The name of the column containing the calibration weight
       if Ratio Winsorisation is to be performed.
     * auxiliary_col: The name of the column containing the auxiliary values if
       Ratio Winsorisation is to be performed.
-    * marker_col: If specified, the name of the column which will contain the
-      marker for winsorisation. Defaults to "winsorisation_marker"
+    * marker_col: The name of the column which will contain the
+      marker for winsorisation. Defaults to `winsorisation_marker`.
 
     ###Returns
     A new data frame containing:
@@ -76,8 +76,8 @@ def one_sided_winsorise(
 
     ###Notes
 
-    All of the provided columns must be fully populated. Otherwise an error is
-    raised.
+    All of the provided columns containing input values must be fully
+    populated. Otherwise an error is raised.
 
     Both or neither of `calibration_col` and `auxiliary_col` must be
     specified. Specifying one without the other raises an error.
@@ -158,12 +158,14 @@ def one_sided_winsorise(
 
     df = pre_marker_df.withColumn(
         "design_calibration",
-        expr("design * calibration"),
+        expr("design * calibration")
     ).withColumn(
         "marker",
         when(
             col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)
-        ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+        ).otherwise(
+            when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value))
+        )
     )
 
     not_winsorised_df = df.filter(
