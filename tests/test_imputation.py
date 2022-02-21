@@ -390,8 +390,10 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         reference_col,
         period_col,
         strata_col,
-        target_col,
         auxiliary_col,
+        forward_col,
+        backward_col,
+        construction_col,
         "imputed",
         "imputation_marker",
     }
