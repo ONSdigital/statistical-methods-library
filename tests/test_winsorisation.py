@@ -232,7 +232,7 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns, dataframe_types, "winsorisation", "unit", "basic_functionality"
     )
     ret_val = winsorisation.one_sided_winsorise(
         test_dataframe,
