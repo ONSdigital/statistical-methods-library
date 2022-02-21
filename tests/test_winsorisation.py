@@ -56,6 +56,15 @@ params = (
     outlier_weight_col,
 )
 
+default_params = (
+    reference_col,
+    period_col,
+    grouping_col,
+    target_col,
+    design_weight_col,
+    l_value_col,
+)
+
 test_scenarios = []
 
 for scenario_category in ("dev", "methodology"):
@@ -217,6 +226,28 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = ret_val.columns
     assert "bonus_column" not in ret_cols
+
+
+# --- Test expected columns are in the output ---
+@pytest.mark.dependency()
+def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    ret_val = winsorisation.one_sided_winsorise(
+        test_dataframe,
+        *default_params,
+    )
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    ret_cols = set(ret_val.columns)
+    expected_cols = {
+        reference_col,
+        period_col,
+        "outlier_weight",
+        "winsorisation_marker",
+    }
+    assert expected_cols == ret_cols
 
 
 @pytest.mark.parametrize(
