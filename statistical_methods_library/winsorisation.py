@@ -156,14 +156,14 @@ def one_sided_winsorise(
     group_cols = ["period", "grouping"]
     pre_marker_df = input_df.select(col_list)
 
+    if calibration_col is None:
+        marker_exp = when(col("design") < 1, lit(Marker.DESIGN_CALIBRATION.value)).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+    else:
+        marker_exp = when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+
     df = pre_marker_df.withColumn(
         "design_calibration", expr("design * calibration")
-    ).withColumn(
-        "marker",
-        when(
-            col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)
-        ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value))),
-    )
+    ).withColumn("marker", marker_exp)
 
     not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
         "outlier", lit(1.0)
