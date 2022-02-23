@@ -162,8 +162,11 @@ def one_sided_winsorise(
         ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
     else:
         marker_exp = when(
-            col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value)
-        ).otherwise(when(col("design") == 1, lit(Marker.FULLY_ENUMERATED.value)))
+            (col("design") == 1) & (col("calibration") == 1),
+            lit(Marker.FULLY_ENUMERATED.value)
+        ).otherwise(
+            when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
+        )
 
     df = pre_marker_df.withColumn(
         "design_calibration", expr("design * calibration")
