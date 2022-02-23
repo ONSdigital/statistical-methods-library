@@ -163,7 +163,7 @@ def one_sided_winsorise(
     else:
         marker_exp = when(
             (col("design") == 1) & (col("calibration") == 1),
-            lit(Marker.FULLY_ENUMERATED.value)
+            lit(Marker.FULLY_ENUMERATED.value),
         ).otherwise(
             when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
         )
