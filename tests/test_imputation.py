@@ -419,6 +419,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
         "test_incorrect_column_types",
+        "test_dataframe_expected_columns",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
