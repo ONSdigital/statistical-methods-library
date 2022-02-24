@@ -166,7 +166,7 @@ def one_sided_winsorise(
             lit(Marker.FULLY_ENUMERATED.value),
         ).otherwise(
             when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
-        )
+        ),
     )
 
     not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
@@ -218,12 +218,12 @@ def one_sided_winsorise(
             "winsorisation_value",
             "k_value",
             "modified_target",
-        ).unionByName(
-            not_winsorised_df
-        ).select(
-                col("reference").alias(reference_col),
-                col("period").alias(period_col),
-                col("outlier").alias(outlier_col),
-                col("marker").alias(marker_col),
+        )
+        .unionByName(not_winsorised_df)
+        .select(
+            col("reference").alias(reference_col),
+            col("period").alias(period_col),
+            col("outlier").alias(outlier_col),
+            col("marker").alias(marker_col),
         )
     )
