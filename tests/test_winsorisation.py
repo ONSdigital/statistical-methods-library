@@ -17,6 +17,7 @@ calibration_weight_col = "calibration_weight"
 l_value_col = "l_value"
 target_col = "target"
 outlier_weight_col = "outlier_weight"
+winsorisation_marker_col = "winsorisation_marker"
 
 
 dataframe_columns = (
@@ -29,6 +30,7 @@ dataframe_columns = (
     l_value_col,
     target_col,
     outlier_weight_col,
+    winsorisation_marker_col,
 )
 
 dataframe_types = {
@@ -41,6 +43,7 @@ dataframe_types = {
     l_value_col: "double",
     target_col: "double",
     outlier_weight_col: "double",
+    winsorisation_marker_col: "string",
 }
 
 params = (
@@ -51,6 +54,15 @@ params = (
     design_weight_col,
     l_value_col,
     outlier_weight_col,
+)
+
+default_params = (
+    reference_col,
+    period_col,
+    grouping_col,
+    target_col,
+    design_weight_col,
+    l_value_col,
 )
 
 test_scenarios = []
@@ -216,6 +228,32 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
+# --- Test expected columns are in the output ---
+@pytest.mark.dependency()
+def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "basic_functionality",
+    )
+    ret_val = winsorisation.one_sided_winsorise(
+        test_dataframe,
+        *default_params,
+    )
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    ret_cols = set(ret_val.columns)
+    expected_cols = {
+        reference_col,
+        period_col,
+        "outlier_weight",
+        "winsorisation_marker",
+    }
+    assert expected_cols == ret_cols
+
+
 @pytest.mark.parametrize(
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
@@ -229,6 +267,7 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_params_mismatched_calibration_cols",
         "test_dataframe_returned_as_expected",
+        "test_dataframe_expected_columns",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
