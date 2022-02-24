@@ -162,7 +162,7 @@ def one_sided_winsorise(
     ).withColumn(
         "marker",
         when(
-            (col("design") == 1) & (col("calibration") == 1),
+            (col("design") == 1) & (col("calibration") >= 1),
             lit(Marker.FULLY_ENUMERATED.value),
         ).otherwise(
             when(col("design_calibration") <= 1, lit(Marker.DESIGN_CALIBRATION.value))
