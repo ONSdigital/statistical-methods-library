@@ -176,7 +176,6 @@ def one_sided_winsorise(
 
     # The design ratio needs to be calculated by grouping whereas the outlier
     # weight calculation is per contributor.
-    # If the outlier weight can't be calculated default to 1.
     return (
         to_be_winsorised_df.join(
             (
