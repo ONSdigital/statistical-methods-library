@@ -176,6 +176,8 @@ def one_sided_winsorise(
 
     # The design ratio needs to be calculated by grouping whereas the outlier
     # weight calculation is per contributor.
+    # If the outlier weight can't be calculated due to the target value being a zero,
+    # then default the outlier weight to 1.
     return (
         to_be_winsorised_df.join(
             (
@@ -208,6 +210,7 @@ def one_sided_winsorise(
             ).otherwise(col("target")),
         )
         .withColumn("outlier", expr("modified_target/target"))
+        .fillna(1.0, ["outlier"])
         .withColumn("marker", lit(Marker.WINSORISED.value))
         .drop(
             "target_design",
