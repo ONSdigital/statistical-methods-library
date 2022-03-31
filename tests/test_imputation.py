@@ -379,14 +379,8 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         dataframe_columns, dataframe_types, "imputation", "unit", "input_data_nulls"
     )
 
-    imputation_kwargs = {
-        "forward_link_col": forward_col,
-        "backward_link_col": backward_col,
-        "construction_link_col": construction_col,
-    }
-
     with pytest.raises(imputation.ValidationError):
-        imputation.impute(test_dataframe, *params, **imputation_kwargs)
+        imputation.impute(test_dataframe, *params)
 
 
 # --- Test expected columns are in the output ---
