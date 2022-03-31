@@ -278,9 +278,14 @@ def impute(
             raise ValidationError(msg)
 
         # Only the target column on the input data may be null.
-        # Once Mean/Medium auxiliary can be null as well.
         if not back_data:
             expected_cols.remove(target_col)
+
+        # Passed in links can supposidly be null. Hoping to change minds on that.
+        if forward_link_col is not None and not back_data:
+            expected_cols.remove(forward_link_col)
+            expected_cols.remove(backward_link_col)
+            expected_cols.remove(construction_link_col)
 
         for col_name in expected_cols:
             if df.filter(col(col_name).isNull()).count() > 0:
