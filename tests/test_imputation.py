@@ -373,6 +373,29 @@ def test_incorrect_column_types(fxt_load_test_csv):
         imputation.impute(test_dataframe, *params)
 
 
+@pytest.mark.dependency()
+def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "input_data_nulls"
+    )
+
+    test_dataframe_with_links = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "input_data_link_nulls"
+    )
+
+    imputation_kwargs = {
+        "forward_link_col": forward_col,
+        "backward_link_col": backward_col,
+        "construction_link_col": construction_col,
+    }
+
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe, *params)
+
+    with pytest.raises(imputation.ValidationError):
+        imputation.impute(test_dataframe_with_links, *params, **imputation_kwargs)
+
+
 # --- Test expected columns are in the output ---
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
@@ -419,6 +442,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
         "test_incorrect_column_types",
+        "test_input_data_contains_nulls",
         "test_dataframe_expected_columns",
     ]
 )
