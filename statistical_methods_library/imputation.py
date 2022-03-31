@@ -63,8 +63,8 @@ def impute(
     strata_col: str,
     target_col: str,
     auxiliary_col: str,
-    output_col: str,
-    marker_col: str,
+    output_col: typing.Optional[str] = "imputed",
+    marker_col: typing.Optional[str] = "imputation_marker",
     forward_link_col: typing.Optional[str] = None,
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
@@ -77,31 +77,31 @@ def impute(
     ###Arguments
     * `input_df`: The input dataframe
     * `reference_col`: The name of the column to reference a unique
-      contributor
+      contributor.
     * `period_col`: The name of the column containing the period
-      information for the contributor
+      information for the contributor.
     * `strata_col`: The Name of the column containing the strata information
-      for the contributor
+      for the contributor.
     * `target_col`: The name of the column containing the target
-      variable
+      variable.
     * `auxiliary_col`: The name of the column containing the auxiliary
-      variable
+      variable.
     * `output_col`: The name of the column which will contain the
-      output
+      output. Defaults to `imputed`.
     * `marker_col`: The name of the column which will contain the marker
-      information for a given value
+      information for a given value. Defaults to `imputation_marker`.
     * `forward_link_col`: If specified, the name of an existing column
-      containing forward ratio (or link) information
-      Defaults to None which means that a default column name of "forward" will
-      be created and the forward ratios will be calculated
+      containing forward ratio (or link) information. Defaults to None which
+      means that a default column name of `forward` will be created and the
+      forward ratios will be calculated.
     * `backward_link_col`: If specified, the name of an existing column
-      containing backward ratio (or link) information
-      Defaults to None which means that a default column name of "backward"
-      will be created and the backward ratios will be calculated
+      containing backward ratio (or link) information. Defaults to None which
+      means that a default column name of `backward` will be created and the
+      backward ratios will be calculated.
     * `construction_link_col`: If specified, the name of an existing column
-      containing construction ratio (or link) information
-      Defaults to None which means that a default column name of "construction"
-      will be created and the construction ratios will be calculated.
+      containing construction ratio (or link) information. Defaults to None
+      which means that a default column name of `construction` will be created
+      and the construction ratios will be calculated.
     * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
 

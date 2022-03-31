@@ -72,6 +72,14 @@ params = (
     marker_col,
 )
 
+default_params = (
+    reference_col,
+    period_col,
+    strata_col,
+    target_col,
+    auxiliary_col,
+)
+
 # Mapping for which columns we should select per scenario category
 selection_map = {
     "back_data": [reference_col, period_col, output_col, marker_col],
@@ -365,6 +373,33 @@ def test_incorrect_column_types(fxt_load_test_csv):
         imputation.impute(test_dataframe, *params)
 
 
+# --- Test expected columns are in the output ---
+@pytest.mark.dependency()
+def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+    )
+    ret_val = imputation.impute(
+        test_dataframe,
+        *default_params,
+    )
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+    ret_cols = set(ret_val.columns)
+    expected_cols = {
+        reference_col,
+        period_col,
+        strata_col,
+        auxiliary_col,
+        forward_col,
+        backward_col,
+        construction_col,
+        "imputed",
+        "imputation_marker",
+    }
+    assert expected_cols == ret_cols
+
+
 # --- Test Scenarios.
 
 
@@ -384,6 +419,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
         "test_incorrect_column_types",
+        "test_dataframe_expected_columns",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
