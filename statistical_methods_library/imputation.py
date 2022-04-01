@@ -170,7 +170,7 @@ def impute(
         nonlocal back_data_df
         validate_df(input_df)
         if back_data_df:
-            validate_df(back_data_df, allow_nulls=False, back_data=True)
+            validate_df(back_data_df, back_data=True)
             back_data_df = select_cols(back_data_df)
 
         if forward_link_col is None:
@@ -207,9 +207,7 @@ def impute(
         return create_output(df)
 
     # --- Validate DF ---
-    def validate_df(
-        df: DataFrame, allow_nulls: bool = True, back_data: bool = False
-    ) -> None:
+    def validate_df(df: DataFrame, back_data: bool = False) -> None:
         input_cols = set(df.columns)
         expected_cols = {
             reference_col,
@@ -279,11 +277,19 @@ def impute(
             )
             raise ValidationError(msg)
 
-        if not allow_nulls:
-            for col_name in expected_cols:
-                if df.filter(col(col_name).isNull()).count() > 0:
-                    msg = f"Column {col_name} must not contain nulls"
-                    raise ValidationError(msg)
+        # Only the target column on the input data may be null.
+        if not back_data:
+            expected_cols.remove(target_col)
+            # Passed in links can supposedly be null. Hoping to change minds on that.
+            if forward_link_col is not None:
+                expected_cols.remove(forward_link_col)
+                expected_cols.remove(backward_link_col)
+                expected_cols.remove(construction_link_col)
+
+        for col_name in expected_cols:
+            if df.filter(col(col_name).isNull()).count() > 0:
+                msg = f"Column {col_name} must not contain nulls"
+                raise ValidationError(msg)
 
         # For clarity. Dataframe is grouped and then gains a count column for how
         # many rows are part of each group. Filters for > 1 which are non distinct pairs.
