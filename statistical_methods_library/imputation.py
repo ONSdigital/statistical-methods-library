@@ -307,7 +307,7 @@ def impute(
 
     def prepare_df(
         df: DataFrame,
-        back_data_df: typing.Optional[DataFrame]=None,
+        back_data_df: typing.Optional[DataFrame] = None,
     ) -> DataFrame:
         nonlocal prepared_back_data_df
         if back_data_df:
@@ -335,9 +335,7 @@ def impute(
             select_cols(df)
             .withColumn("output", col("target"))
             .drop("target")
-            .withColumn(
-                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
-            )
+            .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
             .withColumn("previous_period", calculate_previous_period(col("period")))
             .withColumn("next_period", calculate_next_period(col("period")))
         )
