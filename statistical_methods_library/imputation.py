@@ -168,41 +168,31 @@ def impute(
     # --- Run ---
     def run() -> DataFrame:
         nonlocal back_data_df
-        validate_df(input_df)
+        stages = [validate_df]
         if back_data_df:
-            validate_df(back_data_df, back_data=True)
-            back_data_df = select_cols(back_data_df)
-
-        if forward_link_col is None:
-            full_col_mapping.update(
-                {
-                    "forward": "forward",
-                    "backward": "backward",
-                    "construction": "construction",
-                }
-            )
+            stages += [
+                lambda _: validate_df(back_data_df, back_data=True),
+                lambda df: prepare_df(df, back_data_df),
+            ]
 
         else:
-            full_col_mapping.update(
-                {
-                    "forward": forward_link_col,
-                    "backward": backward_link_col,
-                    "construction": construction_link_col,
-                }
-            )
+            stages.append(prepare_df)
 
-        stages = (
-            prepare_df(back_data_df),
+        stages += [
+            calculate_ratios,
             forward_impute_from_response,
             backward_impute,
             construct_values,
             forward_impute_from_construction,
-        )
+        ]
         df = input_df
         for stage in stages:
-            df = stage(df).localCheckpoint(eager=False)
-            if df.filter(col("output").isNull()).count() == 0:
-                break
+            new_df = stage(df)
+            if new_df:
+                df = new_df.localCheckpoint(eager=False)
+
+                if df.filter(col("output").isNull()).count() == 0:
+                    break
 
         return create_output(df)
 
@@ -313,57 +303,71 @@ def impute(
     # --- Prepare DF ---
 
     def prepare_df(
-        back_data_df: typing.Optional[DataFrame],
-    ) -> typing.Callable[[DataFrame], DataFrame]:
-        def prepare(df: DataFrame) -> DataFrame:
-            prepared_df = (
-                select_cols(df).withColumn("output", col("target")).drop("target")
+        df: DataFrame,
+        back_data_df: typing.Optional[DataFrame]=None,
+    ) -> DataFrame:
+        nonlocal prepared_back_data_df
+        if back_data_df:
+            prepared_back_data_df = select_cols(back_data_df)
+
+        if forward_link_col is None:
+            full_col_mapping.update(
+                {
+                    "forward": "forward",
+                    "backward": "backward",
+                    "construction": "construction",
+                }
             )
-            prepared_df = (
-                prepared_df.withColumn(
-                    "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+
+        else:
+            full_col_mapping.update(
+                {
+                    "forward": forward_link_col,
+                    "backward": backward_link_col,
+                    "construction": construction_link_col,
+                }
+            )
+
+        prepared_df = select_cols(df).withColumn("output", col("target")).drop("target")
+        prepared_df = (
+            prepared_df.withColumn(
+                "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
+            )
+            .withColumn("previous_period", calculate_previous_period(col("period")))
+            .withColumn("next_period", calculate_next_period(col("period")))
+        )
+
+        nonlocal prior_period
+        # We know this will be a single value so use collect as then we
+        # can filter directly.
+        prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
+
+        if back_data_df:
+            prepared_back_data_df = (
+                prepared_back_data_df.filter(
+                    (
+                        (col(period_col) == lit(prior_period))
+                        & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+                    )
                 )
+                .drop("target")
                 .withColumn("previous_period", calculate_previous_period(col("period")))
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
 
-            nonlocal prior_period
-            # We know this will be a single value so use collect as then we
-            # can filter directly.
-            prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][
-                0
-            ]
+        else:
+            # Set the prepared_back_data_df to be empty when back_data not
+            # supplied.
+            prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
 
-            nonlocal prepared_back_data_df
-            if back_data_df:
-                prepared_back_data_df = (
-                    back_data_df.filter(
-                        (
-                            (col(period_col) == lit(prior_period))
-                            & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-                        )
-                    )
-                    .drop("target")
-                    .withColumn(
-                        "previous_period", calculate_previous_period(col("period"))
-                    )
-                    .withColumn("next_period", calculate_next_period(col("period")))
-                )
-            else:
-                # Set the prepared_back_data_df to be empty when back_data not
-                # supplied.
-                prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
+        prepared_back_data_df = prepared_back_data_df.localCheckpoint(eager=True)
+        # Ratio calculation needs all the responses from the back data
+        prepared_df = prepared_df.unionByName(
+            filter_back_data(col("marker") == lit(Marker.RESPONSE.value)),
+            allowMissingColumns=True,
+        )
 
-            prepared_back_data_df = prepared_back_data_df.localCheckpoint(eager=True)
-            # Ratio calculation needs all the responses from the back data
-            prepared_df = prepared_df.unionByName(
-                filter_back_data(col("marker") == lit(Marker.RESPONSE.value)),
-                allowMissingColumns=True,
-            )
-
-            return calculate_ratios(prepared_df)
-
-        return prepare
+        return prepared_df
 
     # --- Calculate Ratios ---
 
