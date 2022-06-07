@@ -168,25 +168,26 @@ def impute(
     # --- Run ---
     def run() -> DataFrame:
         nonlocal back_data_df
-        null_check = lambda f, **kw: lambda df: (f(df, **kw), True)
-        no_null_check = lambda f, **kw: lambda df: (f(df, **kw), False)
+
+        def should_null_check(func, perform_null_check, *args, **kwargs):
+            return lambda df: (func(df, *args, **kwargs), perform_null_check)
 
         stages = [validate_df]
         if back_data_df:
             stages += [
                 lambda _: validate_df(back_data_df, back_data=True),
-                no_null_check(prepare_df, back_data_df=back_data_df),
+                should_null_check(prepare_df, False, back_data_df=back_data_df),
             ]
 
         else:
-            stages.append(no_null_check(prepare_df))
+            stages.append(should_null_check(prepare_df, False))
 
         stages += [
-            null_check(calculate_ratios),
-            null_check(forward_impute_from_response),
-            null_check(backward_impute),
-            null_check(construct_values),
-            null_check(forward_impute_from_construction),
+            should_null_check(calculate_ratios, True),
+            should_null_check(forward_impute_from_response, True),
+            should_null_check(backward_impute, True),
+            should_null_check(construct_values, True),
+            should_null_check(forward_impute_from_construction, True),
         ]
         df = input_df
         for stage in stages:
