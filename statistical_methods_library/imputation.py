@@ -69,6 +69,7 @@ def impute(
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
     back_data_df: typing.Optional[DataFrame] = None,
+    link_filter: typing.Optional[typing.Union[str, Column]] = None,
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
@@ -104,6 +105,8 @@ def impute(
       and the construction ratios will be calculated.
     * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
+    * `link_filter`: A filter compatible with the pyspark DataFrame.filter
+      method used to remove responders from link calculations.
 
     ###Returns
     A new dataframe containing:
@@ -380,10 +383,23 @@ def impute(
             df = df.fillna(1.0, ["forward", "backward", "construction"])
             return df
 
-        # Since we're going to join on to the main df at the end filtering for
-        # nulls won't cause us to lose strata as they'll just be filled with
+        # Since we're going to join on to the main df at the end filtering here
+        # won't cause us to lose strata as they'll just be filled with
         # default ratios.
-        filtered_df = df.filter(~df.output.isNull()).select(
+        if link_filter:
+            # We need to reverse our column selection temporarily as our
+            # aliases are an implementation detail and are thus not exposed to
+            # the users
+            filtered_df = select_cols(
+                select_cols(df.withColumn("target", col("output")), reversed=false)
+                .filter(link_filter)
+                .drop("target")
+            )
+
+        else:
+            filtered_df = df
+
+        filtered_df = filtered_df.filter(~df.output.isNull()).select(
             "ref",
             "period",
             "strata",
