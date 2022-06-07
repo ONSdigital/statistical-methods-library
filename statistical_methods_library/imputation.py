@@ -688,7 +688,7 @@ def impute(
         return df.select(
             [
                 col(k).alias(col_mapping.get(k, k))
-                for k in (col_mapping.keys() & col_set if drop_unmapped else col_set)
+                for k in ((col_mapping.keys() & col_set) if drop_unmapped else col_set)
             ]
         )
 
