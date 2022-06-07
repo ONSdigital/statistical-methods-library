@@ -391,7 +391,11 @@ def impute(
             # aliases are an implementation detail and are thus not exposed to
             # the users
             filtered_df = select_cols(
-                select_cols(df.withColumn("target", col("output")), reversed=false)
+                select_cols(
+                    df.withColumn("target", col("output")),
+                    reversed=False,
+                    drop_unmapped=False,
+                )
                 .filter(link_filter)
                 .drop("target")
             )
@@ -671,17 +675,20 @@ def impute(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)
 
-    def select_cols(df: DataFrame, reversed: bool = True) -> DataFrame:
+    def select_cols(
+        df: DataFrame, reversed: bool = True, drop_unmapped: bool = True
+    ) -> DataFrame:
         col_mapping = (
             {v: k for k, v in full_col_mapping.items()}
             if reversed
             else full_col_mapping
         )
+        col_set = set(df.columns)
 
         return df.select(
             [
-                col(k).alias(col_mapping[k])
-                for k in set(col_mapping.keys()) & set(df.columns)
+                col(k).alias(col_mapping.get(k, k))
+                for k in (col_mapping.keys() & col_set if drop_unmapped else col_set)
             ]
         )
 
