@@ -168,30 +168,33 @@ def impute(
     # --- Run ---
     def run() -> DataFrame:
         nonlocal back_data_df
+        null_check = lambda f, **kw: lambda df: (f(df, **kw), True)
+        no_null_check = lambda f, **kw: lambda df: (f(df, **kw), False)
+
         stages = [validate_df]
         if back_data_df:
             stages += [
                 lambda _: validate_df(back_data_df, back_data=True),
-                lambda df: prepare_df(df, back_data_df),
+                no_null_check(prepare_df, back_data_df=back_data_df),
             ]
 
         else:
-            stages.append(prepare_df)
+            stages.append(no_null_check(prepare_df))
 
         stages += [
-            calculate_ratios,
-            forward_impute_from_response,
-            backward_impute,
-            construct_values,
-            forward_impute_from_construction,
+            null_check(calculate_ratios),
+            null_check(forward_impute_from_response),
+            null_check(backward_impute),
+            null_check(construct_values),
+            null_check(forward_impute_from_construction),
         ]
         df = input_df
         for stage in stages:
-            new_df = stage(df)
-            if new_df:
-                df = new_df.localCheckpoint(eager=False)
+            result = stage(df)
+            if result:
+                df = result[0].localCheckpoint(eager=False)
 
-                if df.filter(col("output").isNull()).count() == 0:
+                if result[1] and df.filter(col("output").isNull()).count() == 0:
                     break
 
         return create_output(df)
@@ -328,9 +331,11 @@ def impute(
                 }
             )
 
-        prepared_df = select_cols(df).withColumn("output", col("target")).drop("target")
         prepared_df = (
-            prepared_df.withColumn(
+            select_cols(df)
+            .withColumn("output", col("target"))
+            .drop("target")
+            .withColumn(
                 "marker", when(~col("output").isNull(), Marker.RESPONSE.value)
             )
             .withColumn("previous_period", calculate_previous_period(col("period")))
