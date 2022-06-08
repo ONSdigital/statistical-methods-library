@@ -597,8 +597,8 @@ def test_dataframe_expected_counts(fxt_spark_session, fxt_load_test_csv):
 
     test_output = fxt_load_test_csv(
         dataframe_columns + ("count_forward", "count_backward", "count_construction"),
-        dataframe_types
-        | {
+        {
+            **dataframe_types,
             "count_forward": "long",
             "count_backward": "long",
             "count_construction": "long",
