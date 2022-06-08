@@ -304,3 +304,20 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         0.01,
         ignore_nullable=True,
     )
+
+
+@pytest.mark.dependency()
+def test_winsorise_different_stratum_l_values_fails(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "different_l_values_stratum",
+    )
+
+    with pytest.raises(winsorisation.ValidationError):
+        winsorisation.one_sided_winsorise(
+            test_dataframe,
+            *default_params,
+        )

@@ -79,6 +79,9 @@ def one_sided_winsorise(
     All of the provided columns containing input values must be fully
     populated. Otherwise an error is raised.
 
+    If any business has different L Values within the stratum then an error
+    will be raised.
+
     Both or neither of `calibration_col` and `auxiliary_col` must be
     specified. Specifying one without the other raises an error.
 
@@ -155,6 +158,17 @@ def one_sided_winsorise(
 
     group_cols = ["period", "grouping"]
     pre_marker_df = input_df.select(col_list)
+
+    if (
+        input_df.select([col(grouping_col), col(l_value_col)])
+        .distinct()
+        .groupBy(grouping_col)
+        .count()
+        .filter("count > 1")
+        .count()
+        > 0
+    ):
+        raise ValidationError("Businesses have different L Values in same stratum")
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
