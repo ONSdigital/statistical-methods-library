@@ -596,11 +596,12 @@ def test_dataframe_expected_counts(fxt_spark_session, fxt_load_test_csv):
     )
 
     test_output = fxt_load_test_csv(
-        ("count_forward", "count_backward", "count_construction"),
-        {
-            "count_forward": "integer",
-            "count_backward": "integer",
-            "count_construction": "integer",
+        dataframe_columns + ("count_forward", "count_backward", "count_construction"),
+        dataframe_types
+        | {
+            "count_forward": "long",
+            "count_backward": "long",
+            "count_construction": "long",
         },
         "imputation",
         "unit",
@@ -613,7 +614,6 @@ def test_dataframe_expected_counts(fxt_spark_session, fxt_load_test_csv):
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
-
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
         ret_val.sort(sort_col_list).select(
