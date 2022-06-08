@@ -167,7 +167,7 @@ def one_sided_winsorise(
         .count()
         > 0
     ):
-        raise ValidationError("Businesses have different L Values in same stratum")
+        raise ValidationError("Businesses have different L Values in same grouping/stratum")
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
