@@ -8,7 +8,7 @@ import typing
 from enum import Enum
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when, count, sum
+from pyspark.sql.functions import col, count, lit, sum, when
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
