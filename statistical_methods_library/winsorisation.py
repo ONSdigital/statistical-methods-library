@@ -79,8 +79,7 @@ def one_sided_winsorise(
     All of the provided columns containing input values must be fully
     populated. Otherwise an error is raised.
 
-    If any business has different L Values within the stratum then an error
-    will be raised.
+    If a stratum contains multiple l-values then an error will be raised.
 
     Both or neither of `calibration_col` and `auxiliary_col` must be
     specified. Specifying one without the other raises an error.
