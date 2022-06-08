@@ -402,11 +402,11 @@ def impute(
                 select_cols(
                     df.withColumn("target", col("output")),
                     reversed=False,
-                    drop_unmapped=False
+                    drop_unmapped=False,
                 )
                 .filter(link_filter)
                 .drop("target"),
-                mapping=temp_mapping
+                mapping=temp_mapping,
             )
 
         else:
@@ -685,13 +685,12 @@ def impute(
         ).withColumnRenamed("output", output_col)
 
     def select_cols(
-        df: DataFrame, reversed: bool = True, drop_unmapped: bool = True, mapping: dict = full_col_mapping
+        df: DataFrame,
+        reversed: bool = True,
+        drop_unmapped: bool = True,
+        mapping: dict = full_col_mapping,
     ) -> DataFrame:
-        col_mapping = (
-            {v: k for k, v in mapping.items()}
-            if reversed
-            else mapping
-        )
+        col_mapping = {v: k for k, v in mapping.items()} if reversed else mapping
         col_set = set(df.columns)
 
         return df.select(
