@@ -8,7 +8,7 @@ import typing
 from enum import Enum
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when
+from pyspark.sql.functions import col, lit, when, count, sum
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
@@ -163,6 +163,9 @@ def impute(
         "target": target_col,
         "strata": strata_col,
         "aux": auxiliary_col,
+        "count_construction": "count_construction",
+        "count_forward": "count_forward",
+        "count_backward": "count_backward"
     }
 
     # --- Run ---
@@ -407,13 +410,14 @@ def impute(
         )
 
         working_df = working_df.groupBy("period", "strata").agg(
-            {
-                "output": "sum",
-                "other_output": "sum",
-                "aux": "sum",
-                "output_for_construction": "sum",
-            }
+            sum(col("output")),
+            sum(col("other_output")),
+            sum(col("aux")),
+            sum(col("output_for_construction")),
+            count(col("output_for_construction")),
+            count(col("other_output"))
         )
+
         # Calculate the forward ratio for every period using 1 as the link in
         # the case of a 0 denominator. We also calculate construction
         # links at the same time for efficiency reasons. This shares
@@ -424,12 +428,22 @@ def impute(
                 "forward", col("sum(output)") / col("sum(other_output)")
             )
             .withColumn(
+                "count_forward",
+                col("count(other_output)")
+            )
+            .withColumn(
                 "construction",
-                col("sum(output_for_construction)") / col("sum(aux)"),
+                col("sum(output_for_construction)") / col("sum(aux)"))
+            .withColumn(
+                "count_construction",
+                col("count(output_for_construction)")
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
+            )
+            .fillna(
+                0, ["count_forward", "count_construction"]
             )
         )
 
@@ -441,6 +455,7 @@ def impute(
                 col("strata").alias("other_strata"),
                 col("sum(other_output)").alias("sum_output"),
                 col("sum(output)").alias("sum_other_output"),
+                col("count_forward").alias("count_backward")
             ),
             [
                 col("next_period") == col("other_period"),
@@ -453,6 +468,10 @@ def impute(
             col("forward"),
             (col("sum_output") / col("sum_other_output")).alias("backward"),
             col("construction"),
+            col("count_construction"),
+            col("count_forward"),
+            col("count_backward")
+
         )
 
         # Join the strata ratios onto the input such that each contributor has

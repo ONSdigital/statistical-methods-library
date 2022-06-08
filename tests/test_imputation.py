@@ -19,6 +19,7 @@ strata_col = "strata"
 target_col = "target"
 construction_col = "construction"
 
+
 reference_type = "string"
 period_type = "string"
 strata_type = "string"
@@ -29,6 +30,7 @@ marker_type = "string"
 backward_type = "double"
 forward_type = "double"
 construction_type = "double"
+
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -42,7 +44,7 @@ dataframe_columns = (
     marker_col,
     forward_col,
     backward_col,
-    construction_col,
+    construction_col
 )
 
 dataframe_types = {
@@ -406,6 +408,9 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         construction_col,
         "imputed",
         "imputation_marker",
+        "count_forward",
+        "count_backward",
+        "count_construction"
     }
     assert expected_cols == ret_cols
 
@@ -576,6 +581,33 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
     assert_approx_df_equality(
         ret_val.sort(sort_col_list).select(selection),
         senario_expected_output.sort(sort_col_list).select(selection),
+        0.0001,
+        ignore_nullable=True,
+    )
+
+
+def test_dataframe_expected_counts(fxt_spark_session, fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "imputation", "dev_scenarios", "imputation_link_counts_input"
+    )
+
+    test_output = fxt_load_test_csv(
+        ("count_forward", "count_backward", "count_construction"),
+        {"count_forward": "integer", "count_backward": "integer", "count_construction": "integer"},
+        "imputation", "dev_scenarios", "imputation_link_counts_other_output"
+    )
+
+    ret_val = imputation.impute(
+        test_dataframe,
+        *default_params,
+    )
+    # perform action on the dataframe to trigger lazy evaluation
+    ret_val.count()
+
+    sort_col_list = ["reference", "period"]
+    assert_approx_df_equality(
+        ret_val.sort(sort_col_list).select(["count_construction","count_forward","count_backward"]),
+        test_output.sort(sort_col_list).select(["count_construction","count_forward","count_backward"]),
         0.0001,
         ignore_nullable=True,
     )
