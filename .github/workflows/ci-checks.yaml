@@ -62,6 +62,7 @@ jobs:
           name: test-results
           path: junit.xml
           reporter: java-junit
+          fail-on-error: false
       - name: upload-coverage-report
         uses: actions/upload-artifact@v2
         with:
