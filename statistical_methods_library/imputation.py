@@ -165,7 +165,7 @@ def impute(
         "aux": auxiliary_col,
         "count_construction": "count_construction",
         "count_forward": "count_forward",
-        "count_backward": "count_backward"
+        "count_backward": "count_backward",
     }
 
     # --- Run ---
@@ -415,7 +415,7 @@ def impute(
             sum(col("aux")),
             sum(col("output_for_construction")),
             count(col("output_for_construction")),
-            count(col("other_output"))
+            count(col("other_output")),
         )
 
         # Calculate the forward ratio for every period using 1 as the link in
@@ -427,24 +427,16 @@ def impute(
             working_df.withColumn(
                 "forward", col("sum(output)") / col("sum(other_output)")
             )
+            .withColumn("count_forward", col("count(other_output)"))
             .withColumn(
-                "count_forward",
-                col("count(other_output)")
+                "construction", col("sum(output_for_construction)") / col("sum(aux)")
             )
-            .withColumn(
-                "construction",
-                col("sum(output_for_construction)") / col("sum(aux)"))
-            .withColumn(
-                "count_construction",
-                col("count(output_for_construction)")
-            )
+            .withColumn("count_construction", col("count(output_for_construction)"))
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
             )
-            .fillna(
-                0, ["count_forward", "count_construction"]
-            )
+            .fillna(0, ["count_forward", "count_construction"])
         )
 
         # Calculate backward ratio as 1/forward for the next period for each
@@ -455,7 +447,7 @@ def impute(
                 col("strata").alias("other_strata"),
                 col("sum(other_output)").alias("sum_output"),
                 col("sum(output)").alias("sum_other_output"),
-                col("count_forward").alias("count_backward")
+                col("count_forward").alias("count_backward"),
             ),
             [
                 col("next_period") == col("other_period"),
@@ -470,8 +462,7 @@ def impute(
             col("construction"),
             col("count_construction"),
             col("count_forward"),
-            col("count_backward")
-
+            col("count_backward"),
         )
 
         # Join the strata ratios onto the input such that each contributor has
