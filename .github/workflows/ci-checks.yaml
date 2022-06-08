@@ -54,7 +54,13 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: test
-        run: poetry run pytest --tap-stream --cov-report=html
+        run: poetry run pytest --tap-stream --cov-report=html --junitxml=junit.xml
+      - name: Upload Test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: test-results
+          path: junit.xml
       - name: upload-coverage-report
         uses: actions/upload-artifact@v2
         with:
