@@ -390,14 +390,23 @@ def impute(
             # We need to reverse our column selection temporarily as our
             # aliases are an implementation detail and are thus not exposed to
             # the users
+            temp_mapping = full_col_mapping
+            temp_mapping.update(
+                {
+                    "previous_period": "previous_period",
+                    "next_period": "next_period",
+                }
+            )
+
             filtered_df = select_cols(
                 select_cols(
                     df.withColumn("target", col("output")),
                     reversed=False,
-                    drop_unmapped=False,
+                    drop_unmapped=False
                 )
                 .filter(link_filter)
-                .drop("target")
+                .drop("target"),
+                mapping=temp_mapping
             )
 
         else:
@@ -676,12 +685,12 @@ def impute(
         ).withColumnRenamed("output", output_col)
 
     def select_cols(
-        df: DataFrame, reversed: bool = True, drop_unmapped: bool = True
+        df: DataFrame, reversed: bool = True, drop_unmapped: bool = True, mapping: dict = full_col_mapping
     ) -> DataFrame:
         col_mapping = (
-            {v: k for k, v in full_col_mapping.items()}
+            {v: k for k, v in mapping.items()}
             if reversed
-            else full_col_mapping
+            else mapping
         )
         col_set = set(df.columns)
 
