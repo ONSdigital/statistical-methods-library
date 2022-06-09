@@ -96,8 +96,10 @@ selection_map = {
 }
 
 test_scenarios = [
-    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
+    ("unit", "ratio_calculation", ["forward", "backward", "construction"]),
+    ("unit", "imputation_link_counts", ["count_forward", "count_backward", "count_construction"]),
 ]
+
 for scenario_category in ("dev", "methodology", "back_data"):
     for file_name in glob.iglob(
         str(
@@ -585,43 +587,3 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         ignore_nullable=True,
     )
 
-
-def test_dataframe_expected_counts(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "unit",
-        "imputation_link_counts_input",
-    )
-
-    test_output = fxt_load_test_csv(
-        dataframe_columns + ("count_forward", "count_backward", "count_construction"),
-        {
-            **dataframe_types,
-            "count_forward": "long",
-            "count_backward": "long",
-            "count_construction": "long",
-        },
-        "imputation",
-        "unit",
-        "imputation_link_counts_output",
-    )
-
-    ret_val = imputation.impute(
-        test_dataframe,
-        *default_params,
-    )
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    sort_col_list = ["reference", "period"]
-    assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select(
-            ["count_construction", "count_forward", "count_backward"]
-        ),
-        test_output.sort(sort_col_list).select(
-            ["count_construction", "count_forward", "count_backward"]
-        ),
-        0.0001,
-        ignore_nullable=True,
-    )
