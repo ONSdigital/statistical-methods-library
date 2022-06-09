@@ -489,7 +489,7 @@ def impute(
             col("forward"),
             (col("sum_output") / col("sum_other_output")).alias("backward"),
             when(col("sum_other_output") == 0, 0)
-            .otherwise(col("count_output"))
+            .when(col("sum_other_output").isNotNull(), col("count_output"))
             .alias("count_backward"),
             col("construction"),
             col("count_construction"),
