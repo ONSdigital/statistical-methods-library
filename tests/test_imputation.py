@@ -18,7 +18,9 @@ reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
 construction_col = "construction"
-
+count_forward_col = "count_forward"
+count_backward_col = "count_backward"
+count_construction_col = "count_construction"
 
 reference_type = "string"
 period_type = "string"
@@ -30,7 +32,9 @@ marker_type = "string"
 backward_type = "double"
 forward_type = "double"
 construction_type = "double"
-
+count_forward_type = "long"
+count_backward_type = "long"
+count_construction_type = "long"
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -45,6 +49,9 @@ dataframe_columns = (
     forward_col,
     backward_col,
     construction_col,
+    count_forward_col,
+    count_backward_col,
+    count_construction_col,
 )
 
 dataframe_types = {
@@ -58,6 +65,9 @@ dataframe_types = {
     backward_col: backward_type,
     forward_col: forward_type,
     construction_col: construction_type,
+    count_forward_col: count_forward_type,
+    count_backward_col: count_backward_type,
+    count_construction_col: count_construction_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
@@ -122,7 +132,16 @@ for scenario_category in ("dev", "methodology", "back_data"):
 
 
 def scenarios(categories):
-    return [scenario for scenario in test_scenarios if scenario[0] in categories]
+    return sum(
+        (
+            [
+                scenario for scenario in test_scenarios
+                if scenario[0].replace("_scenarios", "") == category
+            ]
+            for category in categories
+        ),
+        []
+    )
 
 
 # --- Test type validation on the input dataframe(s) ---
@@ -422,10 +441,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
 
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
-    sorted(
-        scenarios(["dev_scenarios", "methodology_scenarios"]),
-        key=lambda t: pathlib.Path(t[0], t[1]),
-    ),
+    scenarios(["unit", "dev", "methodology"]),
 )
 @pytest.mark.dependency(
     depends=[
@@ -493,10 +509,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
 )
 @pytest.mark.parametrize(
     "scenario_type, scenario, selection",
-    sorted(
-        scenarios(["dev_scenarios", "back_data_scenarios"]),
-        key=lambda t: pathlib.Path(t[0], t[1]),
-    ),
+    scenarios(["dev", "back_data"]),
 )
 def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     test_dataframe = fxt_load_test_csv(
