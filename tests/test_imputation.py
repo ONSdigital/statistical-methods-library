@@ -121,12 +121,13 @@ def scenarios(categories):
     return sum(
         (
             [
-                scenario for scenario in test_scenarios
+                scenario
+                for scenario in test_scenarios
                 if scenario[0].replace("_scenarios", "") == category
             ]
             for category in categories
         ),
-        []
+        [],
     )
 
 
@@ -587,4 +588,3 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
         0.0001,
         ignore_nullable=True,
     )
-
