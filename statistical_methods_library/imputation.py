@@ -69,6 +69,9 @@ def impute(
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
     back_data_df: typing.Optional[DataFrame] = None,
+    count_construction_col: typing.Optional[str] = "count_construction",
+    count_forward_col: typing.Optional[str] = "count_forward",
+    count_backward_col: typing.Optional[str] = "count_backward",
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
@@ -163,9 +166,9 @@ def impute(
         "target": target_col,
         "strata": strata_col,
         "aux": auxiliary_col,
-        "count_construction": "count_construction",
-        "count_forward": "count_forward",
-        "count_backward": "count_backward",
+        "count_construction": count_construction_col,
+        "count_forward": count_forward_col,
+        "count_backward": count_backward_col,
     }
 
     # --- Run ---
@@ -423,22 +426,30 @@ def impute(
         # links at the same time for efficiency reasons. This shares
         # the same behaviour of defaulting to a 1 in the case of a 0
         # denominator.
+
         forward_df = (
             working_df.withColumn(
                 "forward", col("sum(output)") / col("sum(other_output)")
             )
-            .withColumn("count_forward", col("count(other_output)"))
+            .withColumn(
+                "count_forward",
+                when(col("forward").isNull(), 0).otherwise(col("count(other_output)")),
+            )
             .withColumn(
                 "construction", col("sum(output_for_construction)") / col("sum(aux)")
             )
-            .withColumn("count_construction", col("count(output_for_construction)"))
+            .withColumn(
+                "count_construction",
+                when(col("construction").isNull(), 0).otherwise(
+                    col("count(output_for_construction)")
+                ),
+            )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
             )
-            .fillna(0, ["count_forward", "count_construction"])
         )
-
+        # denominator for link col, if 0 then count 0, otherwise count for that column
         # Calculate backward ratio as 1/forward for the next period for each
         # strata.
         strata_ratio_df = forward_df.join(
@@ -459,6 +470,7 @@ def impute(
             col("strata"),
             col("forward"),
             (col("sum_output") / col("sum_other_output")).alias("backward"),
+            when(col("sum_other_output") == 0, 0).otherwise("count_forward"),
             col("construction"),
             col("count_construction"),
             col("count_forward"),
