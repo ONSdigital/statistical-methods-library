@@ -448,16 +448,19 @@ def impute(
                 "forward", col("sum(output)") / col("sum(other_output)")
             )
             .withColumn(
-                "count_forward",when(col("sum(other_output)") == 0, 0)
-            .when(col("sum(other_output)").isNotNull(), col("count(other_output)"))
+                "count_forward",
+                when(col("sum(other_output)") == 0, 0).when(
+                    col("sum(other_output)").isNotNull(), col("count(other_output)")
+                ),
             )
             .withColumn(
                 "construction", col("sum(output_for_construction)") / col("sum(aux)")
             )
             .withColumn(
                 "count_construction",
-                when(col("sum(aux)") == 0, 0)
-                .when(col("sum(aux)").isNotNull(), col("count(output_for_construction)"))
+                when(col("sum(aux)") == 0, 0).when(
+                    col("sum(aux)").isNotNull(), col("count(output_for_construction)")
+                ),
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
