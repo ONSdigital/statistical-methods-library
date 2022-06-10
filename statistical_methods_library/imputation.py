@@ -4,8 +4,10 @@ Perform imputation on a data frame.
 Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 """
 
+from pickletools import long1
 import typing
 from enum import Enum
+from unicodedata import numeric
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
@@ -387,10 +389,13 @@ def impute(
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
-            df = df.fillna(1.0, ["forward", "backward", "construction"])
-            df.withColumn("count_forward", lit(None)).withColumn(
-                "count_backward", lit(None)
-            ).withColumn("count_construction", lit(None))
+            # Temp For Tests --------------- Casts
+            df = (
+                df.fillna(1.0, ["forward", "backward", "construction"])
+                .withColumn("count_forward", lit(None).cast('long'))
+                .withColumn("count_backward", lit(None).cast('long'))
+                .withColumn("count_construction", lit(None).cast('long'))
+            )
             return df
 
         # Since we're going to join on to the main df at the end filtering for
