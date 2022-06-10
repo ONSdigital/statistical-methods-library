@@ -123,3 +123,6 @@ venv.bak/
 *~
 # portray generated docs
 site/
+# asdf tool versions
+.tool-versions
+

@@ -120,11 +120,13 @@ for scenario_category in ("dev", "methodology", "back_data"):
 def scenarios(categories):
     return sum(
         (
-            [
-                scenario
-                for scenario in test_scenarios
-                if scenario[0].replace("_scenarios", "") == category
-            ]
+            sorted(
+                (
+                    scenario
+                    for scenario in test_scenarios
+                    if scenario[0].replace("_scenarios", "") == category
+                )
+            )
             for category in categories
         ),
         [],
