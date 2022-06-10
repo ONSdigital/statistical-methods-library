@@ -584,7 +584,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert_approx_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
-        senario_expected_output.sort(sort_col_list).select(select_cols),
+        scenario_expected_output.sort(sort_col_list).select(select_cols),
         0.0001,
         ignore_nullable=True,
     )
