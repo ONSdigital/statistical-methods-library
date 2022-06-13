@@ -304,3 +304,38 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         0.01,
         ignore_nullable=True,
     )
+
+
+@pytest.mark.dependency()
+def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "different_l_values_stratum_same_period",
+    )
+
+    with pytest.raises(winsorisation.ValidationError):
+        winsorisation.one_sided_winsorise(
+            test_dataframe,
+            *default_params,
+        )
+
+
+@pytest.mark.dependency()
+def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(
+    fxt_load_test_csv,
+):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "winsorisation",
+        "unit",
+        "different_l_values_stratum_different_periods",
+    )
+
+    winsorisation.one_sided_winsorise(
+        test_dataframe,
+        *default_params,
+    )
