@@ -159,9 +159,9 @@ def one_sided_winsorise(
     pre_marker_df = input_df.select(col_list)
 
     if (
-        input_df.select([col(grouping_col), col(l_value_col)])
+        input_df.select([col(grouping_col), col(period_col), col(l_value_col)])
         .distinct()
-        .groupBy(grouping_col)
+        .groupBy([grouping_col, period_col])
         .count()
         .filter("count > 1")
         .count()
