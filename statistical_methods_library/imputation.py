@@ -8,7 +8,7 @@ import typing
 from enum import Enum
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when
+from pyspark.sql.functions import col, count, lit, sum, when
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
@@ -68,6 +68,9 @@ def impute(
     forward_link_col: typing.Optional[str] = None,
     backward_link_col: typing.Optional[str] = None,
     construction_link_col: typing.Optional[str] = None,
+    count_construction_col: typing.Optional[str] = "count_construction",
+    count_forward_col: typing.Optional[str] = "count_forward",
+    count_backward_col: typing.Optional[str] = "count_backward",
     back_data_df: typing.Optional[DataFrame] = None,
     link_filter: typing.Optional[typing.Union[str, Column]] = None,
 ) -> DataFrame:
@@ -103,6 +106,15 @@ def impute(
       containing construction ratio (or link) information. Defaults to None
       which means that a default column name of `construction` will be created
       and the construction ratios will be calculated.
+    * `count_construction_col`: If specified, the name of the column that will
+      hold the count of matched pairs for construction.
+      Defaults to 'count_construction'
+    * `count_forward_col`: If specified, the name of the column that will
+      hold the count of matched pairs for forward imputation.
+      Defaults to 'count_forward'
+    * `count_backward_col`: If specified, the name of the column that will
+      hold the count of matched pairs for forward imputation.
+      Defaults to 'count_forward'
     * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
     * `link_filter`: A filter compatible with the pyspark DataFrame.filter
@@ -118,6 +130,9 @@ def impute(
     * `forward_col`
     * `backward_col`
     * `construction_col`
+    * `construction_count_col`
+    * `forward_count_col`
+    * `backward_count_col`
 
     No other columns are created. In particular, no other columns
     will be passed through from the input since it is expected that the
@@ -166,6 +181,9 @@ def impute(
         "target": target_col,
         "strata": strata_col,
         "aux": auxiliary_col,
+        "count_construction": count_construction_col,
+        "count_forward": count_forward_col,
+        "count_backward": count_backward_col,
     }
 
     # --- Run ---
@@ -380,7 +398,12 @@ def impute(
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
-            df = df.fillna(1.0, ["forward", "backward", "construction"])
+            df = (
+                df.fillna(1.0, ["forward", "backward", "construction"])
+                .withColumn("count_forward", lit(None).cast("long"))
+                .withColumn("count_backward", lit(None).cast("long"))
+                .withColumn("count_construction", lit(None).cast("long"))
+            )
             return df
 
         # Since we're going to join on to the main df at the end filtering here
@@ -444,32 +467,48 @@ def impute(
         )
 
         working_df = working_df.groupBy("period", "strata").agg(
-            {
-                "output": "sum",
-                "other_output": "sum",
-                "aux": "sum",
-                "output_for_construction": "sum",
-            }
+            sum(col("output")),
+            sum(col("other_output")),
+            sum(col("aux")),
+            sum(col("output_for_construction")),
+            count(col("output_for_construction")),
+            count(col("other_output")),
+            count(col("output")),
         )
+
         # Calculate the forward ratio for every period using 1 as the link in
         # the case of a 0 denominator. We also calculate construction
         # links at the same time for efficiency reasons. This shares
         # the same behaviour of defaulting to a 1 in the case of a 0
         # denominator.
+
         forward_df = (
             working_df.withColumn(
                 "forward", col("sum(output)") / col("sum(other_output)")
             )
             .withColumn(
-                "construction",
-                col("sum(output_for_construction)") / col("sum(aux)"),
+                "count_forward",
+                when(col("sum(other_output)") == 0, 0)
+                .when(col("sum(other_output)").isNotNull(), col("count(other_output)"))
+                .cast("long"),
+            )
+            .withColumn(
+                "construction", col("sum(output_for_construction)") / col("sum(aux)")
+            )
+            .withColumn(
+                "count_construction",
+                when(col("sum(aux)") == 0, 0)
+                .when(
+                    col("sum(aux)").isNotNull(), col("count(output_for_construction)")
+                )
+                .cast("long"),
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
                 ["period", "strata"],
             )
         )
-
+        # denominator for link col, if 0 then count 0, otherwise count for that column
         # Calculate backward ratio as 1/forward for the next period for each
         # strata.
         strata_ratio_df = forward_df.join(
@@ -478,6 +517,7 @@ def impute(
                 col("strata").alias("other_strata"),
                 col("sum(other_output)").alias("sum_output"),
                 col("sum(output)").alias("sum_other_output"),
+                col("count(output)").alias("count_output"),
             ),
             [
                 col("next_period") == col("other_period"),
@@ -489,7 +529,13 @@ def impute(
             col("strata"),
             col("forward"),
             (col("sum_output") / col("sum_other_output")).alias("backward"),
+            when(col("sum_other_output") == 0, 0)
+            .when(col("sum_other_output").isNotNull(), col("count_output"))
+            .cast("long")
+            .alias("count_backward"),
             col("construction"),
+            col("count_construction"),
+            col("count_forward"),
         )
 
         # Join the strata ratios onto the input such that each contributor has
