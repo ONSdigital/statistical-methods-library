@@ -387,7 +387,6 @@ def impute(
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
         if "forward" in df.columns:
-            # Temp For Tests --------------- Casts
             df = (
                 df.fillna(1.0, ["forward", "backward", "construction"])
                 .withColumn("count_forward", lit(None).cast("long"))
