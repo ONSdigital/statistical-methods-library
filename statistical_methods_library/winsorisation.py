@@ -79,7 +79,8 @@ def one_sided_winsorise(
     All of the provided columns containing input values must be fully
     populated. Otherwise an error is raised.
 
-    If a stratum contains multiple l-values then an error will be raised.
+    If a stratum contains multiple l-values in the same period then an error
+    will be raised.
 
     Both or neither of `calibration_col` and `auxiliary_col` must be
     specified. Specifying one without the other raises an error.
@@ -168,7 +169,8 @@ def one_sided_winsorise(
         > 0
     ):
         raise ValidationError(
-            "Businesses have different L Values in same grouping/stratum"
+            "Businesses have different L Values in same grouping/stratum in the same "
+            "period"
         )
 
     # Separate out rows that are not to be winsorised and mark appropriately.
