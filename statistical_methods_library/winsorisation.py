@@ -169,8 +169,7 @@ def one_sided_winsorise(
         > 0
     ):
         raise ValidationError(
-            "Businesses have different L Values in same grouping/stratum in the same "
-            "period"
+            "Differing L Values in same grouping/stratum in the same period"
         )
 
     # Separate out rows that are not to be winsorised and mark appropriately.
