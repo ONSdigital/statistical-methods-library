@@ -454,7 +454,7 @@ def impute(
                 "count_forward",
                 when(col("sum(other_output)") == 0, 0).when(
                     col("sum(other_output)").isNotNull(), col("count(other_output)")
-                ),
+                ).cast("long"),
             )
             .withColumn(
                 "construction", col("sum(output_for_construction)") / col("sum(aux)")
@@ -463,7 +463,7 @@ def impute(
                 "count_construction",
                 when(col("sum(aux)") == 0, 0).when(
                     col("sum(aux)").isNotNull(), col("count(output_for_construction)")
-                ),
+                ).cast("long"),
             )
             .join(
                 filtered_df.select("period", "strata", "next_period").distinct(),
@@ -493,7 +493,7 @@ def impute(
             (col("sum_output") / col("sum_other_output")).alias("backward"),
             when(col("sum_other_output") == 0, 0)
             .when(col("sum_other_output").isNotNull(), col("count_output"))
-            .alias("count_backward"),
+            .cast("long").alias("count_backward"),
             col("construction"),
             col("count_construction"),
             col("count_forward"),
