@@ -323,7 +323,9 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
         )
 
 
-def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(fxt_load_test_csv):
+def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(
+    fxt_load_test_csv,
+):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
