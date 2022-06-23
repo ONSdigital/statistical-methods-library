@@ -8,6 +8,7 @@ from pyspark.sql.functions import lit
 
 from statistical_methods_library import estimation
 
+unique_identifier_col = "reference"
 period_col = "period"
 strata_col = "strata"
 sample_col = "sample_inclusion_marker"
@@ -19,6 +20,7 @@ design_weight_col = "design_weight"
 calibration_weight_col = "calibration_weight"
 
 dataframe_columns = (
+    unique_identifier_col,
     period_col,
     strata_col,
     sample_col,
@@ -31,6 +33,7 @@ dataframe_columns = (
 )
 
 dataframe_types = {
+    unique_identifier_col: "string",
     period_col: "string",
     strata_col: "string",
     sample_col: "int",
@@ -42,7 +45,7 @@ dataframe_types = {
     calibration_weight_col: "double",
 }
 
-params = (period_col, strata_col, sample_col)
+params = (unique_identifier_col, period_col, strata_col, sample_col)
 
 test_scenarios = []
 
@@ -80,7 +83,7 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (period_col, strata_col, sample_col, death_col)
+    bad_params = (unique_identifier_col, period_col, strata_col, sample_col, death_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -91,7 +94,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (period_col, strata_col, sample_col, calibration_group_col)
+    bad_params = (unique_identifier_col, period_col, strata_col, sample_col, calibration_group_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -102,7 +105,7 @@ def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (period_col, ["strata_col"], sample_col)
+    bad_params = (unique_identifier_col, period_col, ["strata_col"], sample_col)
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -113,7 +116,7 @@ def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (period_col, "", sample_col)
+    bad_params = (unique_identifier_col, period_col, "", sample_col)
     with pytest.raises(ValueError):
         estimation.estimate(test_dataframe, *bad_params)
 
@@ -137,6 +140,16 @@ def test_dataframe_column_missing(fxt_load_test_csv):
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(estimation.ValidationError):
         estimation.estimate(bad_dataframe, *params)
+
+
+# --- Test if references are duplicated in the input dataframe  ---
+@pytest.mark.dependency()
+def test_dataframe_duplicate_reference(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns, dataframe_types, "estimation", "unit", "duplicate_references"
+    )
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(test_dataframe, *params)
 
 
 # --- Test validation fail if non-boolean markers in data  ---
@@ -248,6 +261,7 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         "test_params_mismatched_calibration_cols",
         "test_params_not_string",
         "test_params_null",
+        "test_dataframe_duplicate_reference",
         "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
         "test_dataframe_non_boolean_markers",
@@ -269,6 +283,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     # We use estimation_kwargs to allow us to pass in the appropriate columns.
     estimation_kwargs = {
+        "unique_identifier_col": unique_identifier_col,
         "period_col": period_col,
         "strata_col": strata_col,
         "sample_marker_col": sample_col,

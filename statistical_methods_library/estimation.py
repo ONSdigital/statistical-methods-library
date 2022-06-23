@@ -18,6 +18,7 @@ class ValidationError(Exception):
 
 def estimate(
     input_df: DataFrame,
+    unique_identifier_col: str,
     period_col: str,
     strata_col: str,
     sample_marker_col: str,
@@ -34,6 +35,8 @@ def estimate(
 
     ###Arguments
     * input_df: The input data frame.
+    * unique_identifier_col: The name of the column containing the unique identifier
+      for the contributors.
     * period_col: The name of the column containing the period information for
       the contributor.
     * strata_col: The name of the column containing the strata of the contributor.
@@ -115,6 +118,7 @@ def estimate(
         )
 
     expected_cols = [
+        unique_identifier_col,
         period_col,
         strata_col,
         sample_marker_col,
@@ -148,6 +152,10 @@ def estimate(
     missing_cols = set(expected_cols) - set(input_df.columns)
     if missing_cols:
         raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
+
+    duplicate_check = input_df.select(unique_identifier_col, period_col)
+    if duplicate_check.distinct().count() != duplicate_check.count():
+        raise ValidationError(f"Duplicate contributors in a period")
 
     # As per the documentation, death marker and sample marker columns must
     # only contain 0 or 1.
