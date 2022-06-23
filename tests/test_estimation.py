@@ -94,7 +94,13 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
     )
-    bad_params = (unique_identifier_col, period_col, strata_col, sample_col, calibration_group_col)
+    bad_params = (
+        unique_identifier_col,
+        period_col,
+        strata_col,
+        sample_col,
+        calibration_group_col,
+    )
     with pytest.raises(TypeError):
         estimation.estimate(test_dataframe, *bad_params)
 

@@ -155,7 +155,7 @@ def estimate(
 
     duplicate_check = input_df.select(unique_identifier_col, period_col)
     if duplicate_check.distinct().count() != duplicate_check.count():
-        raise ValidationError(f"Duplicate contributors in a period")
+        raise ValidationError("Duplicate contributors in a period")
 
     # As per the documentation, death marker and sample marker columns must
     # only contain 0 or 1.
