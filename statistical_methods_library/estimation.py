@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, first, lit, sum
+from pyspark.sql.functions import col, count, first, lit, sum, when
 
 
 class ValidationError(Exception):
@@ -186,7 +186,9 @@ def estimate(
     if death_marker_col is not None and h_value_col is not None:
         col_list += [
             col(death_marker_col).alias("death_marker"),
-            col(h_value_col).alias("h_value"),
+            when(col(h_value_col) == 1, True)
+            .when(col(h_value_col) == 0, False)
+            .alias("h_value"),
         ]
 
     else:
@@ -214,7 +216,7 @@ def estimate(
         .agg(
             sum(col("sample_marker")),
             sum(col("death_marker")),
-            first(col("h_value")),
+            first(col("h_value").cast("integer")).alias("first(h_value)"),
             count(col("sample_marker")),
         )
         .withColumn(
