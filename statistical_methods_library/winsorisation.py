@@ -168,9 +168,7 @@ def one_sided_winsorise(
         .count()
         > 0
     ):
-        raise ValidationError(
-            "Differing L Values in grouping/stratum in the same period"
-        )
+        raise ValidationError("Differing L Values within a grouping in the same period")
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(

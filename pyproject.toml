@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "statistical_methods_library"
-version = "3.8.0"
+version = "4.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
