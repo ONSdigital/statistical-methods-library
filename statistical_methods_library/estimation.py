@@ -26,6 +26,7 @@ def estimate(
     h_value_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
+    unadjusted_design_weight_col: typing.Optional[str] = None,
     design_weight_col: typing.Optional[str] = "design_weight",
     calibration_weight_col: typing.Optional[str] = "calibration_weight",
 ) -> DataFrame:
@@ -53,6 +54,9 @@ def estimate(
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
       group for the contributor.
+    * unadjusted_design_weight_col: The name of the column which will contain
+      the unadjusted design weight for the contributor.
+      Defaults to None, this will mean the column isn't output unless a name is provided.
     * design_weight_col: The name of the column which will contain the
       design weight for the contributor. Defaults to `design_weight`.
     * calibration_weight_col: The name of the column which will containthe
@@ -95,6 +99,8 @@ def estimate(
     Separate Ratio estimation is performed. If `auxiliary_col` is not
     specified then only Expansion estimation is performed and specifying
     `calibration_group_col` raises an error.
+
+    `unadjusted_design_weight_col` is only in the output if a column name is specified.
 
     All specified input columns must be fully populated. If not an error is
     raised. Since `design_weight_col` and `calibration_weight_col` are both
@@ -280,7 +286,11 @@ def estimate(
             )
             estimated_df = (
                 working_df.select(
-                    "period", "strata", "calibration_group", "design_weight"
+                    "period",
+                    "strata",
+                    "calibration_group",
+                    "unadjusted_design_weight",
+                    "design_weight",
                 )
                 .distinct()
                 .join(
@@ -305,4 +315,8 @@ def estimate(
         return_col_list.append(col("design_weight").alias(design_weight_col))
         estimated_df = design_df
 
+    if unadjusted_design_weight_col is not None:
+        return_col_list.append(
+            col("unadjusted_design_weight").alias(unadjusted_design_weight_col)
+        )
     return estimated_df.select(return_col_list)
