@@ -6,7 +6,6 @@ import typing
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum
-from tomlkit import boolean
 
 
 class ValidationError(Exception):
@@ -130,7 +129,8 @@ def estimate(
     out_of_scope_cols = (out_of_scope_marker_col, out_of_scope_full)
     if any(out_of_scope_cols) and not all(out_of_scope_cols):
         raise TypeError(
-            "Either both or none of out_of_scope_marker_col and out_of_scope_full must be specified."
+            "Either both or none of out_of_scope_marker_col "
+            + "and out_of_scope_full must be specified."
         )
     if all(out_of_scope_cols) and not all(death_cols):
         raise TypeError(
