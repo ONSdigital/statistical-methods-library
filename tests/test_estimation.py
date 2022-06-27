@@ -40,7 +40,7 @@ dataframe_types = {
     strata_col: "string",
     sample_col: "int",
     death_col: "int",
-    h_col: "double",
+    h_col: "boolean",
     auxiliary_col: "double",
     calibration_group_col: "string",
     design_weight_col: "double",

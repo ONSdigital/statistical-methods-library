@@ -137,7 +137,8 @@ def estimate(
 
     if calibration_group_col is not None:
         expected_cols.append(calibration_group_col)
-
+    input_df.show(10)
+    input_df.printSchema()
     # Check to see if the column names are of the correct types, not empty and
     # do not contain nulls.
     for col_name in expected_cols:
@@ -192,9 +193,7 @@ def estimate(
     if death_marker_col is not None and h_value_col is not None:
         col_list += [
             col(death_marker_col).alias("death_marker"),
-            when(col(h_value_col) == 1, True)
-            .when(col(h_value_col) == 0, False)
-            .alias("h_value"),
+            col(h_value_col).alias("h_value"),
         ]
 
     else:
