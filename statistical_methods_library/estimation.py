@@ -137,8 +137,7 @@ def estimate(
 
     if calibration_group_col is not None:
         expected_cols.append(calibration_group_col)
-    input_df.show(10)
-    input_df.printSchema()
+
     # Check to see if the column names are of the correct types, not empty and
     # do not contain nulls.
     for col_name in expected_cols:
