@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, first, lit, sum, when
+from pyspark.sql.functions import col, count, first, lit, sum
 
 
 class ValidationError(Exception):
