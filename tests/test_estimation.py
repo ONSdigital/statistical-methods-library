@@ -16,6 +16,7 @@ death_col = "death_marker"
 h_col = "H"
 auxiliary_col = "auxiliary"
 calibration_group_col = "calibration_group"
+unadjusted_design_weight_col = "unadjusted_design_weight"
 design_weight_col = "design_weight"
 calibration_weight_col = "calibration_weight"
 
@@ -29,6 +30,7 @@ dataframe_columns = (
     auxiliary_col,
     calibration_group_col,
     design_weight_col,
+    unadjusted_design_weight_col,
     calibration_weight_col,
 )
 
@@ -42,6 +44,7 @@ dataframe_types = {
     auxiliary_col: "double",
     calibration_group_col: "string",
     design_weight_col: "double",
+    unadjusted_design_weight_col: "double",
     calibration_weight_col: "double",
 }
 
@@ -245,13 +248,14 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         *params,
         auxiliary_col=auxiliary_col,
         calibration_group_col=calibration_group_col,
+        unadjusted_design_weight_col="u_a",
         design_weight_col="a",
         calibration_weight_col="g",
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
     ret_cols = set(ret_val.columns)
-    expected_cols = {period_col, strata_col, calibration_group_col, "a", "g"}
+    expected_cols = {period_col, strata_col, calibration_group_col, "u_a", "a", "g"}
     assert expected_cols == ret_cols
 
 
@@ -303,6 +307,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     if calibration_group_col in test_dataframe.columns:
         estimation_kwargs["calibration_group_col"] = calibration_group_col
+
+    if "unadjusted" in scenario:
+        estimation_kwargs["unadjusted_design_weight_col"] = unadjusted_design_weight_col
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
