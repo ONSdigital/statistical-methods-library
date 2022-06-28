@@ -467,7 +467,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         imputation_kwargs = {}
 
     if scenario.endswith("filtered"):
-        imputation_kwargs["link_filter"] = "auxiliary != 3"
+        imputation_kwargs["link_filter"] = "(auxiliary != 71) and (target < 100000)"
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
