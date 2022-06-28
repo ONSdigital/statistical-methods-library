@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "statistical_methods_library"
-version = "4.1.0"
+version = "4.3.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -31,7 +31,7 @@ site_url = "https://example.com/statistical-methods-library/"
 
 [tool.pytest.ini_options]
 junit_test_suite_name = "statistical_methods_library"
-addopts = "--exitfirst --tap-stream -cov=statistical_methods_library --cov-fail-under=95"
+addopts = "--exitfirst --tap-stream --cov=statistical_methods_library --cov-fail-under=95"
 
 [tool.portray.pdocs]
 exclude_source = true
