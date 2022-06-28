@@ -258,7 +258,7 @@ def estimate(
         .agg(
             sum(col("sample_marker")),
             sum(col("death_marker")),
-            first(col("h_value")),
+            first(col("h_value").cast("integer")).alias("first(h_value)"),
             sum(col("out_of_scope_marker_numerator")),
             sum(col("out_of_scope_marker_denominator")),
             count(col("sample_marker")),

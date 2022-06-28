@@ -18,6 +18,9 @@ reference_col = "reference"
 strata_col = "strata"
 target_col = "target"
 construction_col = "construction"
+count_forward_col = "count_forward"
+count_backward_col = "count_backward"
+count_construction_col = "count_construction"
 
 reference_type = "string"
 period_type = "string"
@@ -29,6 +32,9 @@ marker_type = "string"
 backward_type = "double"
 forward_type = "double"
 construction_type = "double"
+count_forward_type = "long"
+count_backward_type = "long"
+count_construction_type = "long"
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -43,6 +49,9 @@ dataframe_columns = (
     forward_col,
     backward_col,
     construction_col,
+    count_forward_col,
+    count_backward_col,
+    count_construction_col,
 )
 
 dataframe_types = {
@@ -56,6 +65,9 @@ dataframe_types = {
     backward_col: backward_type,
     forward_col: forward_type,
     construction_col: construction_type,
+    count_forward_col: count_forward_type,
+    count_backward_col: count_backward_type,
+    count_construction_col: count_construction_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
@@ -80,22 +92,11 @@ default_params = (
     auxiliary_col,
 )
 
-# Mapping for which columns we should select per scenario category
-selection_map = {
-    "back_data": [reference_col, period_col, output_col, marker_col],
-    "dev": [output_col, marker_col],
-    "methodology": [
-        output_col,
-        marker_col,
-        forward_col,
-        backward_col,
-        construction_col,
-    ],
-}
-
 test_scenarios = [
-    ("unit", "ratio_calculation", ["forward", "backward", "construction"])
+    ("unit", "ratio_calculation"),
+    ("unit", "imputation_link_counts"),
 ]
+
 for scenario_category in ("dev", "methodology", "back_data"):
     for file_name in glob.iglob(
         str(
@@ -112,13 +113,24 @@ for scenario_category in ("dev", "methodology", "back_data"):
             (
                 f"{scenario_category}_scenarios",
                 os.path.basename(file_name).replace("_input.csv", ""),
-                selection_map[scenario_category],
             )
         )
 
 
 def scenarios(categories):
-    return [scenario for scenario in test_scenarios if scenario[0] in categories]
+    return sum(
+        (
+            sorted(
+                (
+                    scenario
+                    for scenario in test_scenarios
+                    if scenario[0].replace("_scenarios", "") == category
+                )
+            )
+            for category in categories
+        ),
+        [],
+    )
 
 
 # --- Test type validation on the input dataframe(s) ---
@@ -406,6 +418,9 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         construction_col,
         "imputed",
         "imputation_marker",
+        "count_forward",
+        "count_backward",
+        "count_construction",
     }
     assert expected_cols == ret_cols
 
@@ -414,11 +429,8 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
 
 
 @pytest.mark.parametrize(
-    "scenario_type, scenario, selection",
-    sorted(
-        scenarios(["dev_scenarios", "methodology_scenarios"]),
-        key=lambda t: pathlib.Path(t[0], t[1]),
-    ),
+    "scenario_type, scenario",
+    scenarios(["unit", "dev", "methodology"]),
 )
 @pytest.mark.dependency(
     depends=[
@@ -433,7 +445,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_dataframe_expected_columns",
     ]
 )
-def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
+def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -454,6 +466,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     else:
         imputation_kwargs = {}
 
+    if scenario.endswith("filtered"):
+        imputation_kwargs["link_filter"] = "(auxiliary != 71) and (target < 100000)"
+
     exp_val = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -464,11 +479,12 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
 
     ret_val = imputation.impute(test_dataframe, *params, **imputation_kwargs)
 
+    select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select(selection),
-        exp_val.sort(sort_col_list).select(selection),
+        ret_val.sort(sort_col_list).select(select_cols),
+        exp_val.sort(sort_col_list).select(select_cols),
         0.0001,
         ignore_nullable=True,
     )
@@ -485,13 +501,10 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
     ]
 )
 @pytest.mark.parametrize(
-    "scenario_type, scenario, selection",
-    sorted(
-        scenarios(["dev_scenarios", "back_data_scenarios"]),
-        key=lambda t: pathlib.Path(t[0], t[1]),
-    ),
+    "scenario_type, scenario",
+    scenarios(["dev", "back_data"]),
 )
-def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, selection):
+def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -542,7 +555,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
         min_period_df, [col("period") == col("min(period)")], "leftanti"
     ).drop("min(period)")
 
-    senario_expected_output = scenario_output.join(
+    scenario_expected_output = scenario_output.join(
         min_period_df, [col("period") == col("min(period)")], "leftanti"
     ).drop("min(period)")
 
@@ -573,9 +586,10 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario, sele
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["reference", "period"]
+    select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list).select(selection),
-        senario_expected_output.sort(sort_col_list).select(selection),
+        ret_val.sort(sort_col_list).select(select_cols),
+        scenario_expected_output.sort(sort_col_list).select(select_cols),
         0.0001,
         ignore_nullable=True,
     )
