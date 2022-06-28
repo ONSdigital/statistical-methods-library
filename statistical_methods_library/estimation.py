@@ -220,7 +220,7 @@ def estimate(
         .agg(
             sum(col("sample_marker")),
             sum(col("death_marker")),
-            first(col("h_value")),
+            first(col("h_value").cast("integer")).alias("first(h_value)"),
             count(col("sample_marker")),
         )
         .withColumn(
