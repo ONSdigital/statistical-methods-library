@@ -118,7 +118,9 @@ def impute(
     * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
     * `link_filter`: A filter compatible with the pyspark DataFrame.filter
-      method used to remove responders from link calculations.
+      method used to remove responders from link calculations. Responses that
+      match the filter conditions will be removed from the link calculations.
+      This will not prevent non responses from being imputed for.
 
     ###Returns
     A new dataframe containing:
@@ -163,6 +165,8 @@ def impute(
 
     If `back_data_df` is provided it must contain the same columns as the output
     from this function.
+
+    Example Link Filter `(aux_value != 71) and (q999 < 100000)`
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
