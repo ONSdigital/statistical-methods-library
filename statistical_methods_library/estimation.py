@@ -174,8 +174,6 @@ def estimate(
             raise ValidationError(
                 f"Input column {col_name} must only contain values of 0 or 1."
             )
-
-    print(death_marker_col)
     if death_marker_col is not None:
         death_df = (
             input_df.filter((col(death_marker_col) == 1))
@@ -187,16 +185,17 @@ def estimate(
             .groupBy([period_col, strata_col])
             .agg(count(col(sample_marker_col)))
         )
-        death_df.show(100)
-        sample_df.show(100)
-        markers_df = (
-            input_df.filter((col(death_marker_col) == 1))
-            .groupBy([period_col, strata_col])
-            .agg(count(death_marker_col))
+        death_sample = death_df.join(sample_df, ["period", "strata"]).filter(
+            (col("count(death_marker)")) > (col("count(sample_inclusion_marker)"))
         )
-
-        markers_df.show(100)
-
+        death_count = 1
+        sample_count = 1
+        print(death_count)
+        print(sample_count)
+        if death_sample.count() > 0:
+            raise ValidationError(
+                f"The death count {death_count} must be less than sample count {sample_count}."
+            )
     # h values must not change within a stratum
     if h_value_col is not None and (
         input_df.select(period_col, strata_col).distinct().count()

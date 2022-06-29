@@ -172,13 +172,13 @@ def test_dataframe_non_boolean_markers(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_larger_death_count(fxt_load_test_csv):
+def test_dataframe_large_death_count(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "estimation",
         "unit",
-        "larger_death_count",
+        "large_death_count",
     )
     with pytest.raises(estimation.ValidationError):
         estimation.estimate(
