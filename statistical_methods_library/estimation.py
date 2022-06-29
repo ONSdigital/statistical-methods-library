@@ -201,20 +201,8 @@ def estimate(
                 (col("count(death_marker)")) > (col("count(sample_inclusion_marker)"))
             )
         )
-        dth_cnt = (
-            death_sample.select(col("count(death_marker)"))
-            .rdd.flatMap(lambda x: x)
-            .collect()
-        )
-        smpl_cnt = (
-            death_sample.select(col("count(sample_inclusion_marker)"))
-            .rdd.flatMap(lambda x: x)
-            .collect()
-        )
-        if dth_cnt > smpl_cnt:
-            raise ValidationError(
-                f"The death count {dth_cnt} must be less than sample count {smpl_cnt}."
-            )
+        if death_sample.count():
+            raise ValidationError(f"The death count must be less than sample count.")
 
     # --- prepare our working data frame ---
     col_list = [
