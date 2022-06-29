@@ -175,6 +175,28 @@ def estimate(
                 f"Input column {col_name} must only contain values of 0 or 1."
             )
 
+    print(death_marker_col)
+    if death_marker_col is not None:
+        death_df = (
+            input_df.filter((col(death_marker_col) == 1))
+            .groupBy([period_col, strata_col])
+            .agg(count(col(death_marker_col)))
+        )
+        sample_df = (
+            input_df.filter((col(sample_marker_col) == 1))
+            .groupBy([period_col, strata_col])
+            .agg(count(col(sample_marker_col)))
+        )
+        death_df.show(100)
+        sample_df.show(100)
+        markers_df = (
+            input_df.filter((col(death_marker_col) == 1))
+            .groupBy([period_col, strata_col])
+            .agg(count(death_marker_col))
+        )
+
+        markers_df.show(100)
+
     # h values must not change within a stratum
     if h_value_col is not None and (
         input_df.select(period_col, strata_col).distinct().count()

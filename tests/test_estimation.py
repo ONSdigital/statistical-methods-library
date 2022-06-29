@@ -171,6 +171,21 @@ def test_dataframe_non_boolean_markers(fxt_load_test_csv):
         estimation.estimate(test_dataframe, *params)
 
 
+@pytest.mark.dependency()
+def test_dataframe_larger_death_count(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "unit",
+        "larger_death_count",
+    )
+    with pytest.raises(estimation.ValidationError):
+        estimation.estimate(
+            test_dataframe, h_value_col=h_col, death_marker_col=death_col, *params
+        )
+
+
 # --- Test validation fail if mixed h values in a strata  ---
 @pytest.mark.dependency()
 def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
