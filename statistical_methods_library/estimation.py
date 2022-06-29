@@ -52,8 +52,14 @@ def estimate(
       the contributor is dead. This column must only contain the values 0
       meaning the contributor is not dead and 1 meaning that the contributor is dead.
     * h_value_col: The name of the column containing the h value for the strata.
-    * out_of_scope_marker_col:
-    * out_of_scope_full:
+    * out_of_scope_marker_col: The name of the column containing a marker for whether
+      the contributor is out of scope. This column must only contain the values 0
+      meaning the contributor is not out of scope and 1 meaning that the contributor
+      is out of scope.
+    * out_of_scope_full: A parameter that specifes what type of out of scope to run
+      when an `out_of_scope_marker_col` is provided. True specifes that the out of
+      scope is used on both sides of the adjustment fraction. False specifes that
+      the out of scope is used only on the denominator of the adjustment fraction. 
     * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
@@ -126,13 +132,14 @@ def estimate(
             "Either both or none of death_marker_col and h_value_col must be specified."
         )
 
+    # Not the same as death_cols because when out_of_scope_full is false the all.
     out_of_scope_cols = (out_of_scope_marker_col, out_of_scope_full)
-    if any(out_of_scope_cols) and not all(out_of_scope_cols):
+    if out_of_scope_cols.count(None) == 1:
         raise TypeError(
             "Either both or none of out_of_scope_marker_col "
             + "and out_of_scope_full must be specified."
         )
-    if all(out_of_scope_cols) and not all(death_cols):
+    if any(out_of_scope_cols) and not any(death_cols):
         raise TypeError(
             "For out of scope, death_marker_col and h_value_col must be specified."
         )
