@@ -59,7 +59,7 @@ def estimate(
     * out_of_scope_full: A parameter that specifes what type of out of scope to run
       when an `out_of_scope_marker_col` is provided. True specifes that the out of
       scope is used on both sides of the adjustment fraction. False specifes that
-      the out of scope is used only on the denominator of the adjustment fraction. 
+      the out of scope is used only on the denominator of the adjustment fraction.
     * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
