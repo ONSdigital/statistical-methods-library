@@ -181,9 +181,8 @@ def test_dataframe_large_death_count(fxt_load_test_csv):
         "large_death_count",
     )
     with pytest.raises(estimation.ValidationError):
-        estimation.estimate(
-            test_dataframe, h_value_col=h_col, death_marker_col=death_col, *params
-        )
+        estimation_params = [*params, death_col, h_col]
+        estimation.estimate(test_dataframe, *estimation_params)
 
 
 # --- Test validation fail if mixed h values in a strata  ---

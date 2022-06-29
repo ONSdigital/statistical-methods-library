@@ -174,6 +174,15 @@ def estimate(
             raise ValidationError(
                 f"Input column {col_name} must only contain values of 0 or 1."
             )
+
+    # h values must not change within a stratum
+    if h_value_col is not None and (
+        input_df.select(period_col, strata_col).distinct().count()
+        != input_df.select(period_col, strata_col, h_value_col).distinct().count()
+    ):
+        raise ValidationError("The h value must be the same per period and stratum.")
+
+    # death(death_marker=1) count must be less than sample(sample_marker=1)
     if death_marker_col is not None:
         death_df = (
             input_df.filter((col(death_marker_col) == 1))
@@ -185,23 +194,27 @@ def estimate(
             .groupBy([period_col, strata_col])
             .agg(count(col(sample_marker_col)))
         )
-        death_sample = death_df.join(sample_df, ["period", "strata"]).filter(
-            (col("count(death_marker)")) > (col("count(sample_inclusion_marker)"))
-        )
-        death_count = 1
-        sample_count = 1
-        print(death_count)
-        print(sample_count)
-        if death_sample.count() > 0:
-            raise ValidationError(
-                f"The death count {death_count} must be less than sample count {sample_count}."
+        death_sample = (
+            death_df.join(sample_df, ["period", "strata"], "left")
+            .fillna(0, ["count(sample_inclusion_marker)"])
+            .filter(
+                (col("count(death_marker)")) > (col("count(sample_inclusion_marker)"))
             )
-    # h values must not change within a stratum
-    if h_value_col is not None and (
-        input_df.select(period_col, strata_col).distinct().count()
-        != input_df.select(period_col, strata_col, h_value_col).distinct().count()
-    ):
-        raise ValidationError("The h value must be the same per period and stratum.")
+        )
+        dth_cnt = (
+            death_sample.select(col("count(death_marker)"))
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+        smpl_cnt = (
+            death_sample.select(col("count(sample_inclusion_marker)"))
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+        if dth_cnt > smpl_cnt:
+            raise ValidationError(
+                f"The death count {dth_cnt} must be less than sample count {smpl_cnt}."
+            )
 
     # --- prepare our working data frame ---
     col_list = [
