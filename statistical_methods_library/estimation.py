@@ -194,15 +194,15 @@ def estimate(
             .groupBy([period_col, strata_col])
             .agg(count(col(sample_marker_col)))
         )
-        death_sample = (
+        if (
             death_df.join(sample_df, ["period", "strata"], "left")
             .fillna(0, ["count(sample_inclusion_marker)"])
             .filter(
                 (col("count(death_marker)")) > (col("count(sample_inclusion_marker)"))
             )
-        )
-        if death_sample.count():
-            raise ValidationError(f"The death count must be less than sample count.")
+            .count()
+        ) >= 1:
+            raise ValidationError("The death count must be less than sample count.")
 
     # --- prepare our working data frame ---
     col_list = [
