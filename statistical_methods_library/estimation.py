@@ -37,36 +37,37 @@ def estimate(
     Ratio estimation.
 
     ###Arguments
-    * input_df: The input data frame.
-    * unique_identifier_col: The name of the column containing the unique identifier
+    * `input_df`: The input data frame.
+    * `unique_identifier_col`: The name of the column containing the unique identifier
       for the contributors.
-    * period_col: The name of the column containing the period information for
+    * `period_col`: The name of the column containing the period information for
       the contributor.
-    * strata_col: The name of the column containing the strata of the contributor.
-    * sample_marker_col: The name of the column containing a marker
+    * `strata_col`: The name of the column containing the strata of the contributor.
+    * `sample_marker_col`: The name of the column containing a marker
       for whether to include the contributor in the sample or only in the
       population. This column must only contain values of 0 or 1 where 0 means
       to exclude the contributor from the sample and 1 means the contributor
       will be included in the sample count.
-    * death_marker_col: The name of the column containing a marker for whether
+    * `death_marker_col`: The name of the column containing a marker for whether
       the contributor is dead. This column must only contain the values 0
       meaning the contributor is not dead and 1 meaning that the contributor is dead.
-    * h_value_col: The name of the column containing the h value for the strata.
-    * out_of_scope_marker_col: The name of the column containing a marker for whether
-      the contributor is out of scope. This column must only contain the values 0
-      meaning the contributor is not out of scope and 1 meaning that the contributor
-      is out of scope.
-    * out_of_scope_full: A parameter that specifes what type of out of scope to run
-      when an `out_of_scope_marker_col` is provided. True specifes that the out of
-      scope is used on both sides of the adjustment fraction. False specifes that
-      the out of scope is used only on the denominator of the adjustment fraction.
+    * `h_value_col`: The name of the column containing the h value for the strata.
+    * `out_of_scope_marker_col`: The name of the column containing a marker for
+      whether the contributor is out of scope. This column must only contain
+      the values 0 meaning the contributor is not out of scope and 1 meaning
+      that the contributor is out of scope.
+    * out_of_scope_full: A parameter that specifies what type of out of scope
+      to run when an `out_of_scope_marker_col` is provided. True specifies
+      that the out of scope is used on both sides of the adjustment fraction.
+      False specifies that the out of scope is used only on the denominator of
+      the adjustment fraction.
     * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
       group for the contributor.
     * unadjusted_design_weight_col: The name of the column which will contain
-      the unadjusted design weight for the contributor.
-      Defaults to None, this will mean the column isn't output unless a name is provided.
+      the unadjusted design weight for the contributor. The column isn't
+      output unless a name is provided.
     * design_weight_col: The name of the column which will contain the
       design weight for the contributor. Defaults to `design_weight`.
     * calibration_weight_col: The name of the column which will containthe
@@ -103,9 +104,9 @@ def estimate(
     is per-stratum, the `h_value_col` must not change within a given period and
     stratum.
 
-    If `out_of_scope_marker_col` is specified, also need type of out of scope.
-    Full or partial set by `out_of_scope_full` True for full, False for partial.
-    Out of scope requires the death marker col and h marker col be present.
+    If `out_of_scope_marker_col` is specified the `out_of_scope_full`
+    parameter must also be set. In addition `death_marker_col` and `h_value_col`
+    must be provided.
 
     If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
     estimation is performed. This depends on whether `calibration_group_col`
@@ -132,7 +133,8 @@ def estimate(
             "Either both or none of death_marker_col and h_value_col must be specified."
         )
 
-    # Not the same as death_cols because when out_of_scope_full is false the all.
+    # Not the same as death_cols because when out_of_scope_full is false the
+    # all fails.
     out_of_scope_cols = (out_of_scope_marker_col, out_of_scope_full)
     if out_of_scope_cols.count(None) == 1:
         raise TypeError(
