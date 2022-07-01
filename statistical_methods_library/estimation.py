@@ -16,7 +16,7 @@ class ValidationError(Exception):
     pass
 
 
-def estimate(
+def ht_ratio(
     input_df: DataFrame,
     unique_identifier_col: str,
     period_col: str,
