@@ -14,6 +14,7 @@ strata_col = "strata"
 sample_col = "sample_inclusion_marker"
 death_col = "death_marker"
 h_col = "H"
+out_of_scope_col = "out_of_scope_marker"
 auxiliary_col = "auxiliary"
 calibration_group_col = "calibration_group"
 unadjusted_design_weight_col = "unadjusted_design_weight"
@@ -27,6 +28,7 @@ dataframe_columns = (
     sample_col,
     death_col,
     h_col,
+    out_of_scope_col,
     auxiliary_col,
     calibration_group_col,
     design_weight_col,
@@ -41,6 +43,7 @@ dataframe_types = {
     sample_col: "int",
     death_col: "int",
     h_col: "boolean",
+    out_of_scope_col: "int",
     auxiliary_col: "double",
     calibration_group_col: "string",
     design_weight_col: "double",
@@ -302,6 +305,13 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         estimation_kwargs["death_marker_col"] = death_col
         estimation_kwargs["h_value_col"] = h_col
 
+    if out_of_scope_col in test_dataframe.columns:
+        estimation_kwargs["out_of_scope_marker_col"] = out_of_scope_col
+        if "full" in scenario:
+            estimation_kwargs["out_of_scope_full"] = True
+        else:
+            estimation_kwargs["out_of_scope_full"] = False
+
     if auxiliary_col in test_dataframe.columns:
         estimation_kwargs["auxiliary_col"] = auxiliary_col
 
@@ -321,13 +331,15 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     ret_val = estimation.estimate(test_dataframe, **estimation_kwargs)
 
+    assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["period", "strata"]
+    select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
 
     assert_approx_df_equality(
-        ret_val.sort(sort_col_list),
-        exp_val.sort(sort_col_list),
+        ret_val.sort(sort_col_list).select(select_cols),
+        exp_val.sort(sort_col_list).select(select_cols),
         0.01,
         ignore_nullable=True,
     )

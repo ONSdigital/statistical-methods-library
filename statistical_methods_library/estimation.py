@@ -24,6 +24,8 @@ def estimate(
     sample_marker_col: str,
     death_marker_col: typing.Optional[str] = None,
     h_value_col: typing.Optional[str] = None,
+    out_of_scope_marker_col: typing.Optional[str] = None,
+    out_of_scope_full: typing.Optional[bool] = None,
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
     unadjusted_design_weight_col: typing.Optional[str] = None,
@@ -35,28 +37,37 @@ def estimate(
     Ratio estimation.
 
     ###Arguments
-    * input_df: The input data frame.
-    * unique_identifier_col: The name of the column containing the unique identifier
+    * `input_df`: The input data frame.
+    * `unique_identifier_col`: The name of the column containing the unique identifier
       for the contributors.
-    * period_col: The name of the column containing the period information for
+    * `period_col`: The name of the column containing the period information for
       the contributor.
-    * strata_col: The name of the column containing the strata of the contributor.
-    * sample_marker_col: The name of the column containing a marker
+    * `strata_col`: The name of the column containing the strata of the contributor.
+    * `sample_marker_col`: The name of the column containing a marker
       for whether to include the contributor in the sample or only in the
       population. This column must only contain values of 0 or 1 where 0 means
       to exclude the contributor from the sample and 1 means the contributor
       will be included in the sample count.
-    * death_marker_col: The name of the column containing a marker for whether
+    * `death_marker_col`: The name of the column containing a marker for whether
       the contributor is dead. This column must only contain the values 0
       meaning the contributor is not dead and 1 meaning that the contributor is dead.
-    * h_value_col: The name of the column containing the h value for the strata.
+    * `h_value_col`: The name of the column containing the h value for the strata.
+    * `out_of_scope_marker_col`: The name of the column containing a marker for
+      whether the contributor is out of scope. This column must only contain
+      the values 0 meaning the contributor is not out of scope and 1 meaning
+      that the contributor is out of scope.
+    * out_of_scope_full: A parameter that specifies what type of out of scope
+      to run when an `out_of_scope_marker_col` is provided. True specifies
+      that the out of scope is used on both sides of the adjustment fraction.
+      False specifies that the out of scope is used only on the denominator of
+      the adjustment fraction.
     * auxiliary_col: The name of the column containing the auxiliary value for
       the contributor.
     * calibration_group_col: The name of the column containing the calibration
       group for the contributor.
     * unadjusted_design_weight_col: The name of the column which will contain
-      the unadjusted design weight for the contributor.
-      Defaults to None, this will mean the column isn't output unless a name is provided.
+      the unadjusted design weight for the contributor. The column isn't
+      output unless a name is provided.
     * design_weight_col: The name of the column which will contain the
       design weight for the contributor. Defaults to `design_weight`.
     * calibration_weight_col: The name of the column which will containthe
@@ -93,6 +104,10 @@ def estimate(
     is per-stratum, the `h_value_col` must not change within a given period and
     stratum.
 
+    If `out_of_scope_marker_col` is specified the `out_of_scope_full`
+    parameter must also be set. In addition `death_marker_col` and `h_value_col`
+    must be provided.
+
     If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
     estimation is performed. This depends on whether `calibration_group_col`
     is specified. If so then Combined Ratio estimation is performed, otherwise
@@ -118,6 +133,19 @@ def estimate(
             "Either both or none of death_marker_col and h_value_col must be specified."
         )
 
+    # Not the same as death_cols because when out_of_scope_full is false the
+    # all fails.
+    out_of_scope_cols = (out_of_scope_marker_col, out_of_scope_full)
+    if out_of_scope_cols.count(None) == 1:
+        raise TypeError(
+            "Either both or none of out_of_scope_marker_col "
+            + "and out_of_scope_full must be specified."
+        )
+    if any(out_of_scope_cols) and not any(death_cols):
+        raise TypeError(
+            "For out of scope, death_marker_col and h_value_col must be specified."
+        )
+
     if calibration_group_col is not None and auxiliary_col is None:
         raise TypeError(
             "If calibration_group_col is specified then auxiliary_col must be provided."
@@ -131,6 +159,9 @@ def estimate(
     ]
     if death_marker_col is not None:
         expected_cols += [death_marker_col, h_value_col]
+
+    if out_of_scope_marker_col is not None:
+        expected_cols.append(out_of_scope_marker_col)
 
     if auxiliary_col is not None:
         expected_cols.append(auxiliary_col)
@@ -168,6 +199,8 @@ def estimate(
     marker_cols = [sample_marker_col]
     if death_marker_col is not None:
         marker_cols.append(death_marker_col)
+    if out_of_scope_marker_col is not None:
+        marker_cols.append(out_of_scope_marker_col)
 
     for col_name in marker_cols:
         if input_df.filter((col(col_name) != 0) & (col(col_name) != 1)).count() > 0:
@@ -198,6 +231,20 @@ def estimate(
     else:
         col_list += [lit(0).alias("death_marker"), lit(0.0).alias("h_value")]
 
+    if out_of_scope_marker_col is not None:
+        col_list.append(
+            col(out_of_scope_marker_col).alias("out_of_scope_marker_denominator")
+        )
+        if out_of_scope_full:
+            col_list.append(
+                col(out_of_scope_marker_col).alias("out_of_scope_marker_numerator")
+            )
+        else:
+            col_list.append(lit(0).alias("out_of_scope_marker_numerator"))
+    else:
+        col_list.append(lit(0).alias("out_of_scope_marker_numerator"))
+        col_list.append(lit(0).alias("out_of_scope_marker_denominator"))
+
     if auxiliary_col is not None:
         col_list.append(col(auxiliary_col).alias("auxiliary"))
 
@@ -221,6 +268,8 @@ def estimate(
             sum(col("sample_marker")),
             sum(col("death_marker")),
             first(col("h_value").cast("integer")).alias("first(h_value)"),
+            sum(col("out_of_scope_marker_numerator")),
+            sum(col("out_of_scope_marker_denominator")),
             count(col("sample_marker")),
         )
         .withColumn(
@@ -235,8 +284,15 @@ def estimate(
                     1
                     + (
                         col("first(h_value)")
-                        * col("sum(death_marker)")
-                        / (col("sum(sample_marker)") - col("sum(death_marker)"))
+                        * (
+                            col("sum(death_marker)")
+                            + col("sum(out_of_scope_marker_numerator)")
+                        )
+                        / (
+                            col("sum(sample_marker)")
+                            - col("sum(death_marker)")
+                            - col("sum(out_of_scope_marker_denominator)")
+                        )
                     )
                 )
             ),
@@ -245,6 +301,8 @@ def estimate(
             "sum(sample_marker)",
             "sum(death_marker)",
             "first(h_value)",
+            "sum(out_of_scope_marker_numerator)",
+            "sum(out_of_scope_marker_denominator)",
             "count(sample_marker)",
         )
     )
