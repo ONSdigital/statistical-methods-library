@@ -220,9 +220,11 @@ def estimate(
         death_marker_col is not None
         and (
             input_df.groupBy([period_col, strata_col])
-            .agg(sum(col(death_marker_col)), sum(col(sample_marker_col)))
-            .fillna(0, ["sum(sample_inclusion_marker)"])
-            .filter(col("sum(death_marker)") > col("sum(sample_inclusion_marker)"))
+            .agg(
+                sum(col(death_marker_col)).alias("sum_death_marker"),
+                sum(col(sample_marker_col)).alias("sum_sample_marker"),
+            )
+            .filter(col("sum_death_marker") > col("sum_sample_marker"))
             .count()
         )
         >= 1
