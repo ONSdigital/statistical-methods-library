@@ -227,7 +227,7 @@ def estimate(
             .filter(col("sum_death_marker") > col("sum_sample_marker"))
             .count()
         )
-        >= 1
+        > 0
     ):
         raise ValidationError("The death count must be less than sample count.")
 
