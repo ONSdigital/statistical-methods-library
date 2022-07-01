@@ -215,6 +215,22 @@ def estimate(
     ):
         raise ValidationError("The h value must be the same per period and stratum.")
 
+    # death(death_marker=1) count must be less than sample(sample_marker=1)
+    if (
+        death_marker_col is not None
+        and (
+            input_df.groupBy([period_col, strata_col])
+            .agg(
+                sum(col(death_marker_col)).alias("sum_death_marker"),
+                sum(col(sample_marker_col)).alias("sum_sample_marker"),
+            )
+            .filter(col("sum_death_marker") > col("sum_sample_marker"))
+            .count()
+        )
+        > 0
+    ):
+        raise ValidationError("The death count must be less than sample count.")
+
     # --- prepare our working data frame ---
     col_list = [
         col(period_col).alias("period"),
