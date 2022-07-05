@@ -33,8 +33,8 @@ def ht_ratio(
     calibration_weight_col: typing.Optional[str] = "calibration_weight",
 ) -> DataFrame:
     """
-    Perform estimation of design and calibration weights using Expansion and
-    Ratio estimation.
+    Perform Horvitz-Thompson estimation of design and calibration weights
+    using Expansion and Ratio estimation.
 
     ###Arguments
     * `input_df`: The input data frame.

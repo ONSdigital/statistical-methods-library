@@ -104,6 +104,7 @@ for scenario_category in ("dev", "methodology", "back_data"):
                 "tests",
                 "fixture_data",
                 "imputation",
+                "ratio_of_means",
                 f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
@@ -149,7 +150,12 @@ def test_input_not_a_dataframe():
 @pytest.mark.dependency()
 def test_back_data_not_a_dataframe(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
@@ -164,7 +170,12 @@ def test_back_data_not_a_dataframe(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(imputation.ValidationError):
@@ -177,7 +188,12 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_duplicate_rows(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "duplicate_rows"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "duplicate_rows",
     )
     with pytest.raises(imputation.ValidationError):
         imputation.ratio_of_means(test_dataframe, *params)
@@ -189,7 +205,12 @@ def test_dataframe_duplicate_rows(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_target_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(target_col)
     with pytest.raises(imputation.ValidationError):
@@ -202,7 +223,12 @@ def test_dataframe_target_missing(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (
         reference_col,
@@ -220,7 +246,12 @@ def test_params_null(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_missing_link_column(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     with pytest.raises(TypeError):
         imputation.ratio_of_means(
@@ -231,7 +262,12 @@ def test_params_missing_link_column(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (
         reference_col,
@@ -252,7 +288,12 @@ def test_params_not_string(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
@@ -268,12 +309,18 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_back_data = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "back_data_missing_column",
     )
@@ -284,10 +331,20 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
 @pytest.mark.dependency()
 def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_back_data = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "back_data_nulls"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "back_data_nulls",
     )
 
     with pytest.raises(imputation.ValidationError):
@@ -297,12 +354,18 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
 @pytest.mark.dependency()
 def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     bad_back_data = fxt_load_test_csv(
         [reference_col, period_col, strata_col, target_col, marker_col, auxiliary_col],
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "back_data_no_output",
     )
@@ -318,13 +381,19 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
 @pytest.mark.dependency()
 def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
 
     back_data = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "back_data_with_link_cols",
     )
@@ -346,6 +415,7 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "basic_functionality_with_link_cols",
     )
@@ -354,6 +424,7 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "back_data_without_link_cols",
     )
@@ -380,6 +451,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         dataframe_columns,
         bad_dataframe_types,
         "imputation",
+        "ratio_of_means",
         "unit",
         "basic_functionality",
     )
@@ -390,7 +462,12 @@ def test_incorrect_column_types(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "input_data_nulls"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "input_data_nulls",
     )
 
     with pytest.raises(imputation.ValidationError):
@@ -401,7 +478,12 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "imputation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
     ret_val = imputation.ratio_of_means(
         test_dataframe,
@@ -452,6 +534,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         scenario_type,
         f"{scenario}_input",
     )
@@ -475,6 +558,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         scenario_type,
         f"{scenario}_output",
     )
@@ -511,6 +595,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         scenario_type,
         f"{scenario}_input",
     )
@@ -531,6 +616,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
         back_data_cols,
         dataframe_types,
         "imputation",
+        "ratio_of_means",
         scenario_type,
         f"{scenario}_output",
     )

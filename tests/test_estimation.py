@@ -62,6 +62,7 @@ for scenario_category in ("dev", "methodology"):
                 "tests",
                 "fixture_data",
                 "estimation",
+                "ht_ratio",
                 f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
@@ -87,7 +88,12 @@ def test_input_not_a_dataframe():
 @pytest.mark.dependency()
 def test_params_mismatched_death_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (unique_identifier_col, period_col, strata_col, sample_col, death_col)
     with pytest.raises(TypeError):
@@ -98,7 +104,12 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (
         unique_identifier_col,
@@ -115,7 +126,12 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (unique_identifier_col, period_col, ["strata_col"], sample_col)
     with pytest.raises(TypeError):
@@ -126,7 +142,12 @@ def test_params_not_string(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     bad_params = (unique_identifier_col, period_col, "", sample_col)
     with pytest.raises(ValueError):
@@ -137,7 +158,12 @@ def test_params_null(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_nulls_in_data(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "null_value_present"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "null_value_present",
     )
     with pytest.raises(estimation.ValidationError):
         estimation.ht_ratio(test_dataframe, *params)
@@ -147,7 +173,12 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(estimation.ValidationError):
@@ -158,7 +189,12 @@ def test_dataframe_column_missing(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_duplicate_reference(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "duplicate_references"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "duplicate_references",
     )
     with pytest.raises(estimation.ValidationError):
         estimation.ht_ratio(test_dataframe, *params)
@@ -168,7 +204,12 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_non_boolean_markers(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "non_boolean_markers"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "non_boolean_markers",
     )
     with pytest.raises(estimation.ValidationError):
         estimation.ht_ratio(test_dataframe, *params)
@@ -180,6 +221,7 @@ def test_dataframe_large_death_count(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "estimation",
+        "ht_ratio",
         "unit",
         "large_death_count",
     )
@@ -195,6 +237,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "estimation",
+        "ht_ratio",
         "unit",
         "mixed_h-values_in_strata",
     )
@@ -207,7 +250,12 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
 
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
@@ -219,7 +267,12 @@ def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
     ret_val = estimation.ht_ratio(test_dataframe, *params)
@@ -233,7 +286,12 @@ def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     ret_val = estimation.ht_ratio(
         test_dataframe,
@@ -258,7 +316,12 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
 @pytest.mark.dependency()
 def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
-        dataframe_columns, dataframe_types, "estimation", "unit", "basic_functionality"
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
     )
     ret_val = estimation.ht_ratio(
         test_dataframe,
@@ -304,6 +367,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "estimation",
+        "ht_ratio",
         scenario_type,
         f"{scenario}_input",
     )
@@ -339,6 +403,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "estimation",
+        "ht_ratio",
         scenario_type,
         f"{scenario}_output",
     )

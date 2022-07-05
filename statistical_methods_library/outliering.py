@@ -43,7 +43,7 @@ def winsorisation(
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     marker_col: typing.Optional[str] = "winsorisation_marker",
-):
+) -> DataFrame:
     """
     Perform One-sided Winsorisation.
 

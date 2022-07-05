@@ -74,6 +74,7 @@ for scenario_category in ("dev", "methodology"):
                 "tests",
                 "fixture_data",
                 "outliering",
+                "winsorisation",
                 f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
@@ -105,6 +106,7 @@ def test_params_not_string(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -130,6 +132,7 @@ def test_params_null(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -155,6 +158,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -181,6 +185,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "null_value_present",
     )
@@ -197,6 +202,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -214,6 +220,7 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -235,6 +242,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -275,6 +283,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         scenario_type,
         f"{scenario}_input",
     )
@@ -288,6 +297,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         scenario_type,
         f"{scenario}_output",
     )
@@ -310,6 +320,7 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "different_l_values_stratum_same_period",
     )
@@ -329,6 +340,7 @@ def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(
         dataframe_columns,
         dataframe_types,
         "outliering",
+        "winsorisation",
         "unit",
         "different_l_values_stratum_different_periods",
     )
