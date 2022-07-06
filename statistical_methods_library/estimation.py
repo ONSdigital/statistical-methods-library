@@ -16,7 +16,7 @@ class ValidationError(Exception):
     pass
 
 
-def estimate(
+def ht_ratio(
     input_df: DataFrame,
     unique_identifier_col: str,
     period_col: str,
@@ -33,8 +33,8 @@ def estimate(
     calibration_weight_col: typing.Optional[str] = "calibration_weight",
 ) -> DataFrame:
     """
-    Perform estimation of design and calibration weights using Expansion and
-    Ratio estimation.
+    Perform Horvitz-Thompson estimation of design and calibration weights
+    using Expansion and Ratio estimation.
 
     ###Arguments
     * `input_df`: The input data frame.

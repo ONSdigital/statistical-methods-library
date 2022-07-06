@@ -11,13 +11,14 @@ def fxt_load_test_csv(fxt_spark_session):
     # be called as a function in our tests and thus this fixture would have no
     # access to its return value. We do this so that our loader can be
     # passed a file name.
-    def load(columns, types, test_module, test_category, test_data):
+    def load(columns, types, test_module, test_function, test_category, test_data):
         test_dataframe = fxt_spark_session.read.csv(
             str(
                 pathlib.Path(
                     "tests",
                     "fixture_data",
                     test_module,
+                    test_function,
                     test_category,
                     f"{test_data}.csv",
                 )

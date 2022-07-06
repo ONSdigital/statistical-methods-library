@@ -31,7 +31,7 @@ class Marker(Enum):
     """The value has not been winsorised because design * calibration is <= 1."""
 
 
-def one_sided_winsorise(
+def winsorise(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
@@ -43,7 +43,7 @@ def one_sided_winsorise(
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     marker_col: typing.Optional[str] = "winsorisation_marker",
-):
+) -> DataFrame:
     """
     Perform One-sided Winsorisation.
 

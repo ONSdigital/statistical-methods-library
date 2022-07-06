@@ -56,7 +56,7 @@ class DataIntegrityError(ImputationError):
     pass
 
 
-def impute(
+def ratio_of_means(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
