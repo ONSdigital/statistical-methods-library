@@ -31,7 +31,7 @@ class Marker(Enum):
     """The value has not been winsorised because design * calibration is <= 1."""
 
 
-def winsorisation(
+def winsorise(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
