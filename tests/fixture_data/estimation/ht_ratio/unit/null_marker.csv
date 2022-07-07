@@ -1,5 +1,5 @@
 reference,period,strata,sample_inclusion_marker,death_marker,H,auxiliary,calibration_group
-1,202009,,True,False,True,10,10
+1,202009,10,,False,True,10,10
 2,202009,10,True,False,True,10,10
 3,202009,10,True,True,True,10,10
 4,202009,10,False,False,True,10,10

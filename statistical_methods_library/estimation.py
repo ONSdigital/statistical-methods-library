@@ -194,18 +194,17 @@ def ht_ratio(
     if duplicate_check.distinct().count() != duplicate_check.count():
         raise ValidationError("Duplicate contributors in a period")
 
-    # As per the documentation, death marker and sample marker columns must
-    # only contain 0 or 1.
-    marker_cols = [sample_marker_col]
+    # death marker, out of scope marker columns must only contain True or False.
+    marker_cols = []
     if death_marker_col is not None:
         marker_cols.append(death_marker_col)
     if out_of_scope_marker_col is not None:
         marker_cols.append(out_of_scope_marker_col)
 
     for col_name in marker_cols:
-        if input_df.filter((col(col_name) != 0) & (col(col_name) != 1)).count() > 0:
+        if input_df.filter(col(col_name).isNull()).count() > 0:
             raise ValidationError(
-                f"Input column {col_name} must only contain values of 0 or 1."
+                f"Input column {col_name} must not contain null values."
             )
 
     # h values must not change within a stratum
@@ -215,45 +214,33 @@ def ht_ratio(
     ):
         raise ValidationError("The h value must be the same per period and stratum.")
 
-    # death(death_marker=1) count must be less than sample(sample_marker=1)
-    if (
-        death_marker_col is not None
-        and (
-            input_df.groupBy([period_col, strata_col])
-            .agg(
-                sum(col(death_marker_col)).alias("sum_death_marker"),
-                sum(col(sample_marker_col)).alias("sum_sample_marker"),
-            )
-            .filter(col("sum_death_marker") > col("sum_sample_marker"))
-            .count()
-        )
-        > 0
-    ):
-        raise ValidationError("The death count must be less than sample count.")
-
     # --- prepare our working data frame ---
     col_list = [
         col(period_col).alias("period"),
         col(strata_col).alias("strata"),
-        col(sample_marker_col).alias("sample_marker"),
+        col(sample_marker_col).cast("integer").alias("sample_marker"),
     ]
 
     if death_marker_col is not None and h_value_col is not None:
         col_list += [
-            col(death_marker_col).alias("death_marker"),
-            col(h_value_col).alias("h_value"),
+            col(death_marker_col).cast("integer").alias("death_marker"),
+            col(h_value_col).cast("integer").alias("h_value"),
         ]
 
     else:
-        col_list += [lit(0).alias("death_marker"), lit(0.0).alias("h_value")]
+        col_list += [lit(0).alias("death_marker"), lit(0).alias("h_value")]
 
     if out_of_scope_marker_col is not None:
         col_list.append(
-            col(out_of_scope_marker_col).alias("out_of_scope_marker_denominator")
+            col(out_of_scope_marker_col)
+            .cast("integer")
+            .alias("out_of_scope_marker_denominator")
         )
         if out_of_scope_full:
             col_list.append(
-                col(out_of_scope_marker_col).alias("out_of_scope_marker_numerator")
+                col(out_of_scope_marker_col)
+                .cast("integer")
+                .alias("out_of_scope_marker_numerator")
             )
         else:
             col_list.append(lit(0).alias("out_of_scope_marker_numerator"))
@@ -268,6 +255,23 @@ def ht_ratio(
         col_list.append(col(calibration_group_col).alias("calibration_group"))
 
     working_df = input_df.select(col_list)
+
+    # death(death_marker=True) count must be less than sample(sample_marker=True)
+    if (
+        death_marker_col is not None
+        and (
+            working_df.groupBy(["period", "strata"])
+            .agg(
+                sum(col("death_marker")),
+                sum(col("sample_marker")),
+            )
+            .filter(col("sum(death_marker)") > col("sum(sample_marker)"))
+            .count()
+        )
+        > 0
+    ):
+        raise ValidationError("The death count must be less than sample count.")
+
     # --- Expansion estimation ---
     # If we've got a death marker and h value then we'll use these, otherwise
     # they'll be 0 and thus the calculation for design weight just multiplies
@@ -283,7 +287,7 @@ def ht_ratio(
         .agg(
             sum(col("sample_marker")),
             sum(col("death_marker")),
-            first(col("h_value").cast("integer")).alias("first(h_value)"),
+            first(col("h_value")),
             sum(col("out_of_scope_marker_numerator")),
             sum(col("out_of_scope_marker_denominator")),
             count(col("sample_marker")),
