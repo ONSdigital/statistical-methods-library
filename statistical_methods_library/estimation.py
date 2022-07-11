@@ -194,19 +194,6 @@ def ht_ratio(
     if duplicate_check.distinct().count() != duplicate_check.count():
         raise ValidationError("Duplicate contributors in a period")
 
-    # death marker, out of scope marker columns must only contain True or False.
-    marker_cols = []
-    if death_marker_col is not None:
-        marker_cols.append(death_marker_col)
-    if out_of_scope_marker_col is not None:
-        marker_cols.append(out_of_scope_marker_col)
-
-    for col_name in marker_cols:
-        if input_df.filter(col(col_name).isNull()).count() > 0:
-            raise ValidationError(
-                f"Input column {col_name} must not contain null values."
-            )
-
     # h values must not change within a stratum
     if h_value_col is not None and (
         input_df.select(period_col, strata_col).distinct().count()

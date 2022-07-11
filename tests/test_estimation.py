@@ -200,21 +200,6 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
         estimation.ht_ratio(test_dataframe, *params)
 
 
-# --- Test validation fail if null markers in data  ---
-@pytest.mark.dependency()
-def test_dataframe_null_marker(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "estimation",
-        "ht_ratio",
-        "unit",
-        "null_marker",
-    )
-    with pytest.raises(estimation.ValidationError):
-        estimation.ht_ratio(test_dataframe, *params)
-
-
 @pytest.mark.dependency()
 def test_dataframe_large_death_count(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -354,7 +339,6 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         "test_dataframe_duplicate_reference",
         "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
-        "test_dataframe_null_marker",
         "test_dataframe_mixed_h_values_in_strata",
         "test_dataframe_correct_type",
         "test_dataframe_no_extra_columns",
