@@ -40,10 +40,10 @@ dataframe_types = {
     unique_identifier_col: "string",
     period_col: "string",
     strata_col: "string",
-    sample_col: "int",
-    death_col: "int",
+    sample_col: "boolean",
+    death_col: "boolean",
     h_col: "boolean",
-    out_of_scope_col: "int",
+    out_of_scope_col: "boolean",
     auxiliary_col: "double",
     calibration_group_col: "string",
     design_weight_col: "double",
@@ -200,21 +200,6 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
         estimation.ht_ratio(test_dataframe, *params)
 
 
-# --- Test validation fail if non-boolean markers in data  ---
-@pytest.mark.dependency()
-def test_dataframe_non_boolean_markers(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "estimation",
-        "ht_ratio",
-        "unit",
-        "non_boolean_markers",
-    )
-    with pytest.raises(estimation.ValidationError):
-        estimation.ht_ratio(test_dataframe, *params)
-
-
 @pytest.mark.dependency()
 def test_dataframe_large_death_count(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -354,7 +339,6 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         "test_dataframe_duplicate_reference",
         "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
-        "test_dataframe_non_boolean_markers",
         "test_dataframe_mixed_h_values_in_strata",
         "test_dataframe_correct_type",
         "test_dataframe_no_extra_columns",
