@@ -333,6 +333,25 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
 
 
 @pytest.mark.dependency()
+def test_winsorise_negative_calibration_weight_fails(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "outliering",
+        "winsorise",
+        "unit",
+        "negative_calibration_weight",
+    )
+
+    with pytest.raises(outliering.ValidationError):
+        additional_params = [*default_params, calibration_weight_col]
+        outliering.winsorise(
+            test_dataframe,
+            *additional_params,
+        )
+
+
+@pytest.mark.dependency()
 def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(
     fxt_load_test_csv,
 ):
