@@ -1,5 +1,5 @@
 ref,period,grouping,target,design_weight,l_value,calibration_weight,auxiliary
-1,202001,1,10,1,5,0,8
+1,202001,1,10,1,5,-0.0001,8
 1,202002,1,10,2,5,4,8
 1,202003,1,15,3,5,6,8
 2,202001,1,20,1,5,2,8
