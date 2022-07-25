@@ -345,7 +345,8 @@ def test_winsorise_negative_calibration_weight_fails(fxt_load_test_csv):
 
     with pytest.raises(
         outliering.ValidationError,
-        match=rf"Column {calibration_weight_col} must not contain zero or negative values.",
+        match=rf"Column {calibration_weight_col} must "
+        + "not contain zero or negative values.",
     ):
         additional_params = [
             *default_params,
