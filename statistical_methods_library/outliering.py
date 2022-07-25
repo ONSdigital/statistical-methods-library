@@ -132,6 +132,20 @@ def winsorise(
         if input_df.filter(col(col_name).isNull()).count() > 0:
             raise ValidationError(f"Column {col_name} must not contain null values.")
 
+    if input_df.filter(col(design_col) < 1).count() > 0:
+        raise ValidationError(
+            f"Column {design_col} must not contain values smaller than one."
+        )
+    if input_df.filter(col(l_value_col) < 0).count() > 0:
+        raise ValidationError(f"Column {l_value_col} must not contain negative values.")
+
+    if calibration_col is not None and (
+        input_df.filter(col(calibration_col) <= 0).count() > 0
+    ):
+        raise ValidationError(
+            f"Column {calibration_col} must not contain zero or negative values."
+        )
+
     col_list = [
         col(reference_col).alias("reference"),
         col(period_col).alias("period"),
