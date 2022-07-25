@@ -134,16 +134,16 @@ def winsorise(
 
     if input_df.filter(col(design_col) < 1).count() > 0:
         raise ValidationError(
-            "Column design weight must not contain values smaller than one."
+            f"Column {design_col} must not contain values smaller than one."
         )
     if input_df.filter(col(l_value_col) < 0).count() > 0:
-        raise ValidationError("Column l value must not contain negative values.")
+        raise ValidationError(f"Column {l_value_col} must not contain negative values.")
 
     if calibration_col is not None and (
         input_df.filter(col(calibration_col) <= 0).count() > 0
     ):
         raise ValidationError(
-            "Column calibartion weight must not contain zero or negative values."
+            f"Column {calibration_col} must not contain zero or negative values."
         )
 
     col_list = [

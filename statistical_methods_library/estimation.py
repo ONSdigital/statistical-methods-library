@@ -199,7 +199,9 @@ def ht_ratio(
         input_df.select(period_col, strata_col).distinct().count()
         != input_df.select(period_col, strata_col, h_value_col).distinct().count()
     ):
-        raise ValidationError("The h value must be the same per period and stratum.")
+        raise ValidationError(
+            f"The {h_value_col} must be the same per period and stratum."
+        )
 
     # --- prepare our working data frame ---
     col_list = [
@@ -257,7 +259,9 @@ def ht_ratio(
         )
         > 0
     ):
-        raise ValidationError("The death count must be less than sample count.")
+        raise ValidationError(
+            f"The {death_marker_col} count must be less than {sample_marker_col} count."
+        )
 
     # --- Expansion estimation ---
     # If we've got a death marker and h value then we'll use these, otherwise

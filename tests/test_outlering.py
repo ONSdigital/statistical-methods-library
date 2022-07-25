@@ -345,7 +345,7 @@ def test_winsorise_negative_calibration_weight_fails(fxt_load_test_csv):
 
     with pytest.raises(
         outliering.ValidationError,
-        match="Column calibartion weight must not contain zero or negative values.",
+        match=rf"Column {calibration_weight_col} must not contain zero or negative values.",
     ):
         additional_params = [
             *default_params,
@@ -372,7 +372,7 @@ def test_winsorise_negative_l_value_fails(fxt_load_test_csv):
 
     with pytest.raises(
         outliering.ValidationError,
-        match="Column l value must not contain negative values.",
+        match=rf"Column {l_value_col} must not contain negative values.",
     ):
         outliering.winsorise(
             test_dataframe,
@@ -393,7 +393,7 @@ def test_winsorise_design_weight_smaller_than_one_fails(fxt_load_test_csv):
 
     with pytest.raises(
         outliering.ValidationError,
-        match="Column design weight must not contain values smaller than one.",
+        match=rf"Column {design_weight_col} must not contain values smaller than one.",
     ):
         outliering.winsorise(
             test_dataframe,
