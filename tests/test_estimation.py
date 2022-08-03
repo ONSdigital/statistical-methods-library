@@ -92,7 +92,13 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    bad_params = (unique_identifier_col, period_col, strata_col, sample_col, adjustment_col)
+    bad_params = (
+        unique_identifier_col,
+        period_col,
+        strata_col,
+        sample_col,
+        adjustment_col,
+    )
     with pytest.raises(TypeError):
         estimation.ht_ratio(test_dataframe, *bad_params)
 

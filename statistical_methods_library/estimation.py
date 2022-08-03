@@ -190,13 +190,14 @@ def ht_ratio(
     adjustment_markers = {"I", "O", "D"}
 
     if adjustment_marker_col is not None and (
-        input_df.select(adjustment_marker_col).filter(col(adjustment_marker_col).isin(adjustment_markers)).count()
+        input_df.select(adjustment_marker_col)
+        .filter(col(adjustment_marker_col).isin(adjustment_markers))
+        .count()
         != input_df.select(adjustment_marker_col).count()
     ):
         raise ValidationError(
             f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
         )
-
 
     # --- prepare our working data frame ---
     col_list = [
@@ -230,7 +231,9 @@ def ht_ratio(
         and (
             working_df.groupBy(["period", "strata"])
             .agg(
-                count_conditional(col("adjustment_marker") == "D").alias("sum(death_marker)"),
+                count_conditional(col("adjustment_marker") == "D").alias(
+                    "sum(death_marker)"
+                ),
                 sum(col("sample_marker")),
             )
             .filter(col("sum(death_marker)") > col("sum(sample_marker)"))
@@ -239,7 +242,8 @@ def ht_ratio(
         > 0
     ):
         raise ValidationError(
-            f"The death marker count from {adjustment_marker_col}, must be less than {sample_marker_col} count."
+            f"""The death marker count from {adjustment_marker_col},
+             must be less than {sample_marker_col} count."""
         )
 
     # --- Expansion estimation ---
@@ -257,9 +261,13 @@ def ht_ratio(
         working_df.groupBy(["period", "strata"])
         .agg(
             sum(col("sample_marker")),
-            count_conditional(col("adjustment_marker") == "D").alias("sum(death_marker)"),
+            count_conditional(col("adjustment_marker") == "D").alias(
+                "sum(death_marker)"
+            ),
             first(col("h_value")),
-            count_conditional(col("adjustment_marker") == "O").alias("sum(out_of_scope_marker)"),
+            count_conditional(col("adjustment_marker") == "O").alias(
+                "sum(out_of_scope_marker)"
+            ),
             count(col("sample_marker")),
         )
         .withColumn(
@@ -268,46 +276,49 @@ def ht_ratio(
         )
     )
 
-    if out_of_scope_full == True:
-        design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", col("sum(out_of_scope_marker)"))
-        design_df = design_df.withColumn("sum(out_of_scope_marker_denominator)",col("sum(out_of_scope_marker)"))
-    elif out_of_scope_full == False:
+    if out_of_scope_full:
+        design_df = design_df.withColumn(
+            "sum(out_of_scope_marker_numerator)", col("sum(out_of_scope_marker)")
+        )
+        design_df = design_df.withColumn(
+            "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
+        )
+    elif not out_of_scope_full:
         design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", lit(0))
-        design_df = design_df.withColumn("sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)"))
+        design_df = design_df.withColumn(
+            "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
+        )
     else:
         design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", lit(0))
         design_df = design_df.withColumn("sum(out_of_scope_marker_denominator)", lit(0))
 
-    design_df = (
-        design_df.withColumn(
-            "design_weight",
-            (
-                col("unadjusted_design_weight")
-                * (
-                    1
-                    + (
-                        col("first(h_value)")
-                        * (
-                            col("sum(death_marker)")
-                            + col("sum(out_of_scope_marker_numerator)")
-                        )
-                        / (
-                            col("sum(sample_marker)")
-                            - col("sum(death_marker)")
-                            - col("sum(out_of_scope_marker_denominator)")
-                        )
+    design_df = design_df.withColumn(
+        "design_weight",
+        (
+            col("unadjusted_design_weight")
+            * (
+                1
+                + (
+                    col("first(h_value)")
+                    * (
+                        col("sum(death_marker)")
+                        + col("sum(out_of_scope_marker_numerator)")
+                    )
+                    / (
+                        col("sum(sample_marker)")
+                        - col("sum(death_marker)")
+                        - col("sum(out_of_scope_marker_denominator)")
                     )
                 )
-            ),
-        )
-        .drop(
-            "sum(sample_marker)",
-            "sum(death_marker)",
-            "first(h_value)",
-            "sum(out_of_scope_marker_numerator)",
-            "sum(out_of_scope_marker_denominator)",
-            "count(sample_marker)",
-        )
+            )
+        ),
+    ).drop(
+        "sum(sample_marker)",
+        "sum(death_marker)",
+        "first(h_value)",
+        "sum(out_of_scope_marker_numerator)",
+        "sum(out_of_scope_marker_denominator)",
+        "count(sample_marker)",
     )
 
     # --- Ratio estimation ---
