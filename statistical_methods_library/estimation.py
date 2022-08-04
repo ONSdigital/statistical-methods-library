@@ -187,16 +187,35 @@ def ht_ratio(
 
     # Values for the marker column used for birth-death and out of scope adjustment.
     # I - In Scope, O - Out Of Scope, D - Dead
-    adjustment_markers = {"I", "O", "D"}
+    all_adjustment_markers = {"I", "O", "D"}
+    death_adjustment_markers = {"I", "D"}
 
-    if adjustment_marker_col is not None and (
-        input_df.select(adjustment_marker_col)
-        .filter(col(adjustment_marker_col).isin(adjustment_markers))
-        .count()
-        != input_df.select(adjustment_marker_col).count()
+    if (
+        adjustment_marker_col is not None
+        and out_of_scope_full is not None
+        and (
+            input_df.select(adjustment_marker_col)
+            .filter(col(adjustment_marker_col).isin(all_adjustment_markers))
+            .count()
+            != input_df.select(adjustment_marker_col).count()
+        )
     ):
         raise ValidationError(
             f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
+        )
+
+    if (
+        adjustment_marker_col is not None
+        and out_of_scope_full is None
+        and (
+            input_df.select(adjustment_marker_col)
+            .filter(col(adjustment_marker_col).isin(death_adjustment_markers))
+            .count()
+            != input_df.select(adjustment_marker_col).count()
+        )
+    ):
+        raise ValidationError(
+            f"The {adjustment_marker_col} must only contain 'I' or 'D'."
         )
 
     # --- prepare our working data frame ---
@@ -248,13 +267,13 @@ def ht_ratio(
         )
 
     # --- Expansion estimation ---
-    # If we've got a death marker and h value then we'll use these, otherwise
+    # If we've got an adjustment marker and h value then we'll use these, otherwise
     # they'll be 0 and thus the calculation for design weight just multiplies
-    # the unadjusted design weight by 1.
-    # Due to the fact that sample and death markers are either 0 or 1, summing
-    # those columns gives the number of contributors in the sample and the
-    # number of dead contributors respectively. There's only ever 1 h value
-    # per strata so we can just take the first one in that period and strata,
+    # the unadjusted design weight by 1. adjustment marker is counted based on
+    # marker provided. Due to the fact that sample is either 0 or 1
+    # (after converting bool to int), sum and count performed on this column gives
+    # the number of contributors in the sample and in the universe. There's only ever
+    # 1 h value per strata so we can just take the first one in that period and strata,
     # and every contributor must have a sample marker so counting this column
     # gives us the total population.
 
