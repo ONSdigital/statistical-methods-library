@@ -271,8 +271,8 @@ def ht_ratio(
     # they'll be 0 and thus the calculation for design weight just multiplies
     # the unadjusted design weight by 1. adjustment marker is counted based on
     # marker provided. Due to the fact that sample is either 0 or 1
-    # (after converting bool to int), sum and count performed on this column gives
-    # the number of contributors in the sample and in the universe. There's only ever
+    # (after converting bool to int), summing this column gives
+    # the number of contributors in the sample. There's only ever
     # 1 h value per strata so we can just take the first one in that period and strata,
     # and every contributor must have a sample marker so counting this column
     # gives us the total population.
