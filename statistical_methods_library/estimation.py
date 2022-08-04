@@ -223,7 +223,8 @@ def ht_ratio(
 
     working_df = input_df.select(col_list)
 
-    count_conditional = lambda cond: sum(when(cond, 1).otherwise(0))
+    def count_conditional(cond):
+        return sum(when(cond, 1).otherwise(0))
 
     # death(death_marker=True) count must be less than sample(sample_marker=True)
     if (
