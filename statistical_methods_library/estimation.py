@@ -296,21 +296,18 @@ def ht_ratio(
         )
     )
 
-    if out_of_scope_full:
+    if out_of_scope_full is True or out_of_scope_full is None:
         design_df = design_df.withColumn(
             "sum(out_of_scope_marker_numerator)", col("sum(out_of_scope_marker)")
         )
         design_df = design_df.withColumn(
             "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
         )
-    elif not out_of_scope_full:
+    else:
         design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", lit(0))
         design_df = design_df.withColumn(
             "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
         )
-    else:
-        design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", lit(0))
-        design_df = design_df.withColumn("sum(out_of_scope_marker_denominator)", lit(0))
 
     design_df = design_df.withColumn(
         "design_weight",
