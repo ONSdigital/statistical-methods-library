@@ -252,11 +252,11 @@ def ht_ratio(
             working_df.groupBy(["period", "strata"])
             .agg(
                 count_conditional(col("adjustment_marker") == "D").alias(
-                    "sum(death_marker)"
+                    "death_marker"
                 ),
                 sum(col("sample_marker")),
             )
-            .filter(col("sum(death_marker)") > col("sum(sample_marker)"))
+            .filter(col("death_marker") > col("sum(sample_marker)"))
             .count()
         )
         > 0
@@ -282,11 +282,11 @@ def ht_ratio(
         .agg(
             sum(col("sample_marker")),
             count_conditional(col("adjustment_marker") == "D").alias(
-                "sum(death_marker)"
+                "death_marker"
             ),
             first(col("h_value")),
             count_conditional(col("adjustment_marker") == "O").alias(
-                "sum(out_of_scope_marker)"
+                "out_of_scope_marker"
             ),
             count(col("sample_marker")),
         )
@@ -298,15 +298,15 @@ def ht_ratio(
 
     if out_of_scope_full is True or out_of_scope_full is None:
         design_df = design_df.withColumn(
-            "sum(out_of_scope_marker_numerator)", col("sum(out_of_scope_marker)")
+            "out_of_scope_marker_numerator", col("out_of_scope_marker")
         )
         design_df = design_df.withColumn(
-            "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
+            "out_of_scope_marker_denominator", col("out_of_scope_marker")
         )
     else:
-        design_df = design_df.withColumn("sum(out_of_scope_marker_numerator)", lit(0))
+        design_df = design_df.withColumn("out_of_scope_marker_numerator", lit(0))
         design_df = design_df.withColumn(
-            "sum(out_of_scope_marker_denominator)", col("sum(out_of_scope_marker)")
+            "out_of_scope_marker_denominator", col("out_of_scope_marker")
         )
 
     design_df = design_df.withColumn(
@@ -318,23 +318,23 @@ def ht_ratio(
                 + (
                     col("first(h_value)")
                     * (
-                        col("sum(death_marker)")
-                        + col("sum(out_of_scope_marker_numerator)")
+                        col("death_marker")
+                        + col("out_of_scope_marker_numerator")
                     )
                     / (
                         col("sum(sample_marker)")
-                        - col("sum(death_marker)")
-                        - col("sum(out_of_scope_marker_denominator)")
+                        - col("death_marker")
+                        - col("out_of_scope_marker_denominator")
                     )
                 )
             )
         ),
     ).drop(
         "sum(sample_marker)",
-        "sum(death_marker)",
+        "death_marker",
         "first(h_value)",
-        "sum(out_of_scope_marker_numerator)",
-        "sum(out_of_scope_marker_denominator)",
+        "out_of_scope_marker_numerator",
+        "out_of_scope_marker_denominator",
         "count(sample_marker)",
     )
 
