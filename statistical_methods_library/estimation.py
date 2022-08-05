@@ -281,9 +281,7 @@ def ht_ratio(
         working_df.groupBy(["period", "strata"])
         .agg(
             sum(col("sample_marker")),
-            count_conditional(col("adjustment_marker") == "D").alias(
-                "death_marker"
-            ),
+            count_conditional(col("adjustment_marker") == "D").alias("death_marker"),
             first(col("h_value")),
             count_conditional(col("adjustment_marker") == "O").alias(
                 "out_of_scope_marker"
@@ -317,10 +315,7 @@ def ht_ratio(
                 1
                 + (
                     col("first(h_value)")
-                    * (
-                        col("death_marker")
-                        + col("out_of_scope_marker_numerator")
-                    )
+                    * (col("death_marker") + col("out_of_scope_marker_numerator"))
                     / (
                         col("sum(sample_marker)")
                         - col("death_marker")
