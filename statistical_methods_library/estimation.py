@@ -5,7 +5,7 @@ Estimates design and calibration weights based on Expansion and Ratio estimation
 import typing
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, first, lit, sum
+from pyspark.sql.functions import col, count, first, lit, sum, when
 
 
 class ValidationError(Exception):
@@ -22,9 +22,8 @@ def ht_ratio(
     period_col: str,
     strata_col: str,
     sample_marker_col: str,
-    death_marker_col: typing.Optional[str] = None,
+    adjustment_marker_col: typing.Optional[str] = None,
     h_value_col: typing.Optional[str] = None,
-    out_of_scope_marker_col: typing.Optional[str] = None,
     out_of_scope_full: typing.Optional[bool] = None,
     auxiliary_col: typing.Optional[str] = None,
     calibration_group_col: typing.Optional[str] = None,
@@ -45,17 +44,12 @@ def ht_ratio(
     * `strata_col`: The name of the column containing the strata of the contributor.
     * `sample_marker_col`: The name of the column containing a marker
       for whether to include the contributor in the sample or only in the
-      population. This column must only contain values of 0 or 1 where 0 means
-      to exclude the contributor from the sample and 1 means the contributor
+      population. This column must be boolean where false means
+      to exclude the contributor from the sample and true means the contributor
       will be included in the sample count.
-    * `death_marker_col`: The name of the column containing a marker for whether
-      the contributor is dead. This column must only contain the values 0
-      meaning the contributor is not dead and 1 meaning that the contributor is dead.
-    * `h_value_col`: The name of the column containing the h value for the strata.
-    * `out_of_scope_marker_col`: The name of the column containing a marker for
-      whether the contributor is out of scope. This column must only contain
-      the values 0 meaning the contributor is not out of scope and 1 meaning
-      that the contributor is out of scope.
+    * `adjustment_marker_col`: The name of the column containing a marker for whether
+      the contributor is in scope (I), out of scope (O) or dead (D).
+    * `h_value_col`: The name of the column containing the boolean h value for the strata.
     * out_of_scope_full: A parameter that specifies what type of out of scope
       to run when an `out_of_scope_marker_col` is provided. True specifies
       that the out of scope is used on both sides of the adjustment fraction.
@@ -98,15 +92,14 @@ def ht_ratio(
 
     ###Notes
 
-    Either both or neither of `death_marker_col` and `h_value_col` must be specified.
+    Either both or neither of `adjustment_marker_col` and `h_value_col` must be specified.
     If they are then the design weight is adjusted using birth-death
     adjustment, otherwise it is not. In addition, since birth-death adjustment
     is per-stratum, the `h_value_col` must not change within a given period and
     stratum.
 
-    If `out_of_scope_marker_col` is specified the `out_of_scope_full`
-    parameter must also be set. In addition `death_marker_col` and `h_value_col`
-    must be provided.
+    If `out_of_scope_full` is also specified, out of scope adjustment
+    is performed during birth-death adjustment.
 
     If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
     estimation is performed. This depends on whether `calibration_group_col`
@@ -127,23 +120,15 @@ def ht_ratio(
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
 
-    death_cols = (death_marker_col, h_value_col)
+    death_cols = (adjustment_marker_col, h_value_col)
     if any(death_cols) and not all(death_cols):
         raise TypeError(
             "Either both or none of death_marker_col and h_value_col must be specified."
         )
 
-    # Not the same as death_cols because when out_of_scope_full is false the
-    # all fails.
-    out_of_scope_cols = (out_of_scope_marker_col, out_of_scope_full)
-    if out_of_scope_cols.count(None) == 1:
+    if out_of_scope_full is not None and not all(death_cols):
         raise TypeError(
-            "Either both or none of out_of_scope_marker_col "
-            + "and out_of_scope_full must be specified."
-        )
-    if any(out_of_scope_cols) and not any(death_cols):
-        raise TypeError(
-            "For out of scope, death_marker_col and h_value_col must be specified."
+            "For out of scope, adjustment_marker_col and h_value_col must be specified."
         )
 
     if calibration_group_col is not None and auxiliary_col is None:
@@ -157,11 +142,8 @@ def ht_ratio(
         strata_col,
         sample_marker_col,
     ]
-    if death_marker_col is not None:
-        expected_cols += [death_marker_col, h_value_col]
-
-    if out_of_scope_marker_col is not None:
-        expected_cols.append(out_of_scope_marker_col)
+    if adjustment_marker_col is not None:
+        expected_cols += [adjustment_marker_col, h_value_col]
 
     if auxiliary_col is not None:
         expected_cols.append(auxiliary_col)
@@ -203,6 +185,39 @@ def ht_ratio(
             f"The {h_value_col} must be the same per period and stratum."
         )
 
+    # Values for the marker column used for birth-death and out of scope adjustment.
+    # I - In Scope, O - Out Of Scope, D - Dead
+    all_adjustment_markers = {"I", "O", "D"}
+    death_adjustment_markers = {"I", "D"}
+
+    if (
+        adjustment_marker_col is not None
+        and out_of_scope_full is not None
+        and (
+            input_df.select(adjustment_marker_col)
+            .filter(col(adjustment_marker_col).isin(all_adjustment_markers))
+            .count()
+            != input_df.select(adjustment_marker_col).count()
+        )
+    ):
+        raise ValidationError(
+            f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
+        )
+
+    if (
+        adjustment_marker_col is not None
+        and out_of_scope_full is None
+        and (
+            input_df.select(adjustment_marker_col)
+            .filter(col(adjustment_marker_col).isin(death_adjustment_markers))
+            .count()
+            != input_df.select(adjustment_marker_col).count()
+        )
+    ):
+        raise ValidationError(
+            f"The {adjustment_marker_col} must only contain 'I' or 'D'."
+        )
+
     # --- prepare our working data frame ---
     col_list = [
         col(period_col).alias("period"),
@@ -210,32 +225,14 @@ def ht_ratio(
         col(sample_marker_col).cast("integer").alias("sample_marker"),
     ]
 
-    if death_marker_col is not None and h_value_col is not None:
+    if adjustment_marker_col is not None and h_value_col is not None:
         col_list += [
-            col(death_marker_col).cast("integer").alias("death_marker"),
+            col(adjustment_marker_col).alias("adjustment_marker"),
             col(h_value_col).cast("integer").alias("h_value"),
         ]
 
     else:
-        col_list += [lit(0).alias("death_marker"), lit(0).alias("h_value")]
-
-    if out_of_scope_marker_col is not None:
-        col_list.append(
-            col(out_of_scope_marker_col)
-            .cast("integer")
-            .alias("out_of_scope_marker_denominator")
-        )
-        if out_of_scope_full:
-            col_list.append(
-                col(out_of_scope_marker_col)
-                .cast("integer")
-                .alias("out_of_scope_marker_numerator")
-            )
-        else:
-            col_list.append(lit(0).alias("out_of_scope_marker_numerator"))
-    else:
-        col_list.append(lit(0).alias("out_of_scope_marker_numerator"))
-        col_list.append(lit(0).alias("out_of_scope_marker_denominator"))
+        col_list += [lit("I").alias("adjustment_marker"), lit(0).alias("h_value")]
 
     if auxiliary_col is not None:
         col_list.append(col(auxiliary_col).alias("auxiliary"))
@@ -245,77 +242,95 @@ def ht_ratio(
 
     working_df = input_df.select(col_list)
 
+    def count_conditional(cond):
+        return sum(when(cond, 1).otherwise(0))
+
     # death(death_marker=True) count must be less than sample(sample_marker=True)
     if (
-        death_marker_col is not None
+        adjustment_marker_col is not None
         and (
             working_df.groupBy(["period", "strata"])
             .agg(
-                sum(col("death_marker")),
+                count_conditional(col("adjustment_marker") == "D").alias(
+                    "death_marker"
+                ),
                 sum(col("sample_marker")),
             )
-            .filter(col("sum(death_marker)") > col("sum(sample_marker)"))
+            .filter(col("death_marker") > col("sum(sample_marker)"))
             .count()
         )
         > 0
     ):
         raise ValidationError(
-            f"The {death_marker_col} count must be less than {sample_marker_col} count."
+            f"""The death marker count from {adjustment_marker_col},
+             must be less than {sample_marker_col} count."""
         )
 
     # --- Expansion estimation ---
-    # If we've got a death marker and h value then we'll use these, otherwise
+    # If we've got an adjustment marker and h value then we'll use these, otherwise
     # they'll be 0 and thus the calculation for design weight just multiplies
-    # the unadjusted design weight by 1.
-    # Due to the fact that sample and death markers are either 0 or 1, summing
-    # those columns gives the number of contributors in the sample and the
-    # number of dead contributors respectively. There's only ever 1 h value
-    # per strata so we can just take the first one in that period and strata,
+    # the unadjusted design weight by 1. adjustment marker is counted based on
+    # marker provided. Due to the fact that sample is either 0 or 1
+    # (after converting bool to int), summing this column gives
+    # the number of contributors in the sample. There's only ever
+    # 1 h value per strata so we can just take the first one in that period and strata,
     # and every contributor must have a sample marker so counting this column
     # gives us the total population.
+
     design_df = (
         working_df.groupBy(["period", "strata"])
         .agg(
             sum(col("sample_marker")),
-            sum(col("death_marker")),
+            count_conditional(col("adjustment_marker") == "D").alias("death_marker"),
             first(col("h_value")),
-            sum(col("out_of_scope_marker_numerator")),
-            sum(col("out_of_scope_marker_denominator")),
+            count_conditional(col("adjustment_marker") == "O").alias(
+                "out_of_scope_marker"
+            ),
             count(col("sample_marker")),
         )
         .withColumn(
             "unadjusted_design_weight",
             col("count(sample_marker)") / col("sum(sample_marker)"),
         )
-        .withColumn(
-            "design_weight",
-            (
-                col("unadjusted_design_weight")
-                * (
-                    1
-                    + (
-                        col("first(h_value)")
-                        * (
-                            col("sum(death_marker)")
-                            + col("sum(out_of_scope_marker_numerator)")
-                        )
-                        / (
-                            col("sum(sample_marker)")
-                            - col("sum(death_marker)")
-                            - col("sum(out_of_scope_marker_denominator)")
-                        )
+    )
+
+    if out_of_scope_full is True or out_of_scope_full is None:
+        design_df = design_df.withColumn(
+            "out_of_scope_marker_numerator", col("out_of_scope_marker")
+        )
+        design_df = design_df.withColumn(
+            "out_of_scope_marker_denominator", col("out_of_scope_marker")
+        )
+    else:
+        design_df = design_df.withColumn("out_of_scope_marker_numerator", lit(0))
+        design_df = design_df.withColumn(
+            "out_of_scope_marker_denominator", col("out_of_scope_marker")
+        )
+
+    design_df = design_df.withColumn(
+        "design_weight",
+        (
+            col("unadjusted_design_weight")
+            * (
+                1
+                + (
+                    col("first(h_value)")
+                    * (col("death_marker") + col("out_of_scope_marker_numerator"))
+                    / (
+                        col("sum(sample_marker)")
+                        - col("death_marker")
+                        - col("out_of_scope_marker_denominator")
                     )
                 )
-            ),
-        )
-        .drop(
-            "sum(sample_marker)",
-            "sum(death_marker)",
-            "first(h_value)",
-            "sum(out_of_scope_marker_numerator)",
-            "sum(out_of_scope_marker_denominator)",
-            "count(sample_marker)",
-        )
+            )
+        ),
+    ).drop(
+        "sum(sample_marker)",
+        "death_marker",
+        "first(h_value)",
+        "out_of_scope_marker_numerator",
+        "out_of_scope_marker_denominator",
+        "count(sample_marker)",
     )
 
     # --- Ratio estimation ---

@@ -12,9 +12,8 @@ unique_identifier_col = "reference"
 period_col = "period"
 strata_col = "strata"
 sample_col = "sample_inclusion_marker"
-death_col = "death_marker"
+adjustment_col = "adjustment_marker"
 h_col = "H"
-out_of_scope_col = "out_of_scope_marker"
 auxiliary_col = "auxiliary"
 calibration_group_col = "calibration_group"
 unadjusted_design_weight_col = "unadjusted_design_weight"
@@ -26,9 +25,8 @@ dataframe_columns = (
     period_col,
     strata_col,
     sample_col,
-    death_col,
+    adjustment_col,
     h_col,
-    out_of_scope_col,
     auxiliary_col,
     calibration_group_col,
     design_weight_col,
@@ -41,9 +39,8 @@ dataframe_types = {
     period_col: "string",
     strata_col: "string",
     sample_col: "boolean",
-    death_col: "boolean",
+    adjustment_col: "string",
     h_col: "boolean",
-    out_of_scope_col: "boolean",
     auxiliary_col: "double",
     calibration_group_col: "string",
     design_weight_col: "double",
@@ -95,7 +92,13 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    bad_params = (unique_identifier_col, period_col, strata_col, sample_col, death_col)
+    bad_params = (
+        unique_identifier_col,
+        period_col,
+        strata_col,
+        sample_col,
+        adjustment_col,
+    )
     with pytest.raises(TypeError):
         estimation.ht_ratio(test_dataframe, *bad_params)
 
@@ -211,7 +214,7 @@ def test_dataframe_large_death_count(fxt_load_test_csv):
         "large_death_count",
     )
     with pytest.raises(estimation.ValidationError):
-        estimation_params = [*params, death_col, h_col]
+        estimation_params = [*params, adjustment_col, h_col]
         estimation.ht_ratio(test_dataframe, *estimation_params)
 
 
@@ -227,7 +230,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         "mixed_h-values_in_strata",
     )
     with pytest.raises(estimation.ValidationError):
-        estimation_params = [*params, death_col, h_col]
+        estimation_params = [*params, adjustment_col, h_col]
         estimation.ht_ratio(test_dataframe, *estimation_params)
 
 
@@ -363,12 +366,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         "strata_col": strata_col,
         "sample_marker_col": sample_col,
     }
-    if death_col in test_dataframe.columns:
-        estimation_kwargs["death_marker_col"] = death_col
+    if adjustment_col in test_dataframe.columns:
+        estimation_kwargs["adjustment_marker_col"] = adjustment_col
         estimation_kwargs["h_value_col"] = h_col
 
-    if out_of_scope_col in test_dataframe.columns:
-        estimation_kwargs["out_of_scope_marker_col"] = out_of_scope_col
+    if "out_of_scope" in scenario:
         if "full" in scenario:
             estimation_kwargs["out_of_scope_full"] = True
         else:
