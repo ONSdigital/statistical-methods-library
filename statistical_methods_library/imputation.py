@@ -119,7 +119,7 @@ def ratio_of_means(
       calculations on.
     * `link_filter`: A filter compatible with the pyspark DataFrame.filter
       method used to remove responders from link calculations. Responses that
-      match the filter conditions will be removed from the link calculations.
+      match the filter conditions will be included in the link calculations.
       This will not prevent non responses from being imputed for.
 
     ###Returns
