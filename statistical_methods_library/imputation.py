@@ -118,8 +118,8 @@ def ratio_of_means(
     * `back_data_df`: If specified, will use this to base the initial imputation
       calculations on.
     * `link_filter`: A filter compatible with the pyspark DataFrame.filter
-      method used to remove responders from link calculations. Responses that
-      match the filter conditions will be removed from the link calculations.
+      method. Only responses that match the filter conditions will be included
+      in link calculations.
       This will not prevent non responses from being imputed for.
 
     ###Returns
@@ -165,8 +165,6 @@ def ratio_of_means(
 
     If `back_data_df` is provided it must contain the same columns as the output
     from this function.
-
-    Example Link Filter `(aux_value != 71) and (q999 < 100000)`
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
