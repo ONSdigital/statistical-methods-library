@@ -1,5 +1,5 @@
 """
-Estimates design and calibration weights based on Expansion and Ratio estimation.
+Estimates design weigths and calibration factors based on Expansion and Ratio estimation.
 """
 
 import typing
@@ -29,10 +29,10 @@ def ht_ratio(
     calibration_group_col: typing.Optional[str] = None,
     unadjusted_design_weight_col: typing.Optional[str] = None,
     design_weight_col: typing.Optional[str] = "design_weight",
-    calibration_weight_col: typing.Optional[str] = "calibration_weight",
+    calibration_factor_col: typing.Optional[str] = "calibration_factor",
 ) -> DataFrame:
     """
-    Perform Horvitz-Thompson estimation of design and calibration weights
+    Perform Horvitz-Thompson estimation of design weights and calibration factors
     using Expansion and Ratio estimation.
 
     ###Arguments
@@ -64,8 +64,8 @@ def ht_ratio(
       output unless a name is provided.
     * design_weight_col: The name of the column which will contain the
       design weight for the contributor. Defaults to `design_weight`.
-    * calibration_weight_col: The name of the column which will containthe
-      calibration weight for the contributor. Defaults to `calibration_weight`.
+    * calibration_factor_col: The name of the column which will contain the
+      calibration factor for the contributor. Defaults to `calibration_factor`.
 
     ###Returns
 
@@ -83,12 +83,12 @@ def ht_ratio(
     ####Ratio Estimation
 
     In the case of either Separate or Combined Ratio Estimation, the data frame
-    will also contain the column specified by `calibration_weight_col`.
+    will also contain the column specified by `calibration_factor_col`.
 
     ####Combined Ratio Estimation
 
     When Combined Ratio Estimation is performed, the data frame will also
-    contain the column specified by `calibration_weight_col`.
+    contain the column specified by `calibration_factor_col`.
 
     ###Notes
 
@@ -111,7 +111,7 @@ def ht_ratio(
     `unadjusted_design_weight_col` is only in the output if a column name is specified.
 
     All specified input columns must be fully populated. If not an error is
-    raised. Since `design_weight_col` and `calibration_weight_col` are both
+    raised. Since `design_weight_col` and `calibration_factor_col` are both
     output columns this does not apply to them, and any values they contain prior
     to calling the method will be ignored.
     """
@@ -273,7 +273,7 @@ def ht_ratio(
     # marker provided. Due to the fact that sample is either 0 or 1
     # (after converting bool to int), summing this column gives
     # the number of contributors in the sample. There's only ever
-    # 1 h value per strata so we can just take the first one in that period and strata,
+    # 1 h value per strata, so we can just take the first one in that period and strata,
     # and every contributor must have a sample marker so counting this column
     # gives us the total population.
 
@@ -337,8 +337,8 @@ def ht_ratio(
     # Note: if we don't have the columns for this then only Expansion
     # estimation is performed.
 
-    # The ratio calculation for calibration weight is the same for Separate
-    # and Combined estimation with the exception of the grouping.
+    # The ratio calculation for calibration factor is the same for Separate
+    # and Combined estimation except for the grouping.
     def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
         group_cols = ["period", group_col]
         return (
@@ -351,7 +351,7 @@ def ht_ratio(
             .groupBy(group_cols)
             .agg({"auxiliary": "sum", "aux_design": "sum"})
             .withColumn(
-                "calibration_weight", col("sum(auxiliary)") / col("sum(aux_design)")
+                "calibration_factor", col("sum(auxiliary)") / col("sum(aux_design)")
             )
         )
 
@@ -391,7 +391,7 @@ def ht_ratio(
 
         return_col_list += [
             col("design_weight").alias(design_weight_col),
-            col("calibration_weight").alias(calibration_weight_col),
+            col("calibration_factor").alias(calibration_factor_col),
         ]
 
     else:
