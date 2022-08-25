@@ -1,4 +1,4 @@
-period,strata,calibration_group,design_weight,calibration_weight
+period,strata,calibration_group,design_weight,calibration_factor
 202009,10,10,6,1
 202009,11,11,6,1
 202009,12,12,2,1

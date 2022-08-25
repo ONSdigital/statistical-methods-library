@@ -13,7 +13,7 @@ period_col = "period"
 grouping_col = "grouping"
 auxiliary_col = "auxiliary"
 design_weight_col = "design_weight"
-calibration_weight_col = "calibration_weight"
+calibration_factor_col = "calibration_factor"
 l_value_col = "l_value"
 target_col = "target"
 outlier_weight_col = "outlier_weight"
@@ -26,7 +26,7 @@ dataframe_columns = (
     grouping_col,
     auxiliary_col,
     design_weight_col,
-    calibration_weight_col,
+    calibration_factor_col,
     l_value_col,
     target_col,
     outlier_weight_col,
@@ -39,7 +39,7 @@ dataframe_types = {
     grouping_col: "string",
     auxiliary_col: "double",
     design_weight_col: "double",
-    calibration_weight_col: "double",
+    calibration_factor_col: "double",
     l_value_col: "double",
     target_col: "double",
     outlier_weight_col: "double",
@@ -170,7 +170,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         design_weight_col,
         l_value_col,
         outlier_weight_col,
-        calibration_weight_col,
+        calibration_factor_col,
     )
     with pytest.raises(TypeError):
         outliering.winsorise(test_dataframe, *bad_params)
@@ -291,7 +291,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     winsorisation_kwargs = {}
     if auxiliary_col in test_dataframe.columns:
         winsorisation_kwargs["auxiliary_col"] = auxiliary_col
-        winsorisation_kwargs["calibration_col"] = calibration_weight_col
+        winsorisation_kwargs["calibration_col"] = calibration_factor_col
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
@@ -333,25 +333,25 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
 
 
 @pytest.mark.dependency()
-def test_winsorise_negative_calibration_weight_fails(fxt_load_test_csv):
+def test_winsorise_negative_calibration_factor_fails(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "outliering",
         "winsorise",
         "unit",
-        "negative_calibration_weight",
+        "negative_calibration_factor",
     )
 
     with pytest.raises(
         outliering.ValidationError,
-        match=rf"Column {calibration_weight_col} must "
+        match=rf"Column {calibration_factor_col} must "
         + "not contain zero or negative values.",
     ):
         additional_params = [
             *default_params,
             outlier_weight_col,
-            calibration_weight_col,
+            calibration_factor_col,
             auxiliary_col,
         ]
         outliering.winsorise(

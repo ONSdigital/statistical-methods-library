@@ -18,7 +18,7 @@ auxiliary_col = "auxiliary"
 calibration_group_col = "calibration_group"
 unadjusted_design_weight_col = "unadjusted_design_weight"
 design_weight_col = "design_weight"
-calibration_weight_col = "calibration_weight"
+calibration_factor_col = "calibration_factor"
 
 dataframe_columns = (
     unique_identifier_col,
@@ -31,7 +31,7 @@ dataframe_columns = (
     calibration_group_col,
     design_weight_col,
     unadjusted_design_weight_col,
-    calibration_weight_col,
+    calibration_factor_col,
 )
 
 dataframe_types = {
@@ -45,7 +45,7 @@ dataframe_types = {
     calibration_group_col: "string",
     design_weight_col: "double",
     unadjusted_design_weight_col: "double",
-    calibration_weight_col: "double",
+    calibration_factor_col: "double",
 }
 
 params = (unique_identifier_col, period_col, strata_col, sample_col)
@@ -295,7 +295,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         strata_col,
         calibration_group_col,
         design_weight_col,
-        calibration_weight_col,
+        calibration_factor_col,
     }
     assert expected_cols == ret_cols
 
@@ -318,7 +318,7 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         calibration_group_col=calibration_group_col,
         unadjusted_design_weight_col="u_a",
         design_weight_col="a",
-        calibration_weight_col="g",
+        calibration_factor_col="g",
     )
     # perform action on the dataframe to trigger lazy evaluation
     ret_val.count()
