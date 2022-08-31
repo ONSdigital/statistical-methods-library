@@ -204,14 +204,14 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_dataframe_large_death_count(fxt_load_test_csv):
+def test_dataframe_deaths_in_unsampled(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "estimation",
         "ht_ratio",
         "unit",
-        "large_death_count",
+        "deaths_in_unsampled",
     )
     with pytest.raises(estimation.ValidationError):
         estimation_params = [*params, adjustment_col, h_col]
