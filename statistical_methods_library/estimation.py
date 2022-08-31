@@ -218,6 +218,17 @@ def ht_ratio(
             f"The {adjustment_marker_col} must only contain 'I' or 'D'."
         )
 
+    if adjustment_marker_col is not None:
+        if (
+            input_df.filter(
+                (~col(sample_marker_col)) & (col(adjustment_marker_col) != "I")
+            ).count()
+            > 0
+        ):
+            raise ValidationError(
+                "Unsampled responders must only contain an 'I' marker."
+            )
+
     # --- prepare our working data frame ---
     col_list = [
         col(period_col).alias("period"),
@@ -244,27 +255,6 @@ def ht_ratio(
 
     def count_conditional(cond):
         return sum(when(cond, 1).otherwise(0))
-
-    # death(death_marker=True) count must be less than sample(sample_marker=True)
-    if (
-        adjustment_marker_col is not None
-        and (
-            working_df.groupBy(["period", "strata"])
-            .agg(
-                count_conditional(col("adjustment_marker") == "D").alias(
-                    "death_marker"
-                ),
-                sum(col("sample_marker")),
-            )
-            .filter(col("death_marker") > col("sum(sample_marker)"))
-            .count()
-        )
-        > 0
-    ):
-        raise ValidationError(
-            f"""The death marker count from {adjustment_marker_col},
-             must be less than {sample_marker_col} count."""
-        )
 
     # --- Expansion estimation ---
     # If we've got an adjustment marker and h value then we'll use these, otherwise
