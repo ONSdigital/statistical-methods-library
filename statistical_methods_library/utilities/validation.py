@@ -28,6 +28,7 @@ def validate_dataframe(input_df, expected_columns, type_mapping, excluded_column
             f"Missing columns: {', '.join(c for c in missing_columns)}"
         )
 
+    # Alias columns
     column_list = []
     for alias, name in expected_columns.items():
         column_list.append(
@@ -35,6 +36,7 @@ def validate_dataframe(input_df, expected_columns, type_mapping, excluded_column
         )
     aliased_df = input_df.select(column_list)
 
+    # Create Schema for comparison
     column_type_list = []
     for alias in expected_columns:
         column_type_list.append(StructField(alias, type_mapping[alias]))
