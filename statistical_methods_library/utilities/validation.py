@@ -6,7 +6,7 @@ from pyspark.sql.types import StructField, StructType
 from statistical_methods_library.utilities.exceptions import ValidationError
 
 
-def validate_dataframe(input_df, expected_columns, type_mapping, columns_to_check):
+def validate_dataframe(input_df, expected_columns, type_mapping, excluded_columns=[]):
 
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
@@ -44,7 +44,10 @@ def validate_dataframe(input_df, expected_columns, type_mapping, columns_to_chec
         raise Exception
 
     # Check to see if the columns contain null values.
-    for col_name in columns_to_check:
+    for col_name in expected_columns:
+        if col_name in excluded_columns:
+            continue
+
         if aliased_df.filter(col(col_name).isNull()).count() > 0:
             raise ValidationError(
                 f"Input column {col_name} must not contain null values."

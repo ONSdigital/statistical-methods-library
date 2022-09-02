@@ -136,9 +136,7 @@ def estimate(
         "calibration_group": StringType(),
     }
 
-    aliased_df = validate_dataframe(
-        input_df, expected_columns, type_mapping, expected_columns.keys()
-    )
+    aliased_df = validate_dataframe(input_df, expected_columns, type_mapping)
 
     death_cols = (adjustment_marker_col, h_value_col)
     if any(death_cols) and not all(death_cols):
