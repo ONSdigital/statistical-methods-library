@@ -7,6 +7,7 @@ from chispa import assert_approx_df_equality
 from pyspark.sql.functions import lit
 
 from statistical_methods_library.estimation import ht_ratio
+from statistical_methods_library.utilities.exceptions import ValidationError
 
 unique_identifier_col = "reference"
 period_col = "period"
@@ -168,7 +169,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         "unit",
         "null_value_present",
     )
-    with pytest.raises(ht_ratio.ValidationError):
+    with pytest.raises(ValidationError):
         ht_ratio.estimate(test_dataframe, *params)
 
 
@@ -184,7 +185,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(strata_col)
-    with pytest.raises(ht_ratio.ValidationError):
+    with pytest.raises(ValidationError):
         ht_ratio.estimate(bad_dataframe, *params)
 
 
@@ -199,7 +200,7 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
         "unit",
         "duplicate_references",
     )
-    with pytest.raises(ht_ratio.ValidationError):
+    with pytest.raises(ValueError):
         ht_ratio.estimate(test_dataframe, *params)
 
 
@@ -213,7 +214,7 @@ def test_dataframe_deaths_in_unsampled(fxt_load_test_csv):
         "unit",
         "deaths_in_unsampled",
     )
-    with pytest.raises(ht_ratio.ValidationError):
+    with pytest.raises(ValueError):
         estimation_params = [*params, adjustment_col, h_col]
         ht_ratio.estimate(test_dataframe, *estimation_params)
 
@@ -229,7 +230,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         "unit",
         "mixed_h-values_in_strata",
     )
-    with pytest.raises(ht_ratio.ValidationError):
+    with pytest.raises(ValueError):
         estimation_params = [*params, adjustment_col, h_col]
         ht_ratio.estimate(test_dataframe, *estimation_params)
 

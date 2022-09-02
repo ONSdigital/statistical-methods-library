@@ -8,15 +8,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
-from statistical_methods_library.util.validation import validate_dataframe
-
-
-class ValidationError(Exception):
-    """
-    Error raised when validating the input data frame.
-    """
-
-    pass
+from statistical_methods_library.utilities.validation import validate_dataframe
 
 
 def estimate(
@@ -120,8 +112,33 @@ def estimate(
     """
 
     # --- Validate params ---
-    if not isinstance(input_df, DataFrame):
-        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
+    input_params = {
+        "unique_identifier": unique_identifier_col,
+        "period": period_col,
+        "strata": strata_col,
+        "sample_marker": sample_marker_col,
+        "adjustment_marker": adjustment_marker_col,
+        "h_value": h_value_col,
+        "auxiliary": auxiliary_col,
+        "calibration_group": calibration_group_col,
+    }
+
+    expected_columns = {k: v for k, v in input_params.items() if v is not None}
+
+    type_mapping = {
+        "unique_identifier": StringType(),
+        "period": StringType(),
+        "strata": StringType(),
+        "sample_marker": BooleanType(),
+        "adjustment_marker": StringType(),
+        "h_value": BooleanType(),
+        "auxiliary": DoubleType(),
+        "calibration_group": StringType(),
+    }
+
+    aliased_df = validate_dataframe(
+        input_df, expected_columns, type_mapping, expected_columns.keys()
+    )
 
     death_cols = (adjustment_marker_col, h_value_col)
     if any(death_cols) and not all(death_cols):
@@ -139,122 +156,60 @@ def estimate(
             "If calibration_group_col is specified then auxiliary_col must be provided."
         )
 
-    expected_cols = [
-        unique_identifier_col,
-        period_col,
-        strata_col,
-        sample_marker_col,
-    ]
-    if adjustment_marker_col is not None:
-        expected_cols += [adjustment_marker_col, h_value_col]
-
-    if auxiliary_col is not None:
-        expected_cols.append(auxiliary_col)
-
-    if calibration_group_col is not None:
-        expected_cols.append(calibration_group_col)
-
-    # Check to see if the column names are of the correct types, not empty and
-    # do not contain nulls.
-    for col_name in expected_cols:
-        if not isinstance(col_name, str):
-            raise TypeError("All column names provided in params must be strings.")
-
-        if col_name == "":
-            raise ValueError(
-                "Column name strings provided in params must not be empty."
-            )
-
-        if input_df.filter(col(col_name).isNull()).count() > 0:
-            raise ValidationError(
-                f"Input column {col_name} must not contain null values."
-            )
-
-    # Check to see if any required columns are missing from the dataframe.
-    missing_cols = set(expected_cols) - set(input_df.columns)
-    if missing_cols:
-        raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
-
-    duplicate_check = input_df.select(unique_identifier_col, period_col)
+    duplicate_check = aliased_df.select("unique_identifier", "period")
     if duplicate_check.distinct().count() != duplicate_check.count():
-        raise ValidationError("Duplicate contributors in a period")
+        raise ValueError("Duplicate contributors in a period")
 
     # h values must not change within a stratum
     if h_value_col is not None and (
-        input_df.select(period_col, strata_col).distinct().count()
-        != input_df.select(period_col, strata_col, h_value_col).distinct().count()
+        aliased_df.select("period", "strata").distinct().count()
+        != aliased_df.select("period", "strata", "h_value").distinct().count()
     ):
-        raise ValidationError(
-            f"The {h_value_col} must be the same per period and stratum."
-        )
+        raise ValueError(f"The {h_value_col} must be the same per period and stratum.")
 
     # Values for the marker column used for birth-death and out of scope adjustment.
     # I - In Scope, O - Out Of Scope, D - Dead
     all_adjustment_markers = {"I", "O", "D"}
     death_adjustment_markers = {"I", "D"}
 
-    if (
-        adjustment_marker_col is not None
-        and out_of_scope_full is not None
-        and (
-            input_df.select(adjustment_marker_col)
-            .filter(col(adjustment_marker_col).isin(all_adjustment_markers))
-            .count()
-            != input_df.select(adjustment_marker_col).count()
-        )
-    ):
-        raise ValidationError(
-            f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
-        )
-
-    if (
-        adjustment_marker_col is not None
-        and out_of_scope_full is None
-        and (
-            input_df.select(adjustment_marker_col)
-            .filter(col(adjustment_marker_col).isin(death_adjustment_markers))
-            .count()
-            != input_df.select(adjustment_marker_col).count()
-        )
-    ):
-        raise ValidationError(
-            f"The {adjustment_marker_col} must only contain 'I' or 'D'."
-        )
-
     if adjustment_marker_col is not None:
         if (
-            input_df.filter(
-                (~col(sample_marker_col)) & (col(adjustment_marker_col) != "I")
+            aliased_df.filter(
+                (~col("sample_marker")) & (col("adjustment_marker") != "I")
             ).count()
             > 0
         ):
-            raise ValidationError(
-                "Unsampled responders must only contain an 'I' marker."
+            raise ValueError("Unsampled responders must only contain an 'I' marker.")
+
+        if out_of_scope_full is not None and (
+            aliased_df.select("adjustment_marker")
+            .filter(col("adjustment_marker").isin(all_adjustment_markers))
+            .count()
+            != aliased_df.select(adjustment_marker_col).count()
+        ):
+            raise ValueError(
+                f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
+            )
+
+        if out_of_scope_full is None and (
+            aliased_df.select("adjustment_marker")
+            .filter(col("adjustment_marker").isin(death_adjustment_markers))
+            .count()
+            != aliased_df.select("adjustment_marker").count()
+        ):
+            raise ValueError(
+                f"The {adjustment_marker_col} must only contain 'I' or 'D'."
             )
 
     # --- prepare our working data frame ---
-    col_list = [
-        col(period_col).alias("period"),
-        col(strata_col).alias("strata"),
-        col(sample_marker_col).cast("integer").alias("sample_marker"),
-    ]
-
-    if adjustment_marker_col is not None and h_value_col is not None:
-        col_list += [
-            col(adjustment_marker_col).alias("adjustment_marker"),
-            col(h_value_col).cast("integer").alias("h_value"),
-        ]
-
+    working_df = aliased_df.withColumn(
+        "sample_marker", col("sample_marker").cast("integer")
+    )
+    if adjustment_marker_col is None:
+        working_df = working_df.withColumn("adjustment_marker", lit("I"))
+        working_df = working_df.withColumn("h_value", lit(0))
     else:
-        col_list += [lit("I").alias("adjustment_marker"), lit(0).alias("h_value")]
-
-    if auxiliary_col is not None:
-        col_list.append(col(auxiliary_col).alias("auxiliary"))
-
-    if calibration_group_col is not None:
-        col_list.append(col(calibration_group_col).alias("calibration_group"))
-
-    working_df = input_df.select(col_list)
+        working_df = working_df.withColumn("h_value", col("h_value").cast("integer"))
 
     def count_conditional(cond):
         return sum(when(cond, 1).otherwise(0))
@@ -396,45 +351,5 @@ def estimate(
         return_col_list.append(
             col("unadjusted_design_weight").alias(unadjusted_design_weight_col)
         )
-
-    input_params = {
-        "unique_identifier_col": unique_identifier_col,
-        "period_col": period_col,
-        "strata_col": strata_col,
-        "sample_marker_col": sample_marker_col,
-        "adjustment_marker_col": adjustment_marker_col,
-        "h_value_col": h_value_col,
-        "auxiliary_col": auxiliary_col,
-        "calibration_group_col": calibration_group_col,
-        "unadjusted_design_weight_col": unadjusted_design_weight_col,
-        "design_weight_col": design_weight_col,
-        "calibration_factor_col": calibration_factor_col,
-    }
-
-    expected_columns = {k: v for k, v in input_params.items() if v is not None}
-
-    alias_mapping = {
-        "unique_identifier_col": "unique_identifier",
-        "period_col": "period",
-        "strata_col": "strata",
-        "sample_marker_col": "sample_marker",
-        "adjustment_marker_col": "adjustment_marker",
-        "h_value_col": "h_value",
-        "auxiliary_col": "auxiliary",
-        "calibration_group_col": "calibration_group",
-    }
-
-    type_mapping = {
-        "unique_identifier": StringType,
-        "period": StringType,
-        "strata": StringType,
-        "sample_marker": BooleanType,
-        "adjustment_marker": StringType,
-        "h_value": BooleanType,
-        "auxiliary": DoubleType,
-        "calibration_group": StringType,
-    }
-
-    validate_dataframe(input_df, expected_columns, alias_mapping, type_mapping)
 
     return estimated_df.select(return_col_list)
