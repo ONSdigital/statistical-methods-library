@@ -6,8 +6,9 @@ import typing
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
-from util.validation import validate_dataframe
-from pyspark.sql.types import StringType, DoubleType, BooleanType
+from pyspark.sql.types import BooleanType, DoubleType, StringType
+
+from statistical_methods_library.util.validation import validate_dataframe
 
 
 class ValidationError(Exception):

@@ -1,7 +1,7 @@
 from chispa.schema_comparer import are_schemas_equal_ignore_nullable
-from util.exceptions import ValidationError
 from pyspark.sql.functions import col
 from pyspark.sql.types import StructField, StructType
+from util.exceptions import ValidationError
 
 
 def validate_dataframe(input_df, expected_columns, alias_mapping, type_mapping):
