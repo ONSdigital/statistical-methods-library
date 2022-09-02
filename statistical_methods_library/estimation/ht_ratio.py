@@ -6,6 +6,8 @@ import typing
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
+from util.validation import validate_dataframe
+from pyspark.sql.types import StringType, DoubleType, BooleanType
 
 
 class ValidationError(Exception):
@@ -16,7 +18,7 @@ class ValidationError(Exception):
     pass
 
 
-def ht_ratio(
+def estimate(
     input_df: DataFrame,
     unique_identifier_col: str,
     period_col: str,
@@ -393,4 +395,45 @@ def ht_ratio(
         return_col_list.append(
             col("unadjusted_design_weight").alias(unadjusted_design_weight_col)
         )
+
+    input_params = {
+        "unique_identifier_col": unique_identifier_col,
+        "period_col": period_col,
+        "strata_col": strata_col,
+        "sample_marker_col": sample_marker_col,
+        "adjustment_marker_col": adjustment_marker_col,
+        "h_value_col": h_value_col,
+        "auxiliary_col": auxiliary_col,
+        "calibration_group_col": calibration_group_col,
+        "unadjusted_design_weight_col": unadjusted_design_weight_col,
+        "design_weight_col": design_weight_col,
+        "calibration_factor_col": calibration_factor_col,
+    }
+
+    expected_columns = {k: v for k, v in input_params.items() if v is not None}
+
+    alias_mapping = {
+        "unique_identifier_col": "unique_identifier",
+        "period_col": "period",
+        "strata_col": "strata",
+        "sample_marker_col": "sample_marker",
+        "adjustment_marker_col": "adjustment_marker",
+        "h_value_col": "h_value",
+        "auxiliary_col": "auxiliary",
+        "calibration_group_col": "calibration_group",
+    }
+
+    type_mapping = {
+        "unique_identifier": StringType,
+        "period": StringType,
+        "strata": StringType,
+        "sample_marker": BooleanType,
+        "adjustment_marker": StringType,
+        "h_value": BooleanType,
+        "auxiliary": DoubleType,
+        "calibration_group": StringType,
+    }
+
+    validate_dataframe(input_df, expected_columns, alias_mapping, type_mapping)
+
     return estimated_df.select(return_col_list)

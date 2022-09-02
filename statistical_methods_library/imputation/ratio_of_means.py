@@ -37,26 +37,13 @@ class Marker(Enum):
 # --- Imputation errors ---
 
 
-class ImputationError(Exception):
-    """Base type for imputation errors"""
-
-    pass
-
-
-class ValidationError(ImputationError):
+class ValidationError(Exception):
     """Error raised by dataframe validation"""
 
     pass
 
 
-class DataIntegrityError(ImputationError):
-    """Error raised when imputation has failed to impute for data integrity
-    reasons (currently when the auxiliary column contains nulls)"""
-
-    pass
-
-
-def ratio_of_means(
+def impute(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
