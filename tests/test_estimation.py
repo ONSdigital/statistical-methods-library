@@ -200,7 +200,7 @@ def test_dataframe_duplicate_reference(fxt_load_test_csv):
         "unit",
         "duplicate_references",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         ht_ratio.estimate(test_dataframe, *params)
 
 
@@ -214,7 +214,7 @@ def test_dataframe_deaths_in_unsampled(fxt_load_test_csv):
         "unit",
         "deaths_in_unsampled",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         estimation_params = [*params, adjustment_col, h_col]
         ht_ratio.estimate(test_dataframe, *estimation_params)
 
@@ -230,7 +230,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         "unit",
         "mixed_h-values_in_strata",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         estimation_params = [*params, adjustment_col, h_col]
         ht_ratio.estimate(test_dataframe, *estimation_params)
 

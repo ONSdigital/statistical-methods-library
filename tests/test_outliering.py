@@ -7,6 +7,7 @@ from chispa import assert_approx_df_equality
 from pyspark.sql.functions import lit
 
 from statistical_methods_library.outliering import winsorisation
+from statistical_methods_library.utilities.exceptions import ValidationError
 
 reference_col = "ref"
 period_col = "period"
@@ -189,7 +190,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         "unit",
         "null_value_present",
     )
-    with pytest.raises(winsorisation.ValidationError):
+    with pytest.raises(ValidationError):
         winsorisation.winsorise(test_dataframe, *params)
 
 
@@ -207,7 +208,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(target_col)
-    with pytest.raises(winsorisation.ValidationError):
+    with pytest.raises(ValidationError):
         winsorisation.winsorise(bad_dataframe, *params)
 
 
@@ -325,7 +326,7 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
         "different_l_values_stratum_same_period",
     )
 
-    with pytest.raises(winsorisation.ValidationError):
+    with pytest.raises(ValidationError):
         winsorisation.winsorise(
             test_dataframe,
             *default_params,
@@ -344,7 +345,7 @@ def test_winsorise_negative_calibration_factor_fails(fxt_load_test_csv):
     )
 
     with pytest.raises(
-        winsorisation.ValidationError,
+        ValidationError,
         match=rf"Column {calibration_factor_col} must "
         + "not contain zero or negative values.",
     ):
@@ -372,7 +373,7 @@ def test_winsorise_negative_l_value_fails(fxt_load_test_csv):
     )
 
     with pytest.raises(
-        winsorisation.ValidationError,
+        ValidationError,
         match=rf"Column {l_value_col} must not contain negative values.",
     ):
         winsorisation.winsorise(
@@ -393,7 +394,7 @@ def test_winsorise_design_weight_smaller_than_one_fails(fxt_load_test_csv):
     )
 
     with pytest.raises(
-        winsorisation.ValidationError,
+        ValidationError,
         match=rf"Column {design_weight_col} must not contain values smaller than one.",
     ):
         winsorisation.winsorise(

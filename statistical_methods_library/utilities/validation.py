@@ -56,3 +56,21 @@ def validate_dataframe(input_df, expected_columns, type_mapping, excluded_column
             )
 
     return aliased_df
+
+
+def validate_one_value_per_group(input_df, group_cols, value_col):
+    if (
+        input_df.select(*group_cols).distinct().count()
+        != input_df.select(*group_cols, value_col).distinct().count()
+    ):
+        raise ValidationError(
+            f"The {value_col} must be the same per " + " ".join(group_cols) + "."
+        )
+
+
+def validate_no_duplicates(input_df, unique_cols):
+    if (
+        input_df.select(*unique_cols).distinct().count()
+        != input_df.select(*unique_cols).count()
+    ):
+        raise ValidationError("Duplicate contributors in a period")

@@ -8,7 +8,12 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
-from statistical_methods_library.utilities.validation import validate_dataframe
+from statistical_methods_library.utilities.exceptions import ValidationError
+from statistical_methods_library.utilities.validation import (
+    validate_dataframe,
+    validate_no_duplicates,
+    validate_one_value_per_group,
+)
 
 
 def estimate(
@@ -111,6 +116,22 @@ def estimate(
     to calling the method will be ignored.
     """
 
+    death_cols = (adjustment_marker_col, h_value_col)
+    if any(death_cols) and not all(death_cols):
+        raise TypeError(
+            "Either both or none of death_marker_col and h_value_col must be specified."
+        )
+
+    if out_of_scope_full is not None and not all(death_cols):
+        raise TypeError(
+            "For out of scope, adjustment_marker_col and h_value_col must be specified."
+        )
+
+    if calibration_group_col is not None and auxiliary_col is None:
+        raise TypeError(
+            "If calibration_group_col is specified then auxiliary_col must be provided."
+        )
+
     # --- Validate params ---
     input_params = {
         "unique_identifier": unique_identifier_col,
@@ -138,32 +159,11 @@ def estimate(
 
     aliased_df = validate_dataframe(input_df, expected_columns, type_mapping)
 
-    death_cols = (adjustment_marker_col, h_value_col)
-    if any(death_cols) and not all(death_cols):
-        raise TypeError(
-            "Either both or none of death_marker_col and h_value_col must be specified."
-        )
-
-    if out_of_scope_full is not None and not all(death_cols):
-        raise TypeError(
-            "For out of scope, adjustment_marker_col and h_value_col must be specified."
-        )
-
-    if calibration_group_col is not None and auxiliary_col is None:
-        raise TypeError(
-            "If calibration_group_col is specified then auxiliary_col must be provided."
-        )
-
-    duplicate_check = aliased_df.select("unique_identifier", "period")
-    if duplicate_check.distinct().count() != duplicate_check.count():
-        raise ValueError("Duplicate contributors in a period")
+    validate_no_duplicates(aliased_df, ["unique_identifier", "period"])
 
     # h values must not change within a stratum
-    if h_value_col is not None and (
-        aliased_df.select("period", "strata").distinct().count()
-        != aliased_df.select("period", "strata", "h_value").distinct().count()
-    ):
-        raise ValueError(f"The {h_value_col} must be the same per period and stratum.")
+    if h_value_col is not None:
+        validate_one_value_per_group(aliased_df, ["period", "strata"], "h_value")
 
     # Values for the marker column used for birth-death and out of scope adjustment.
     # I - In Scope, O - Out Of Scope, D - Dead
@@ -177,7 +177,9 @@ def estimate(
             ).count()
             > 0
         ):
-            raise ValueError("Unsampled responders must only contain an 'I' marker.")
+            raise ValidationError(
+                "Unsampled responders must only contain an 'I' marker."
+            )
 
         if out_of_scope_full is not None and (
             aliased_df.select("adjustment_marker")
@@ -185,7 +187,7 @@ def estimate(
             .count()
             != aliased_df.select(adjustment_marker_col).count()
         ):
-            raise ValueError(
+            raise ValidationError(
                 f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
             )
 
@@ -195,7 +197,7 @@ def estimate(
             .count()
             != aliased_df.select("adjustment_marker").count()
         ):
-            raise ValueError(
+            raise ValidationError(
                 f"The {adjustment_marker_col} must only contain 'I' or 'D'."
             )
 
