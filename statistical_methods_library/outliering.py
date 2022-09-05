@@ -25,7 +25,7 @@ class Marker(Enum):
 
     FULLY_ENUMERATED = "NW_FE"
     """The value has not been winsorised because it makes up 100% of its stratum.
-    (design_weight = 1 and calibration_weight = 1)"""
+    (design_weight = 1 and calibration_factor = 1)"""
 
     DESIGN_CALIBRATION = "NW_AG"
     """The value has not been winsorised because design * calibration is <= 1."""
@@ -59,7 +59,7 @@ def winsorise(
     * l_value_col: The name of the column containing the l value.
     * outlier_col: The name of the column which will contain the calculated
       outlier weight. Defaults to `outlier_weight`.
-    * calibration_col: The name of the column containing the calibration weight
+    * calibration_col: The name of the column containing the calibration factor
       if Ratio Winsorisation is to be performed.
     * auxiliary_col: The name of the column containing the auxiliary values if
       Ratio Winsorisation is to be performed.
@@ -76,7 +76,7 @@ def winsorise(
 
     ###Notes
 
-    All of the provided columns containing input values must be fully
+    The provided columns containing input values must be fully
     populated. Otherwise an error is raised.
 
     If a stratum contains multiple l-values in the same period then an error
@@ -155,7 +155,7 @@ def winsorise(
         col(l_value_col).alias("l_value"),
     ]
 
-    # If we don't have a calibration weight and auxiliary value then set to 1.
+    # If we don't have a calibration factor and auxiliary value then set to 1.
     # This cancels out the ratio part of Winsorisation which means that
     # Expansion Winsorisation is performed.
     if auxiliary_col is not None:
