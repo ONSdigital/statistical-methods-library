@@ -8,12 +8,8 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
+import statistical_methods_library.utilities.validation as validation
 from statistical_methods_library.utilities.exceptions import ValidationError
-from statistical_methods_library.utilities.validation import (
-    validate_dataframe,
-    validate_no_duplicates,
-    validate_one_value_per_group,
-)
 
 
 def estimate(
@@ -157,13 +153,15 @@ def estimate(
         "calibration_group": StringType(),
     }
 
-    aliased_df = validate_dataframe(input_df, expected_columns, type_mapping)
+    aliased_df = validation.validate_dataframe(input_df, expected_columns, type_mapping)
 
-    validate_no_duplicates(aliased_df, ["unique_identifier", "period"])
+    validation.validate_no_duplicates(aliased_df, ["unique_identifier", "period"])
 
     # h values must not change within a stratum
     if h_value_col is not None:
-        validate_one_value_per_group(aliased_df, ["period", "strata"], "h_value")
+        validation.validate_one_value_per_group(
+            aliased_df, ["period", "strata"], "h_value"
+        )
 
     # Values for the marker column used for birth-death and out of scope adjustment.
     # I - In Scope, O - Out Of Scope, D - Dead

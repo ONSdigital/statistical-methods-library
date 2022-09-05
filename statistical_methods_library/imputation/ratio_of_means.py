@@ -11,10 +11,7 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
 from pyspark.sql.types import DoubleType, StringType
 
-from statistical_methods_library.utilities.validation import (
-    validate_dataframe,
-    validate_no_duplicates,
-)
+import statistical_methods_library.utilities.validation as validation
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
@@ -218,23 +215,23 @@ def impute(
         "count_construction": DoubleType(),
     }
 
-    aliased_input_df = validate_dataframe(
+    aliased_input_df = validation.validate_dataframe(
         input_df,
         input_expected_columns,
         type_mapping,
         ["target", "forward", "backward", "construction"],
     )
-    validate_no_duplicates(aliased_input_df, ["ref", "period"])
+    validation.validate_no_duplicates(aliased_input_df, ["ref", "period"])
 
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
 
     if back_data_df:
-        prepared_back_data_df = validate_dataframe(
+        prepared_back_data_df = validation.validate_dataframe(
             back_data_df, back_expected_columns, type_mapping
         )
-        validate_no_duplicates(prepared_back_data_df, ["ref", "period"])
+        validation.validate_no_duplicates(prepared_back_data_df, ["ref", "period"])
 
     # Store the value for the period prior to the start of imputation.
     # Stored as a value to avoid a join in output creation.

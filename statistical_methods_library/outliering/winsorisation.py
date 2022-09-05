@@ -11,12 +11,8 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DoubleType, StringType
 
+import statistical_methods_library.utilities.validation as validation
 from statistical_methods_library.utilities.exceptions import ValidationError
-from statistical_methods_library.utilities.validation import (
-    validate_dataframe,
-    validate_no_duplicates,
-    validate_one_value_per_group,
-)
 
 
 class Marker(Enum):
@@ -126,8 +122,8 @@ def winsorise(
         "auxiliary": DoubleType(),
     }
 
-    aliased_df = validate_dataframe(input_df, expected_columns, type_mapping)
-    validate_no_duplicates(aliased_df, ["reference", "period"])
+    aliased_df = validation.validate_dataframe(input_df, expected_columns, type_mapping)
+    validation.validate_no_duplicates(aliased_df, ["reference", "period"])
 
     if aliased_df.filter(col(design_col) < 1).count() > 0:
         raise ValidationError(
@@ -154,7 +150,7 @@ def winsorise(
         pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
 
     group_cols = ["period", "grouping"]
-    validate_one_value_per_group(input_df, group_cols, l_value_col)
+    validation.validate_one_value_per_group(input_df, group_cols, l_value_col)
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
