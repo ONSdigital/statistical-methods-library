@@ -43,7 +43,7 @@ def validate_dataframe(input_df, expected_columns, type_mapping, excluded_column
 
     schema = StructType(column_type_list)
     if not are_schemas_equal_ignore_nullable(aliased_df.schema, schema):
-        raise Exception
+        raise ValidationError
 
     # Check to see if the columns contain null values.
     for col_name in expected_columns:

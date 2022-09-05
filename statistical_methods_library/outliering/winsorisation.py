@@ -14,6 +14,7 @@ from pyspark.sql.types import DoubleType, StringType
 from statistical_methods_library.utilities.exceptions import ValidationError
 from statistical_methods_library.utilities.validation import (
     validate_dataframe,
+    validate_no_duplicates,
     validate_one_value_per_group,
 )
 
@@ -126,6 +127,7 @@ def winsorise(
     }
 
     aliased_df = validate_dataframe(input_df, expected_columns, type_mapping)
+    validate_no_duplicates(aliased_df, ["reference", "period"])
 
     if aliased_df.filter(col(design_col) < 1).count() > 0:
         raise ValidationError(

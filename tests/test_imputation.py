@@ -7,6 +7,7 @@ from chispa.dataframe_comparer import assert_approx_df_equality
 from pyspark.sql.functions import col, lit, when
 
 from statistical_methods_library.imputation import ratio_of_means
+from statistical_methods_library.utilities.exceptions import ValidationError
 
 auxiliary_col = "auxiliary"
 backward_col = "backward"
@@ -176,7 +177,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(strata_col)
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(bad_dataframe, *params)
 
 
@@ -193,7 +194,7 @@ def test_dataframe_duplicate_rows(fxt_load_test_csv):
         "unit",
         "duplicate_rows",
     )
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params)
 
 
@@ -211,7 +212,7 @@ def test_dataframe_target_missing(fxt_load_test_csv):
         "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(target_col)
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(bad_dataframe, *params)
 
 
@@ -322,7 +323,7 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
         "unit",
         "back_data_missing_column",
     )
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
@@ -345,7 +346,7 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         "back_data_nulls",
     )
 
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
@@ -368,7 +369,7 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         "back_data_no_output",
     )
 
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
 
 
@@ -453,7 +454,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params)
 
 
@@ -468,7 +469,7 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         "input_data_nulls",
     )
 
-    with pytest.raises(ratio_of_means.ValidationError):
+    with pytest.raises(ValidationError):
         ratio_of_means.impute(test_dataframe, *params)
 
 
