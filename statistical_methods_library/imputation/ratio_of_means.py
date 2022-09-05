@@ -268,10 +268,7 @@ def impute(
 
     # --- Prepare DF ---
 
-    def prepare_df(
-        df: DataFrame,
-        back_data_df: typing.Optional[DataFrame] = None,
-    ) -> DataFrame:
+    def prepare_df(df: DataFrame) -> DataFrame:
         nonlocal prepared_back_data_df
 
         prepared_df = (
@@ -287,7 +284,7 @@ def impute(
         # can filter directly.
         prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
 
-        if back_data_df:
+        if prepared_back_data_df:
             prepared_back_data_df = (
                 prepared_back_data_df.filter(
                     (
