@@ -9,7 +9,6 @@ from enum import Enum
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
-from pyspark.sql.types import DoubleType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -111,14 +110,14 @@ def outlier(
     expected_columns = {k: v for k, v in input_params.items() if v is not None}
 
     type_mapping = {
-        "reference": StringType(),
-        "period": StringType(),
-        "grouping": StringType(),
-        "target": DoubleType(),
-        "design": DoubleType(),
-        "l_value": DoubleType(),
-        "calibration": DoubleType(),
-        "auxiliary": DoubleType(),
+        "reference": "string",
+        "period": "string",
+        "grouping": "string",
+        "target": "double",
+        "design": "double",
+        "l_value": "double",
+        "calibration": "double",
+        "auxiliary": "double",
     }
 
     aliased_df = validation.validate_dataframe(

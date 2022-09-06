@@ -49,6 +49,9 @@ dataframe_types = {
     calibration_factor_col: "double",
 }
 
+bad_dataframe_types = dataframe_types.copy()
+bad_dataframe_types[unique_identifier_col] = "double"
+
 params = (unique_identifier_col, period_col, strata_col, sample_col)
 
 test_scenarios = []
@@ -328,6 +331,20 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
     assert expected_cols == ret_cols
 
 
+@pytest.mark.dependency()
+def test_incorrect_column_types(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        bad_dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
+    )
+    with pytest.raises(ValidationError):
+        ht_ratio.estimate(test_dataframe, *params)
+
+
 # --- Test valid scenarios ---
 @pytest.mark.parametrize(
     "scenario_type, scenario",
@@ -348,6 +365,7 @@ def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_tes
         "test_dataframe_no_extra_columns",
         "test_dataframe_expected_columns",
         "test_dataframe_expected_columns_not_defaults",
+        "test_incorrect_column_types",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):

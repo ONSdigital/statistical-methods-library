@@ -9,7 +9,6 @@ from enum import Enum
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
-from pyspark.sql.types import DoubleType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -199,16 +198,16 @@ def impute(
     }
 
     type_mapping = {
-        "ref": StringType(),
-        "period": StringType(),
-        "strata": StringType(),
-        "target": DoubleType(),
-        "aux": DoubleType(),
-        "output": DoubleType(),
-        "marker": StringType(),
-        "forward": DoubleType(),
-        "backward": DoubleType(),
-        "construction": DoubleType(),
+        "ref": "string",
+        "period": "string",
+        "strata": "string",
+        "target": "double",
+        "aux": "double",
+        "output": "double",
+        "marker": "string",
+        "forward": "double",
+        "backward": "double",
+        "construction": "double",
     }
 
     aliased_input_df = validation.validate_dataframe(

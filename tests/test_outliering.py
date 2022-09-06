@@ -47,6 +47,9 @@ dataframe_types = {
     winsorisation_marker_col: "string",
 }
 
+bad_dataframe_types = dataframe_types.copy()
+bad_dataframe_types[reference_col] = "double"
+
 params = (
     reference_col,
     period_col,
@@ -263,6 +266,19 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     assert expected_cols == ret_cols
 
 
+@pytest.mark.dependency()
+def test_incorrect_column_types(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        bad_dataframe_types,
+        "outliering",
+        "winsorisation",
+        "unit",
+        "basic_functionality",
+    )
+    with pytest.raises(ValidationError):
+        winsorisation.outlier(test_dataframe, *params)
+
 @pytest.mark.parametrize(
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
@@ -277,6 +293,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_params_mismatched_calibration_cols",
         "test_dataframe_returned_as_expected",
         "test_dataframe_expected_columns",
+        "test_incorrect_column_types",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
