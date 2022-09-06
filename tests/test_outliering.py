@@ -279,6 +279,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
     with pytest.raises(ValidationError):
         winsorisation.outlier(test_dataframe, *params)
 
+
 @pytest.mark.parametrize(
     "scenario_type, scenario",
     sorted(test_scenarios, key=lambda t: pathlib.Path(t[0], t[1])),
