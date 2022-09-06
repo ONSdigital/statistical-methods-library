@@ -1,8 +1,5 @@
-from chispa.schema_comparer import are_schemas_equal_ignore_nullable
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
-from pyspark.sql.types import StructField, StructType
-
 from statistical_methods_library.utilities.exceptions import ValidationError
 
 
@@ -12,19 +9,19 @@ def validate_dataframe(
 
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
-
+    expected_input_col_names = set(expected_columns.values())
     # Check to see if the column names have been passed in properly.
-    for col_name in expected_columns.values():
+    for col_name in expected_input_col_names:
         if not isinstance(col_name, str):
             raise TypeError("All column names provided in params must be strings.")
 
-        if col_name == "":
+        if not len(col_name):
             raise ValueError(
                 "Column name strings provided in params must not be empty."
             )
 
     # Check to see if any required columns are missing from the dataframe.
-    missing_columns = set(expected_columns.values()) - set(input_df.columns)
+    missing_columns = expected_input_col_names - set(input_df.columns)
     if missing_columns:
         raise ValidationError(
             f"Missing columns: {', '.join(c for c in missing_columns)}"
@@ -37,15 +34,15 @@ def validate_dataframe(
             col(name).alias(alias),
         )
     aliased_df = input_df.select(column_list)
-
-    # Create Schema for comparison
-    column_type_list = []
-    for alias in expected_columns:
-        column_type_list.append(StructField(alias, type_mapping[alias]))
-
-    schema = StructType(column_type_list)
-    if not are_schemas_equal_ignore_nullable(aliased_df.schema, schema):
-        raise ValidationError
+    # Check that the set of aliased columns have the correct data types.
+    # Note: the dtype property on a DataFrame object returns a list of
+    # tuples of (col_name, data_type) where the data_type field is the string
+    # name for the pyspark data type.
+    wrong_types = set(aliased_df.dtypes) - set(type_mapping.items())
+    if wrong_types:
+        raise ValidationError(
+            f"Wrong data types for columns: {', '.join(c for c in wrong_types)}"
+        )
 
     # Duplicate check
     if (
