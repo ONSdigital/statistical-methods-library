@@ -218,6 +218,11 @@ def impute(
         ["target", "forward", "backward", "construction"],
     )
 
+    if link_filter:
+        filtered_refs = input_df.select(
+            col(reference_col).alias("ref"), col(period_col).alias("period")
+        ).filter(link_filter)
+
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
@@ -318,28 +323,7 @@ def impute(
         # won't cause us to lose strata as they'll just be filled with
         # default ratios.
         if link_filter:
-            # We need to reverse our column selection temporarily as our
-            # aliases are an implementation detail and are thus not exposed to
-            # the users
-            temp_mapping = full_col_mapping
-            temp_mapping.update(
-                {
-                    "previous_period": "previous_period",
-                    "next_period": "next_period",
-                }
-            )
-
-            filtered_df = select_cols(
-                select_cols(
-                    df.withColumn("target", col("output")),
-                    reversed=False,
-                    drop_unmapped=False,
-                )
-                .filter(link_filter)
-                .drop("target"),
-                mapping=temp_mapping,
-            )
-
+            filtered_df = df.join(filtered_refs, ["ref", "period"])
         else:
             filtered_df = df
 
