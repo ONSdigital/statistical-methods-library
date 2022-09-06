@@ -9,7 +9,6 @@ from pyspark.sql.functions import col, count, first, lit, sum, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
 import statistical_methods_library.utilities.validation as validation
-from statistical_methods_library.utilities.exceptions import ValidationError
 
 
 def estimate(
@@ -153,9 +152,9 @@ def estimate(
         "calibration_group": StringType(),
     }
 
-    aliased_df = validation.validate_dataframe(input_df, expected_columns, type_mapping)
-
-    validation.validate_no_duplicates(aliased_df, ["unique_identifier", "period"])
+    aliased_df = validation.validate_dataframe(
+        input_df, expected_columns, type_mapping, ["unique_identifier", "period"]
+    )
 
     # h values must not change within a stratum
     if h_value_col is not None:
@@ -169,34 +168,22 @@ def estimate(
     death_adjustment_markers = {"I", "D"}
 
     if adjustment_marker_col is not None:
-        if (
-            aliased_df.filter(
-                (~col("sample_marker")) & (col("adjustment_marker") != "I")
-            ).count()
-            > 0
-        ):
-            raise ValidationError(
-                "Unsampled responders must only contain an 'I' marker."
+        validation.validate_no_matching_rows(
+            aliased_df,
+            ((~col("sample_marker")) & (col("adjustment_marker") != "I")),
+            "Unsampled responders must only contain an 'I' marker.",
+        )
+        if out_of_scope_full is not None:
+            validation.validate_no_matching_rows(
+                aliased_df,
+                (~col("adjustment_marker").isin(all_adjustment_markers)),
+                f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'.",
             )
-
-        if out_of_scope_full is not None and (
-            aliased_df.select("adjustment_marker")
-            .filter(col("adjustment_marker").isin(all_adjustment_markers))
-            .count()
-            != aliased_df.select(adjustment_marker_col).count()
-        ):
-            raise ValidationError(
-                f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'."
-            )
-
-        if out_of_scope_full is None and (
-            aliased_df.select("adjustment_marker")
-            .filter(col("adjustment_marker").isin(death_adjustment_markers))
-            .count()
-            != aliased_df.select("adjustment_marker").count()
-        ):
-            raise ValidationError(
-                f"The {adjustment_marker_col} must only contain 'I' or 'D'."
+        else:
+            validation.validate_no_matching_rows(
+                aliased_df,
+                (~col("adjustment_marker").isin(death_adjustment_markers)),
+                f"The {adjustment_marker_col} must only contain 'I' or 'D'.",
             )
 
     # --- prepare our working data frame ---

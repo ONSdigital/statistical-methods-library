@@ -12,7 +12,6 @@ from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DoubleType, StringType
 
 import statistical_methods_library.utilities.validation as validation
-from statistical_methods_library.utilities.exceptions import ValidationError
 
 
 class Marker(Enum):
@@ -122,21 +121,24 @@ def winsorise(
         "auxiliary": DoubleType(),
     }
 
-    aliased_df = validation.validate_dataframe(input_df, expected_columns, type_mapping)
-    validation.validate_no_duplicates(aliased_df, ["reference", "period"])
-
-    if aliased_df.filter(col(design_col) < 1).count() > 0:
-        raise ValidationError(
-            f"Column {design_col} must not contain values smaller than one."
-        )
-    if aliased_df.filter(col(l_value_col) < 0).count() > 0:
-        raise ValidationError(f"Column {l_value_col} must not contain negative values.")
-
-    if calibration_col is not None and (
-        aliased_df.filter(col(calibration_col) <= 0).count() > 0
-    ):
-        raise ValidationError(
-            f"Column {calibration_col} must not contain zero or negative values."
+    aliased_df = validation.validate_dataframe(
+        input_df, expected_columns, type_mapping, ["reference", "period"]
+    )
+    validation.validate_no_matching_rows(
+        aliased_df,
+        (col(design_col) < 1),
+        f"Column {design_col} must not contain values smaller than one.",
+    )
+    validation.validate_no_matching_rows(
+        aliased_df,
+        (col(l_value_col) < 0),
+        f"Column {l_value_col} must not contain negative values.",
+    )
+    if calibration_col is not None:
+        validation.validate_no_matching_rows(
+            aliased_df,
+            (col(calibration_col) <= 0),
+            f"Column {calibration_col} must not contain zero or negative values.",
         )
 
     # If we don't have a calibration factor and auxiliary value then set to 1.

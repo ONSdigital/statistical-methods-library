@@ -6,7 +6,9 @@ from pyspark.sql.types import StructField, StructType
 from statistical_methods_library.utilities.exceptions import ValidationError
 
 
-def validate_dataframe(input_df, expected_columns, type_mapping, excluded_columns=[]):
+def validate_dataframe(
+    input_df, expected_columns, type_mapping, unique_cols, excluded_columns=[]
+):
 
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
@@ -45,6 +47,13 @@ def validate_dataframe(input_df, expected_columns, type_mapping, excluded_column
     if not are_schemas_equal_ignore_nullable(aliased_df.schema, schema):
         raise ValidationError
 
+    # Duplicate check
+    if (
+        aliased_df.select(*unique_cols).distinct().count()
+        != aliased_df.select(*unique_cols).count()
+    ):
+        raise ValidationError("Duplicate contributors")
+
     # Check to see if the columns contain null values.
     for col_name in expected_columns:
         if col_name in excluded_columns:
@@ -68,9 +77,6 @@ def validate_one_value_per_group(input_df, group_cols, value_col):
         )
 
 
-def validate_no_duplicates(input_df, unique_cols):
-    if (
-        input_df.select(*unique_cols).distinct().count()
-        != input_df.select(*unique_cols).count()
-    ):
-        raise ValidationError("Duplicate contributors in a period")
+def validate_no_matching_rows(input_df, filter, error_message):
+    if input_df.filter(filter).count() > 0:
+        raise ValidationError(error_message)

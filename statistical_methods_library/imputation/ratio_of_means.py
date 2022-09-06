@@ -219,9 +219,9 @@ def impute(
         input_df,
         input_expected_columns,
         type_mapping,
+        ["ref", "period"],
         ["target", "forward", "backward", "construction"],
     )
-    validation.validate_no_duplicates(aliased_input_df, ["ref", "period"])
 
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
@@ -229,9 +229,8 @@ def impute(
 
     if back_data_df:
         prepared_back_data_df = validation.validate_dataframe(
-            back_data_df, back_expected_columns, type_mapping
+            back_data_df, back_expected_columns, type_mapping, ["ref", "period"]
         )
-        validation.validate_no_duplicates(prepared_back_data_df, ["ref", "period"])
 
     # Store the value for the period prior to the start of imputation.
     # Stored as a value to avoid a join in output creation.
