@@ -11,7 +11,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DoubleType, StringType
 
-import statistical_methods_library.utilities.validation as validation
+from statistical_methods_library.utilities import validation
 
 
 class Marker(Enum):

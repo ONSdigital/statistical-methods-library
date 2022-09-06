@@ -8,7 +8,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
-import statistical_methods_library.utilities.validation as validation
+from statistical_methods_library.utilities import validation
 
 
 def estimate(

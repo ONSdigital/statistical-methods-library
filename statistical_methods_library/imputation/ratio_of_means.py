@@ -11,7 +11,7 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
 from pyspark.sql.types import DoubleType, StringType
 
-import statistical_methods_library.utilities.validation as validation
+from statistical_methods_library.utilities import validation
 
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
