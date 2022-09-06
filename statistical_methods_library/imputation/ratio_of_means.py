@@ -10,6 +10,8 @@ from enum import Enum
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
 
+from statistical_methods_library.utilities import validation
+
 # --- Marker constants ---
 # Documented after the variable as per Pdoc syntax for documenting variables.
 
@@ -34,29 +36,7 @@ class Marker(Enum):
     """The value has been forward imputed from a constructed value."""
 
 
-# --- Imputation errors ---
-
-
-class ImputationError(Exception):
-    """Base type for imputation errors"""
-
-    pass
-
-
-class ValidationError(ImputationError):
-    """Error raised by dataframe validation"""
-
-    pass
-
-
-class DataIntegrityError(ImputationError):
-    """Error raised when imputation has failed to impute for data integrity
-    reasons (currently when the auxiliary column contains nulls)"""
-
-    pass
-
-
-def ratio_of_means(
+def impute(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
@@ -163,30 +143,93 @@ def ratio_of_means(
     the case of rolling imputation, the markers will be the same for chains of
     imputed values.
 
-    If `back_data_df` is provided it must contain the same columns as the output
-    from this function.
+    If `back_data_df` is provided it must contain the following columns:
+        *`reference_col`
+        *`period_col`
+        *`strata_col`
+        *`auxiliary_col`
+        *`output_col`
+        *`marker_col`
     """
     # --- Validate params ---
-    if not isinstance(input_df, DataFrame):
-        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
+    link_cols = [forward_link_col, backward_link_col, construction_link_col]
+    if any(link_cols) and not all(link_cols):
+        raise TypeError("Either all or no link columns must be specified")
 
-    if back_data_df:
-        if not isinstance(back_data_df, DataFrame):
-            raise TypeError("back_data_df must be an instance of pyspark.sql.DataFrame")
-
-    # Mapping of column aliases to parameters
-    full_col_mapping = {
+    input_params = {
         "ref": reference_col,
         "period": period_col,
+        "strata": strata_col,
+        "target": target_col,
+        "aux": auxiliary_col,
+        "forward": forward_link_col,
+        "backward": backward_link_col,
+        "construction": construction_link_col,
+    }
+
+    # Mapping of column aliases to parameters
+    created_col_mapping = {
         "output": output_col,
         "marker": marker_col,
-        "target": target_col,
-        "strata": strata_col,
-        "aux": auxiliary_col,
         "count_construction": count_construction_col,
         "count_forward": count_forward_col,
         "count_backward": count_backward_col,
     }
+
+    new_link_map = {
+        "forward": "forward",
+        "backward": "backward",
+        "construction": "construction",
+    }
+
+    input_expected_columns = {k: v for k, v in input_params.items() if v is not None}
+
+    full_col_mapping = {**input_expected_columns, **created_col_mapping}
+    if forward_link_col is None:
+        full_col_mapping = {**full_col_mapping, **new_link_map}
+
+    back_expected_columns = {
+        "ref": reference_col,
+        "period": period_col,
+        "strata": strata_col,
+        "aux": auxiliary_col,
+        "output": output_col,
+        "marker": marker_col,
+    }
+
+    type_mapping = {
+        "ref": "string",
+        "period": "string",
+        "strata": "string",
+        "target": "double",
+        "aux": "double",
+        "output": "double",
+        "marker": "string",
+        "forward": "double",
+        "backward": "double",
+        "construction": "double",
+    }
+
+    aliased_input_df = validation.validate_dataframe(
+        input_df,
+        input_expected_columns,
+        type_mapping,
+        ["ref", "period"],
+        ["target", "forward", "backward", "construction"],
+    )
+
+    # Cache the prepared back data df since we'll need a few differently
+    # filtered versions
+    prepared_back_data_df = None
+
+    if back_data_df:
+        prepared_back_data_df = validation.validate_dataframe(
+            back_data_df, back_expected_columns, type_mapping, ["ref", "period"]
+        )
+
+    # Store the value for the period prior to the start of imputation.
+    # Stored as a value to avoid a join in output creation.
+    prior_period = None
 
     # --- Run ---
     def run() -> DataFrame:
@@ -195,24 +238,15 @@ def ratio_of_means(
         def should_null_check(func, perform_null_check, *args, **kwargs):
             return lambda df: (func(df, *args, **kwargs), perform_null_check)
 
-        stages = [validate_df]
-        if back_data_df:
-            stages += [
-                lambda _: validate_df(back_data_df, back_data=True),
-                should_null_check(prepare_df, False, back_data_df=back_data_df),
-            ]
-
-        else:
-            stages.append(should_null_check(prepare_df, False))
-
-        stages += [
+        stages = [
+            should_null_check(prepare_df, False),
             should_null_check(calculate_ratios, True),
             should_null_check(forward_impute_from_response, True),
             should_null_check(backward_impute, True),
             should_null_check(construct_values, True),
             should_null_check(forward_impute_from_construction, True),
         ]
-        df = input_df
+        df = aliased_input_df
         for stage in stages:
             result = stage(df)
             if result:
@@ -223,141 +257,13 @@ def ratio_of_means(
 
         return create_output(df)
 
-    # --- Validate DF ---
-    def validate_df(df: DataFrame, back_data: bool = False) -> None:
-        input_cols = set(df.columns)
-        expected_cols = {
-            reference_col,
-            period_col,
-            strata_col,
-            auxiliary_col,
-        }
-
-        if back_data:
-            expected_cols.add(marker_col)
-            expected_cols.add(output_col)
-        else:
-            expected_cols.add(target_col)
-
-        link_cols = [
-            link_col is not None
-            for link_col in [forward_link_col, backward_link_col, construction_link_col]
-        ]
-
-        if any(link_cols) and not all(link_cols):
-            raise TypeError("Either all or no link columns must be specified")
-
-        if forward_link_col is not None and not back_data:
-            expected_cols.add(forward_link_col)
-            expected_cols.add(backward_link_col)
-            expected_cols.add(construction_link_col)
-
-        # Check to see if the col names are not blank.
-        for col_name in expected_cols:
-            if not isinstance(col_name, str):
-                msg = "All column names provided in params must be strings."
-                raise TypeError(msg)
-
-            if col_name == "":
-                msg = "Column name strings provided in params must not be empty."
-                raise ValueError(msg)
-
-        # Check to see if any required columns are missing from dataframe.
-        missing_cols = expected_cols - input_cols
-        if missing_cols:
-            msg = f"Missing columns: {', '.join(c for c in missing_cols)}"
-            raise ValidationError(msg)
-
-        # Check the types of the columns in the input dataframe.
-        expected_types = {
-            reference_col: "string",
-            period_col: "string",
-            strata_col: "string",
-            target_col: "double",
-            auxiliary_col: "double",
-            output_col: "double",
-            marker_col: "string",
-            forward_link_col: "double",
-            backward_link_col: "double",
-            construction_link_col: "double",
-        }
-
-        set_types = {a for a in expected_types.items()}
-        incorrect_types = [
-            t for t in set(df.dtypes) - set_types if t[0] in expected_types
-        ]
-
-        if incorrect_types:
-            msg = ", ".join(
-                f"Column {t[0]} of type {t[1]} must be of type {expected_types[t[0]]}"
-                for t in incorrect_types
-            )
-            raise ValidationError(msg)
-
-        # Only the target column on the input data may be null.
-        if not back_data:
-            expected_cols.remove(target_col)
-            # Passed in links can supposedly be null. Hoping to change minds on that.
-            if forward_link_col is not None:
-                expected_cols.remove(forward_link_col)
-                expected_cols.remove(backward_link_col)
-                expected_cols.remove(construction_link_col)
-
-        for col_name in expected_cols:
-            if df.filter(col(col_name).isNull()).count() > 0:
-                msg = f"Column {col_name} must not contain nulls"
-                raise ValidationError(msg)
-
-        # For clarity. Dataframe is grouped and then gains a count column for how
-        # many rows are part of each group. Filters for > 1 which are non distinct pairs.
-        # Final count tells us the number of distinct pairs.
-        # Python treats 0 as False and > 0 as True
-        if (
-            df.groupby(reference_col, period_col)
-            .count()
-            .filter(col("count") > 1)
-            .count()
-        ):
-            raise ValidationError("References must be unique within periods")
-
-    # Cache the prepared back data df since we'll need a few differently
-    # filtered versions
-    prepared_back_data_df = None
-    # Store the value for the period prior to the start of imputation.
-    # Stored as a value to avoid a join in output creation.
-    prior_period = None
-
     # --- Prepare DF ---
 
-    def prepare_df(
-        df: DataFrame,
-        back_data_df: typing.Optional[DataFrame] = None,
-    ) -> DataFrame:
+    def prepare_df(df: DataFrame) -> DataFrame:
         nonlocal prepared_back_data_df
-        if back_data_df:
-            prepared_back_data_df = select_cols(back_data_df)
-
-        if forward_link_col is None:
-            full_col_mapping.update(
-                {
-                    "forward": "forward",
-                    "backward": "backward",
-                    "construction": "construction",
-                }
-            )
-
-        else:
-            full_col_mapping.update(
-                {
-                    "forward": forward_link_col,
-                    "backward": backward_link_col,
-                    "construction": construction_link_col,
-                }
-            )
 
         prepared_df = (
-            select_cols(df)
-            .withColumn("output", col("target"))
+            df.withColumn("output", col("target"))
             .drop("target")
             .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
             .withColumn("previous_period", calculate_previous_period(col("period")))
@@ -369,7 +275,7 @@ def ratio_of_means(
         # can filter directly.
         prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
 
-        if back_data_df:
+        if prepared_back_data_df:
             prepared_back_data_df = (
                 prepared_back_data_df.filter(
                     (

@@ -10,11 +10,7 @@ from enum import Enum
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 
-
-class ValidationError(Exception):
-    """Error raised when data frame validation fails."""
-
-    pass
+from statistical_methods_library.utilities import validation
 
 
 class Marker(Enum):
@@ -31,7 +27,7 @@ class Marker(Enum):
     """The value has not been winsorised because design * calibration is <= 1."""
 
 
-def winsorise(
+def outlier(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
@@ -93,96 +89,69 @@ def winsorise(
     `Marker` enum.
     """
 
-    if not isinstance(input_df, DataFrame):
-        raise TypeError("input_df must be an instance of pyspark.sql.DataFrame.")
-
     ratio_cols = [auxiliary_col, calibration_col]
     if any(ratio_cols) and not all(ratio_cols):
         raise TypeError(
             "Both or neither of auxiliary_col and calibration_col must be specified."
         )
 
-    expected_cols = {
-        reference_col,
-        period_col,
-        grouping_col,
-        target_col,
-        design_col,
-        l_value_col,
+    # --- Validate params ---
+    input_params = {
+        "reference": reference_col,
+        "period": period_col,
+        "grouping": grouping_col,
+        "target": target_col,
+        "design": design_col,
+        "l_value": l_value_col,
+        "calibration": calibration_col,
+        "auxiliary": auxiliary_col,
     }
 
+    expected_columns = {k: v for k, v in input_params.items() if v is not None}
+
+    type_mapping = {
+        "reference": "string",
+        "period": "string",
+        "grouping": "string",
+        "target": "double",
+        "design": "double",
+        "l_value": "double",
+        "calibration": "double",
+        "auxiliary": "double",
+    }
+
+    aliased_df = validation.validate_dataframe(
+        input_df, expected_columns, type_mapping, ["reference", "period"]
+    )
+    validation.validate_no_matching_rows(
+        aliased_df,
+        (col(design_col) < 1),
+        f"Column {design_col} must not contain values smaller than one.",
+    )
+    validation.validate_no_matching_rows(
+        aliased_df,
+        (col(l_value_col) < 0),
+        f"Column {l_value_col} must not contain negative values.",
+    )
     if calibration_col is not None:
-        expected_cols.add(calibration_col)
-
-    if auxiliary_col is not None:
-        expected_cols.add(auxiliary_col)
-
-    for col_name in expected_cols:
-        if not isinstance(col_name, str):
-            raise TypeError("Provided column names must be strings.")
-
-        if not col_name:
-            raise ValueError("Provided column names must not be empty.")
-
-    missing_cols = expected_cols - set(input_df.columns)
-    if missing_cols:
-        raise ValidationError(f"Missing columns: {', '.join(c for c in missing_cols)}")
-
-    for col_name in expected_cols:
-        if input_df.filter(col(col_name).isNull()).count() > 0:
-            raise ValidationError(f"Column {col_name} must not contain null values.")
-
-    if input_df.filter(col(design_col) < 1).count() > 0:
-        raise ValidationError(
-            f"Column {design_col} must not contain values smaller than one."
+        validation.validate_no_matching_rows(
+            aliased_df,
+            (col(calibration_col) <= 0),
+            f"Column {calibration_col} must not contain zero or negative values.",
         )
-    if input_df.filter(col(l_value_col) < 0).count() > 0:
-        raise ValidationError(f"Column {l_value_col} must not contain negative values.")
-
-    if calibration_col is not None and (
-        input_df.filter(col(calibration_col) <= 0).count() > 0
-    ):
-        raise ValidationError(
-            f"Column {calibration_col} must not contain zero or negative values."
-        )
-
-    col_list = [
-        col(reference_col).alias("reference"),
-        col(period_col).alias("period"),
-        col(grouping_col).alias("grouping"),
-        col(target_col).alias("target"),
-        col(design_col).alias("design"),
-        col(l_value_col).alias("l_value"),
-    ]
 
     # If we don't have a calibration factor and auxiliary value then set to 1.
     # This cancels out the ratio part of Winsorisation which means that
     # Expansion Winsorisation is performed.
-    if auxiliary_col is not None:
-        col_list.append(col(auxiliary_col).alias("auxiliary"))
+    pre_marker_df = aliased_df
+    if auxiliary_col is None:
+        pre_marker_df = pre_marker_df.withColumn("auxiliary", lit(1.0))
 
-    else:
-        col_list.append(lit(1.0).alias("auxiliary"))
-
-    if calibration_col is not None:
-        col_list.append(col(calibration_col).alias("calibration"))
-
-    else:
-        col_list.append(lit(1.0).alias("calibration"))
+    if calibration_col is None:
+        pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
 
     group_cols = ["period", "grouping"]
-    pre_marker_df = input_df.select(col_list)
-
-    if (
-        input_df.select([col(grouping_col), col(period_col), col(l_value_col)])
-        .distinct()
-        .groupBy([grouping_col, period_col])
-        .count()
-        .filter("count > 1")
-        .count()
-        > 0
-    ):
-        raise ValidationError("Differing L Values within a grouping in the same period")
+    validation.validate_one_value_per_group(input_df, group_cols, l_value_col)
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
