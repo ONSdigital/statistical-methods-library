@@ -28,7 +28,7 @@ class Marker(Enum):
     """The value has not been winsorised because design * calibration is <= 1."""
 
 
-def winsorise(
+def outlier(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,

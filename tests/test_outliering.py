@@ -75,7 +75,7 @@ for scenario_category in ("dev", "methodology"):
                 "tests",
                 "fixture_data",
                 "outliering",
-                "winsorise",
+                "winsorisation",
                 f"{scenario_category}_scenarios",
                 "*_input.csv",
             )
@@ -95,7 +95,7 @@ for scenario_category in ("dev", "methodology"):
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        winsorisation.winsorise("not_a_dataframe", *params)
+        winsorisation.outlier("not_a_dataframe", *params)
 
 
 # --- Test if params not strings  ---
@@ -107,7 +107,7 @@ def test_params_not_string(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -121,7 +121,7 @@ def test_params_not_string(fxt_load_test_csv):
         outlier_weight_col,
     )
     with pytest.raises(TypeError):
-        winsorisation.winsorise(test_dataframe, *bad_params)
+        winsorisation.outlier(test_dataframe, *bad_params)
 
 
 # --- Test if params null  ---
@@ -133,7 +133,7 @@ def test_params_null(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -147,7 +147,7 @@ def test_params_null(fxt_load_test_csv):
         outlier_weight_col,
     )
     with pytest.raises(ValueError):
-        winsorisation.winsorise(test_dataframe, *bad_params)
+        winsorisation.outlier(test_dataframe, *bad_params)
 
 
 # --- Test validation fail if mismatched calibration cols  ---
@@ -159,7 +159,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
@@ -174,7 +174,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         calibration_factor_col,
     )
     with pytest.raises(TypeError):
-        winsorisation.winsorise(test_dataframe, *bad_params)
+        winsorisation.outlier(test_dataframe, *bad_params)
 
 
 # --- Test validation fail if nulls in data  ---
@@ -186,12 +186,12 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "null_value_present",
     )
     with pytest.raises(ValidationError):
-        winsorisation.winsorise(test_dataframe, *params)
+        winsorisation.outlier(test_dataframe, *params)
 
 
 # --- Test if cols missing from input dataframe(s)  ---
@@ -203,13 +203,13 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
     bad_dataframe = test_dataframe.drop(target_col)
     with pytest.raises(ValidationError):
-        winsorisation.winsorise(bad_dataframe, *params)
+        winsorisation.outlier(bad_dataframe, *params)
 
 
 # --- Test if output contents are as expected, both new columns and data ---
@@ -221,13 +221,13 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = winsorisation.winsorise(test_dataframe, *params)
+    ret_val = winsorisation.outlier(test_dataframe, *params)
     # perform action on the dataframe to trigger lazy evaluation...
     ret_val.count()
     # ...and then check
@@ -243,11 +243,11 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "basic_functionality",
     )
-    ret_val = winsorisation.winsorise(
+    ret_val = winsorisation.outlier(
         test_dataframe,
         *default_params,
     )
@@ -284,7 +284,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         scenario_type,
         f"{scenario}_input",
     )
@@ -298,12 +298,12 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         scenario_type,
         f"{scenario}_output",
     )
 
-    ret_val = winsorisation.winsorise(test_dataframe, *params, **winsorisation_kwargs)
+    ret_val = winsorisation.outlier(test_dataframe, *params, **winsorisation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
@@ -321,13 +321,13 @@ def test_winsorise_different_stratum_l_values_in_same_period_fails(fxt_load_test
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "different_l_values_stratum_same_period",
     )
 
     with pytest.raises(ValidationError):
-        winsorisation.winsorise(
+        winsorisation.outlier(
             test_dataframe,
             *default_params,
         )
@@ -339,7 +339,7 @@ def test_winsorise_negative_calibration_factor_fails(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "negative_calibration_factor",
     )
@@ -355,7 +355,7 @@ def test_winsorise_negative_calibration_factor_fails(fxt_load_test_csv):
             calibration_factor_col,
             auxiliary_col,
         ]
-        winsorisation.winsorise(
+        winsorisation.outlier(
             test_dataframe,
             *additional_params,
         )
@@ -367,7 +367,7 @@ def test_winsorise_negative_l_value_fails(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "negative_l_value",
     )
@@ -376,7 +376,7 @@ def test_winsorise_negative_l_value_fails(fxt_load_test_csv):
         ValidationError,
         match=rf"Column {l_value_col} must not contain negative values.",
     ):
-        winsorisation.winsorise(
+        winsorisation.outlier(
             test_dataframe,
             *default_params,
         )
@@ -388,7 +388,7 @@ def test_winsorise_design_weight_smaller_than_one_fails(fxt_load_test_csv):
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "design_weight_smaller_than_one",
     )
@@ -397,7 +397,7 @@ def test_winsorise_design_weight_smaller_than_one_fails(fxt_load_test_csv):
         ValidationError,
         match=rf"Column {design_weight_col} must not contain values smaller than one.",
     ):
-        winsorisation.winsorise(
+        winsorisation.outlier(
             test_dataframe,
             *default_params,
         )
@@ -411,12 +411,12 @@ def test_winsorise_different_stratum_l_values_in_different_periods_succeeds(
         dataframe_columns,
         dataframe_types,
         "outliering",
-        "winsorise",
+        "winsorisation",
         "unit",
         "different_l_values_stratum_different_periods",
     )
 
-    winsorisation.winsorise(
+    winsorisation.outlier(
         test_dataframe,
         *default_params,
     )
