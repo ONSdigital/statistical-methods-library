@@ -206,13 +206,9 @@ def impute(
         "aux": DoubleType(),
         "output": DoubleType(),
         "marker": StringType(),
-        "auxiliary": DoubleType(),
         "forward": DoubleType(),
         "backward": DoubleType(),
         "construction": DoubleType(),
-        "count_forward": DoubleType(),
-        "count_backward": DoubleType(),
-        "count_construction": DoubleType(),
     }
 
     aliased_input_df = validation.validate_dataframe(
