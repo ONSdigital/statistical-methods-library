@@ -219,9 +219,9 @@ def impute(
     )
 
     if link_filter:
-        filtered_refs = input_df.select(
+        filtered_refs = input_df.filter(link_filter).select(
             col(reference_col).alias("ref"), col(period_col).alias("period")
-        ).filter(link_filter)
+        )
 
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
