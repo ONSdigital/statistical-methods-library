@@ -123,19 +123,22 @@ def outlier(
     aliased_df = validation.validate_dataframe(
         input_df, expected_columns, type_mapping, ["reference", "period"]
     )
+    validation.validate_one_value_per_group(
+        input_df, [period_col, grouping_col], l_value_col
+    )
     validation.validate_no_matching_rows(
-        aliased_df,
+        input_df,
         (col(design_col) < 1),
         f"Column {design_col} must not contain values smaller than one.",
     )
     validation.validate_no_matching_rows(
-        aliased_df,
+        input_df,
         (col(l_value_col) < 0),
         f"Column {l_value_col} must not contain negative values.",
     )
     if calibration_col is not None:
         validation.validate_no_matching_rows(
-            aliased_df,
+            input_df,
             (col(calibration_col) <= 0),
             f"Column {calibration_col} must not contain zero or negative values.",
         )
@@ -151,8 +154,6 @@ def outlier(
         pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
 
     group_cols = ["period", "grouping"]
-    validation.validate_one_value_per_group(pre_marker_df, group_cols, l_value_col)
-
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
         "design_calibration", expr("design * calibration")
