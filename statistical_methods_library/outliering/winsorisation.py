@@ -123,7 +123,9 @@ def outlier(
     aliased_df = validation.validate_dataframe(
         input_df, expected_columns, type_mapping, ["reference", "period"]
     )
-    validation.validate_one_value_per_group(input_df, [period_col, grouping_col], l_value_col)
+    validation.validate_one_value_per_group(
+        input_df, [period_col, grouping_col], l_value_col
+    )
     validation.validate_no_matching_rows(
         input_df,
         (col(design_col) < 1),
