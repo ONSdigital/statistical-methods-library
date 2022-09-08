@@ -151,7 +151,7 @@ def outlier(
         pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
 
     group_cols = ["period", "grouping"]
-    validation.validate_one_value_per_group(input_df, group_cols, l_value_col)
+    validation.validate_one_value_per_group(pre_marker_df, group_cols, l_value_col)
 
     # Separate out rows that are not to be winsorised and mark appropriately.
     df = pre_marker_df.withColumn(
