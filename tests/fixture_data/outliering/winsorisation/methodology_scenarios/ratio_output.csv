@@ -1,4 +1,4 @@
-period,ref,outlier_weight,winsorisation_marker
+date,identifier,outlier_weight,winsorisation_marker
 1900,123456,1,"W"
 1900,234567,0.433037166,"W"
 1900,345678,1,"W"

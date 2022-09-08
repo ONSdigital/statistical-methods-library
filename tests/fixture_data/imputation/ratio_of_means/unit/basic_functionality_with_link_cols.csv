@@ -1,2 +1,2 @@
-reference,period,strata,target,auxiliary,backward,forward,construction
+identifier,date,group,question,other,backward,forward,construction
 1234,"202105","9000",1,2,1,1,1

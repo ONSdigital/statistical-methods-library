@@ -1,4 +1,4 @@
-reference,period,strata,auxiliary,construction,output,marker,count_construction
+identifier,date,group,other,construction,output,marker,count_construction
 1111,202101,9000,2,1750.0,3500.0,C,4
 2222,202105,9000,2,2556.175,2928.2,R,4
 2222,202104,9000,2,2329.25,2662,R,4

@@ -42,7 +42,7 @@ def validate_dataframe(
     wrong_types = set(aliased_df.dtypes) - set(type_mapping.items())
     if wrong_types:
         raise ValidationError(
-            f"Wrong data types for columns: {', '.join(c[0] for c in wrong_types)}"
+            f"Wrong data types for columns: {', '.join(expected_columns[c[0]] for c in wrong_types)}"
         )
 
     # Duplicate check

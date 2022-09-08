@@ -1,4 +1,4 @@
-period,ref,outlier_weight,winsorisation_marker
+date,identifier,outlier_weight,winsorisation_marker
 202201,345671,1,W
 202201,345672,1,W
 202201,345673,1,W

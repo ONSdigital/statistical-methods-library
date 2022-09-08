@@ -1,4 +1,4 @@
-reference,period,strata,sample_inclusion_marker,adjustment_marker,H
+identifier,date,group,sample,adjustment,H
 1,202009,10,True,I,True
 2,202009,10,True,D,True
 3,202009,10,True,D,True

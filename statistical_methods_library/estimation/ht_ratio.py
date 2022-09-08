@@ -158,7 +158,7 @@ def estimate(
     # h values must not change within a stratum
     if h_value_col is not None:
         validation.validate_one_value_per_group(
-            aliased_df, ["period", "strata"], "h_value"
+            input_df, [period_col, strata_col], h_value_col
         )
 
     # Values for the marker column used for birth-death and out of scope adjustment.
@@ -168,20 +168,20 @@ def estimate(
 
     if adjustment_marker_col is not None:
         validation.validate_no_matching_rows(
-            aliased_df,
-            ((~col("sample_marker")) & (col("adjustment_marker") != "I")),
+            input_df,
+            ((~col(sample_marker_col)) & (col(adjustment_marker_col) != "I")),
             "Unsampled responders must only contain an 'I' marker.",
         )
         if out_of_scope_full is not None:
             validation.validate_no_matching_rows(
-                aliased_df,
-                (~col("adjustment_marker").isin(all_adjustment_markers)),
+                input_df,
+                (~col(adjustment_marker_col).isin(all_adjustment_markers)),
                 f"The {adjustment_marker_col} must only contain 'I', 'O' or 'D'.",
             )
         else:
             validation.validate_no_matching_rows(
-                aliased_df,
-                (~col("adjustment_marker").isin(death_adjustment_markers)),
+                input_df,
+                (~col(adjustment_marker_col).isin(death_adjustment_markers)),
                 f"The {adjustment_marker_col} must only contain 'I' or 'D'.",
             )
 

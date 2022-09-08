@@ -1,4 +1,4 @@
-reference,period,strata,target,marker
+identifier,date,group,question,marker
 1,202010,1,1,FI
 2,202010,1,1,FIC
 3,202010,1,1,R

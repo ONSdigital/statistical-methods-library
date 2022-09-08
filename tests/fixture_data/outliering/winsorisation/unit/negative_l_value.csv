@@ -1,4 +1,4 @@
-ref,period,grouping,target,design_weight,l_value,calibration_factor,auxiliary
+identifier,date,group,question,design,L,calibration,other
 1,202001,1,10,1,-0.05,4,8
 1,202002,1,10,2,-0.05,4,8
 1,202003,1,15,3,-0.05,6,8

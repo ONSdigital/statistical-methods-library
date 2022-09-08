@@ -1,4 +1,4 @@
-period,strata,calibration_group,unadjusted_design_weight,design_weight,calibration_factor
+date,group,calibration,unadjusted_design_weight,design_weight,calibration_factor
 2010,1,200,1.25,2.5,1.1086294416
 2010,2,200,1.6666666667,1.6666666667,1.1086294416
 2010,3,300,1,1,1

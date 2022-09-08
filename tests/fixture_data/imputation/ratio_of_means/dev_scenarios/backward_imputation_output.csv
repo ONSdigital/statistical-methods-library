@@ -1,4 +1,4 @@
-reference,period,strata,auxiliary,output,marker,forward,backward,count_forward,count_backward
+identifier,date,group,other,output,marker,forward,backward,count_forward,count_backward
 1111,202101,9000,2.0,1000.0,R,1.0,0.9090909090909091,,3
 1111,202102,9000,2.0,1100.0,R,1.1,0.9090909090909091,3,3
 1111,202103,9000,2.0,1210.0,FIR,1.1,0.9090909090909091,3,4

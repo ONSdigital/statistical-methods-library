@@ -1,4 +1,4 @@
-period,strata,calibration_group,design_weight,calibration_factor
+date,group,calibration,design_weight,calibration_factor
 202012,0001,0001,1.50,0.99
 202012,0002,0002,2.25,0.97
 202012,0003,0003,2.67,1.5
