@@ -556,9 +556,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     if scenario.endswith("filtered"):
         if "dev" in scenario_type:
-            imputation_kwargs["link_filter"] = '(' + exclude_col + ' == "N")'
+            imputation_kwargs["link_filter"] = "(" + exclude_col + ' == "N")'
         else:
-            imputation_kwargs["link_filter"] = "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
+            imputation_kwargs["link_filter"] = (
+                "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
+            )
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
