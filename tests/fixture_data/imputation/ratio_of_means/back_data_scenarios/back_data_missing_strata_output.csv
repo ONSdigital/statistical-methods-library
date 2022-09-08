@@ -1,4 +1,4 @@
-reference,period,strata,auxiliary,marker,output,forward,backward,construction
+identifier,date,group,other,marker,output,forward,backward,construction
 101,203912,9000,2,FIR,12000,1,1,
 101,204001,9000,2,FIR,12000,1,1,
 101,204002,9000,2,R,10000,1,1,

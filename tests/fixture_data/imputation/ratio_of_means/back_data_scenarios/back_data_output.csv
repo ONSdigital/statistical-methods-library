@@ -1,4 +1,4 @@
-reference,period,strata,output,auxiliary,marker,calc_output,next_period,prev_period,forward,backward,construction
+identifier,date,group,output,other,marker,calc_output,next_period,prev_period,forward,backward,construction
 1111000,203901,9000,1464.1,2,R,1464.1,203902,,1,1,1
 1111001,203901,8000,2464.1,2,BI,2464.1,203902,,1,1,1
 1111002,203901,9000,3464.1,2,FIR,3464.1,203902,,1,1,1

@@ -1,4 +1,4 @@
-reference,period,strata,auxiliary,output,marker,forward,backward,construction,count_forward,count_backward,count_construction
+identifier,date,group,other,output,marker,forward,backward,construction,count_forward,count_backward,count_construction
 160001,202001,100,76,2086,R,1.0,0.285048351,29.78238342,,3,3
 160001,202002,100,76,4154,R,3.508176757,3.177592184,104.4818653,3,3,3
 160001,202003,100,76,1610,R,0.314703695,0.927777778,33.07522124,3,3,4

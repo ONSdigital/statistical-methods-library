@@ -9,14 +9,14 @@ from pyspark.sql.functions import lit
 from statistical_methods_library.estimation import ht_ratio
 from statistical_methods_library.utilities.exceptions import ValidationError
 
-unique_identifier_col = "reference"
-period_col = "period"
-strata_col = "strata"
-sample_col = "sample_inclusion_marker"
-adjustment_col = "adjustment_marker"
+unique_identifier_col = "identifier"
+period_col = "date"
+strata_col = "group"
+sample_col = "sample"
+adjustment_col = "adjustment"
 h_col = "H"
-auxiliary_col = "auxiliary"
-calibration_group_col = "calibration_group"
+auxiliary_col = "other"
+calibration_group_col = "calibration"
 unadjusted_design_weight_col = "unadjusted_design_weight"
 design_weight_col = "design_weight"
 calibration_factor_col = "calibration_factor"
@@ -416,7 +416,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     ret_val = ht_ratio.estimate(test_dataframe, **estimation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["period", "strata"]
+    sort_col_list = ["date", "group"]
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)

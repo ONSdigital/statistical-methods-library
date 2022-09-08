@@ -1,4 +1,4 @@
-reference,period,strata,sample_inclusion_marker,H,adjustment_marker,auxiliary,calibration_group
+identifier,date,group,sample,H,adjustment,other,calibration
 1,202012,0001,True,True,D,10,A
 2,202012,0001,True,True,I,5,A
 3,202012,0001,True,True,I,6,A

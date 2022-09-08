@@ -1,4 +1,4 @@
-reference,period,strata,sample_inclusion_marker
+identifier,date,group,sample
 1,202009,10,True
 2,202009,10,True
 3,202009,10,True

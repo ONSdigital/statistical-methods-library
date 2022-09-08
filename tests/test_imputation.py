@@ -9,15 +9,15 @@ from pyspark.sql.functions import col, lit, when
 from statistical_methods_library.imputation import ratio_of_means
 from statistical_methods_library.utilities.exceptions import ValidationError
 
-auxiliary_col = "auxiliary"
+auxiliary_col = "other"
 backward_col = "backward"
 forward_col = "forward"
 marker_col = "marker"
 output_col = "output"
-period_col = "period"
-reference_col = "reference"
-strata_col = "strata"
-target_col = "target"
+period_col = "date"
+reference_col = "identifier"
+strata_col = "group"
+target_col = "question"
 construction_col = "construction"
 count_forward_col = "count_forward"
 count_backward_col = "count_backward"
@@ -556,9 +556,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     if scenario.endswith("filtered"):
         if "dev" in scenario_type:
-            imputation_kwargs["link_filter"] = '(exclude == "N")'
+            imputation_kwargs["link_filter"] = "(" + exclude_col + ' == "N")'
         else:
-            imputation_kwargs["link_filter"] = "(auxiliary != 71) and (target < 100000)"
+            imputation_kwargs["link_filter"] = (
+                "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
+            )
 
     exp_val = fxt_load_test_csv(
         dataframe_columns,
@@ -573,7 +575,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["reference", "period"]
+    sort_col_list = [reference_col, period_col]
     assert_approx_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
         exp_val.sort(sort_col_list).select(select_cols),
@@ -639,19 +641,19 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
         .alias(marker_col),
     ]
 
-    min_period_df = scenario_output.selectExpr("min(period)")
+    min_period_df = scenario_output.selectExpr("min(" + period_col + ")")
 
     back_data_df = scenario_output.join(
-        min_period_df, [col("period") == col("min(period)")]
+        min_period_df, [col(period_col) == col("min(" + period_col + ")")]
     )
 
     input_df = test_dataframe.join(
-        min_period_df, [col("period") == col("min(period)")], "leftanti"
-    ).drop("min(period)")
+        min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
+    ).drop("min(" + period_col + ")")
 
     scenario_expected_output = scenario_output.join(
-        min_period_df, [col("period") == col("min(period)")], "leftanti"
-    ).drop("min(period)")
+        min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
+    ).drop("min(" + period_col + ")")
 
     # We use imputation_kwargs to allow us to pass in the forward, backward
     # and construction link columns which are usually defaulted to None. This
@@ -679,7 +681,7 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
     ret_val = ratio_of_means.impute(input_df, *params, **imputation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = ["reference", "period"]
+    sort_col_list = [reference_col, period_col]
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert_approx_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),

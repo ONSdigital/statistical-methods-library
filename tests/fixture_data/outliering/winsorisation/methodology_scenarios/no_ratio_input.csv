@@ -1,4 +1,4 @@
-period,ref,grouping,target,design_weight,calibration_factor,auxiliary,l_value
+date,identifier,group,question,design,calibration,other,L
 1900,123456,1,92,50,0.8,100,2368.579001
 1900,234567,1,115,50,0.8,110,2368.579001
 1900,345678,1,96,50,0.8,90,2368.579001

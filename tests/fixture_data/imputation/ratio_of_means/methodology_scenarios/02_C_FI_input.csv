@@ -1,4 +1,4 @@
-reference,period,strata,target,auxiliary
+identifier,date,group,question,other
 20001,202001,100,2536,35
 20001,202002,100,8283,35
 20002,202001,100,9113,72

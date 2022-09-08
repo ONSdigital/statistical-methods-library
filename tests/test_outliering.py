@@ -9,14 +9,14 @@ from pyspark.sql.functions import lit
 from statistical_methods_library.outliering import winsorisation
 from statistical_methods_library.utilities.exceptions import ValidationError
 
-reference_col = "ref"
-period_col = "period"
-grouping_col = "grouping"
-auxiliary_col = "auxiliary"
-design_weight_col = "design_weight"
-calibration_factor_col = "calibration_factor"
-l_value_col = "l_value"
-target_col = "target"
+reference_col = "identifier"
+period_col = "date"
+grouping_col = "group"
+auxiliary_col = "other"
+design_weight_col = "design"
+calibration_factor_col = "calibration"
+l_value_col = "L"
+target_col = "question"
 outlier_weight_col = "outlier_weight"
 winsorisation_marker_col = "winsorisation_marker"
 

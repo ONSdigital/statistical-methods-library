@@ -1,4 +1,4 @@
-period,strata,design_weight,unadjusted_design_weight
+date,group,design_weight,unadjusted_design_weight
 202009,10,6,2
 202009,11,6,2
 202009,12,2,2
