@@ -201,13 +201,13 @@ def impute(
         "ref": "string",
         "period": "string",
         "strata": "string",
-        "target": "double",
-        "aux": "double",
-        "output": "double",
+        "target": "decimal",
+        "aux": "decimal",
+        "output": "decimal",
         "marker": "string",
-        "forward": "double",
-        "backward": "double",
-        "construction": "double",
+        "forward": "decimal",
+        "backward": "decimal",
+        "construction": "decimal",
     }
 
     aliased_input_df = validation.validate_dataframe(

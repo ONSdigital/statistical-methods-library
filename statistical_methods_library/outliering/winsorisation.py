@@ -113,11 +113,11 @@ def outlier(
         "reference": "string",
         "period": "string",
         "grouping": "string",
-        "target": "double",
-        "design": "double",
-        "l_value": "double",
-        "calibration": "double",
-        "auxiliary": "double",
+        "target": "decimal",
+        "design": "decimal",
+        "l_value": "decimal",
+        "calibration": "decimal",
+        "auxiliary": "decimal",
     }
 
     aliased_df = validation.validate_dataframe(

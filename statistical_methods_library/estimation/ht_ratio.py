@@ -147,7 +147,7 @@ def estimate(
         "sample_marker": "boolean",
         "adjustment_marker": "string",
         "h_value": "boolean",
-        "auxiliary": "double",
+        "auxiliary": "decimal",
         "calibration_group": "string",
     }
 

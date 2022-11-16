@@ -38,17 +38,17 @@ dataframe_types = {
     reference_col: "string",
     period_col: "string",
     grouping_col: "string",
-    auxiliary_col: "double",
-    design_weight_col: "double",
-    calibration_factor_col: "double",
-    l_value_col: "double",
-    target_col: "double",
-    outlier_weight_col: "double",
+    auxiliary_col: "decimal",
+    design_weight_col: "decimal",
+    calibration_factor_col: "decimal",
+    l_value_col: "decimal",
+    target_col: "decimal",
+    outlier_weight_col: "decimal",
     winsorisation_marker_col: "string",
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[reference_col] = "double"
+bad_dataframe_types[reference_col] = "decimal"
 
 params = (
     reference_col,

@@ -42,15 +42,15 @@ dataframe_types = {
     sample_col: "boolean",
     adjustment_col: "string",
     h_col: "boolean",
-    auxiliary_col: "double",
+    auxiliary_col: "decimal",
     calibration_group_col: "string",
-    design_weight_col: "double",
-    unadjusted_design_weight_col: "double",
-    calibration_factor_col: "double",
+    design_weight_col: "decimal",
+    unadjusted_design_weight_col: "decimal",
+    calibration_factor_col: "decimal",
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[unique_identifier_col] = "double"
+bad_dataframe_types[unique_identifier_col] = "decimal"
 
 params = (unique_identifier_col, period_col, strata_col, sample_col)
 
