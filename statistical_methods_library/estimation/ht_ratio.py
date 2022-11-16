@@ -6,6 +6,7 @@ import typing
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
+from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -141,14 +142,14 @@ def estimate(
     expected_columns = {k: v for k, v in input_params.items() if v is not None}
 
     type_mapping = {
-        "unique_identifier": "string",
-        "period": "string",
-        "strata": "string",
-        "sample_marker": "boolean",
-        "adjustment_marker": "string",
-        "h_value": "boolean",
-        "auxiliary": "decimal",
-        "calibration_group": "string",
+        "unique_identifier": StringType,
+        "period": StringType,
+        "strata": StringType,
+        "sample_marker": BooleanType,
+        "adjustment_marker": StringType,
+        "h_value": BooleanType,
+        "auxiliary": DecimalType,
+        "calibration_group": StringType,
     }
 
     aliased_df = validation.validate_dataframe(

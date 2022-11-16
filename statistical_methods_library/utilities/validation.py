@@ -36,14 +36,17 @@ def validate_dataframe(
         )
     aliased_df = input_df.select(column_list)
     # Check that the set of aliased columns have the correct data types.
-    # Note: the dtype property on a DataFrame object returns a list of
-    # tuples of (col_name, data_type) where the data_type field is the string
-    # name for the pyspark data type.
-    wrong_types = set(aliased_df.dtypes) - set(type_mapping.items())
+    wrong_types = [
+        (field.name, field.dataType) for field in aliased_df.schema.fields
+        if not isinstance(field.dataType, type_mapping[field.name])
+    ]
     if wrong_types:
         raise ValidationError(
             "Wrong data types for columns: "
-            + f"{', '.join(expected_columns[c[0]] for c in wrong_types)}"
+            + ', '.join(
+                f"{expected_columns[c[0]]}: {c[1].typeName}"
+                for c in wrong_types
+            )
         )
 
     # Duplicate check
