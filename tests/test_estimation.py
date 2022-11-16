@@ -3,7 +3,7 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_approx_df_equality
+from chispa import assert_df_equality
 from pyspark.sql.functions import lit
 
 from statistical_methods_library.estimation import ht_ratio
@@ -42,15 +42,15 @@ dataframe_types = {
     sample_col: "boolean",
     adjustment_col: "string",
     h_col: "boolean",
-    auxiliary_col: "decimal",
+    auxiliary_col: "decimal(15,2)",
     calibration_group_col: "string",
-    design_weight_col: "decimal",
-    unadjusted_design_weight_col: "decimal",
-    calibration_factor_col: "decimal",
+    design_weight_col: "decimal(15,2)",
+    unadjusted_design_weight_col: "decimal(15,2)",
+    calibration_factor_col: "decimal(15,2)",
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[unique_identifier_col] = "decimal"
+bad_dataframe_types[unique_identifier_col] = "decimal(15,5)"
 
 params = (unique_identifier_col, period_col, strata_col, sample_col)
 
@@ -421,9 +421,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
 
-    assert_approx_df_equality(
+    assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
         exp_val.sort(sort_col_list).select(select_cols),
-        0.01,
         ignore_nullable=True,
     )
