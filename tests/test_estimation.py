@@ -5,6 +5,7 @@ import pathlib
 import pytest
 from chispa import assert_df_equality
 from pyspark.sql.functions import lit
+from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.estimation import ht_ratio
 from statistical_methods_library.utilities.exceptions import ValidationError
@@ -34,23 +35,24 @@ dataframe_columns = (
     unadjusted_design_weight_col,
     calibration_factor_col,
 )
+decimal_type = DecimalType(15,3)
 
 dataframe_types = {
-    unique_identifier_col: "string",
-    period_col: "string",
-    strata_col: "string",
-    sample_col: "boolean",
-    adjustment_col: "string",
-    h_col: "boolean",
-    auxiliary_col: "decimal(15,2)",
-    calibration_group_col: "string",
-    design_weight_col: "decimal(15,2)",
-    unadjusted_design_weight_col: "decimal(15,2)",
-    calibration_factor_col: "decimal(15,2)",
+    unique_identifier_col: StringType(),
+    period_col: StringType(),
+    strata_col: StringType(),
+    sample_col: BooleanType(),
+    adjustment_col: StringType(),
+    h_col: BooleanType(),
+    auxiliary_col: decimal_type,
+    calibration_group_col: StringType(),
+    design_weight_col: decimal_type,
+    unadjusted_design_weight_col: decimal_type,
+    calibration_factor_col: decimal_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[unique_identifier_col] = "decimal(15,5)"
+bad_dataframe_types[unique_identifier_col] = decimal_type
 
 params = (unique_identifier_col, period_col, strata_col, sample_col)
 
@@ -413,7 +415,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
 
-    ret_val = ht_ratio.estimate(test_dataframe, **estimation_kwargs)
+    ret_val = ht_ratio.estimate(test_dataframe, **estimation_kwargs, output_type=decimal_type)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["date", "group"]

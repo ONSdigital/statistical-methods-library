@@ -9,7 +9,7 @@ from enum import Enum
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, count, lit, sum, when
-from pyspark.sql.types import DecimalType, StringType
+from pyspark.sql.types import DecimalType, StringType, IntegerType
 
 from statistical_methods_library.utilities import validation
 
@@ -641,13 +641,13 @@ def impute(
 
     def calculate_previous_period(period: Column) -> Column:
         return when(
-            period.endswith("01"), (period.cast("int") - 89).cast(StringType)
-        ).otherwise((period.cast("int") - 1).cast(StringType))
+            period.endswith("01"), (period.cast(IntegerType()) - 89).cast(StringType())
+        ).otherwise((period.cast(IntegerType()) - 1).cast(StringType()))
 
     def calculate_next_period(period: Column) -> Column:
         return when(
-            period.endswith("12"), (period.cast("int") + 89).cast(StringType)
-        ).otherwise((period.cast("int") + 1).cast(StringType))
+            period.endswith("12"), (period.cast(IntegerType()) + 89).cast(StringType())
+        ).otherwise((period.cast(IntegerType()) + 1).cast(StringType()))
 
     def filter_back_data(filter_col: Column) -> DataFrame:
         return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)

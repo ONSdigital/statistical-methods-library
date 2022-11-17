@@ -40,6 +40,7 @@ def outlier(
     calibration_col: typing.Optional[str] = None,
     auxiliary_col: typing.Optional[str] = None,
     marker_col: typing.Optional[str] = "winsorisation_marker",
+    output_type: DecimalType = DecimalType(38,18),
 ) -> DataFrame:
     """
     Perform One-sided Winsorisation.
@@ -149,10 +150,10 @@ def outlier(
     # Expansion Winsorisation is performed.
     pre_marker_df = aliased_df
     if auxiliary_col is None:
-        pre_marker_df = pre_marker_df.withColumn("auxiliary", lit(1.0))
+        pre_marker_df = pre_marker_df.withColumn("auxiliary", lit(1.0).cast(output_type))
 
     if calibration_col is None:
-        pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
+        pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0).cast(output_type))
 
     group_cols = ["period", "grouping"]
     # Separate out rows that are not to be winsorised and mark appropriately.
@@ -169,7 +170,7 @@ def outlier(
     )
 
     not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
-        "outlier", lit(1.0)
+        "outlier", lit(1.0).cast(output_type)
     )
     to_be_winsorised_df = df.filter(col("marker").isNull())
 

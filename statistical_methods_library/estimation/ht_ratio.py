@@ -25,6 +25,7 @@ def estimate(
     unadjusted_design_weight_col: typing.Optional[str] = None,
     design_weight_col: typing.Optional[str] = "design_weight",
     calibration_factor_col: typing.Optional[str] = "calibration_factor",
+    output_type: DecimalType = DecimalType(38,18),
 ) -> DataFrame:
     """
     Perform Horvitz-Thompson estimation of design weights and calibration factors
@@ -197,7 +198,7 @@ def estimate(
         working_df = working_df.withColumn("h_value", col("h_value").cast("integer"))
 
     def count_conditional(cond):
-        return sum(when(cond, 1).otherwise(0))
+        return sum(when(cond, 1).otherwise(0).cast(output_type))
 
     # --- Expansion estimation ---
     # If we've got an adjustment marker and h value then we'll use these, otherwise
@@ -213,17 +214,17 @@ def estimate(
     design_df = (
         working_df.groupBy(["period", "strata"])
         .agg(
-            sum(col("sample_marker")),
+            sum(col("sample_marker").cast(output_type)).alias("sample_sum"),
             count_conditional(col("adjustment_marker") == "D").alias("death_marker"),
             first(col("h_value")),
             count_conditional(col("adjustment_marker") == "O").alias(
                 "out_of_scope_marker"
             ),
-            count(col("sample_marker")),
+            count(col("sample_marker").cast(output_type)).alias("sample_count"),
         )
         .withColumn(
             "unadjusted_design_weight",
-            col("count(sample_marker)") / col("sum(sample_marker)"),
+            col("sample_count") / col("sample_sum"),
         )
     )
 
@@ -250,7 +251,7 @@ def estimate(
                     col("first(h_value)")
                     * (col("death_marker") + col("out_of_scope_marker_numerator"))
                     / (
-                        col("sum(sample_marker)")
+                        col("sample_sum")
                         - col("death_marker")
                         - col("out_of_scope_marker_denominator")
                     )
@@ -258,12 +259,12 @@ def estimate(
             )
         ),
     ).drop(
-        "sum(sample_marker)",
+        "sample_sum",
         "death_marker",
         "first(h_value)",
         "out_of_scope_marker_numerator",
         "out_of_scope_marker_denominator",
-        "count(sample_marker)",
+        "sample_count",
     )
 
     # --- Ratio estimation ---
