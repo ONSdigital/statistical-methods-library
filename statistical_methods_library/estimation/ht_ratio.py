@@ -224,7 +224,7 @@ def estimate(
         )
         .withColumn(
             "unadjusted_design_weight",
-            col("sample_count") / col("sample_sum"),
+            (col("sample_count") / col("sample_sum")).cast(output_type),
         )
     )
 
@@ -257,7 +257,7 @@ def estimate(
                     )
                 )
             )
-        ),
+        ).cast(output_type),
     ).drop(
         "sample_sum",
         "death_marker",
@@ -285,7 +285,7 @@ def estimate(
             .groupBy(group_cols)
             .agg({"auxiliary": "sum", "aux_design": "sum"})
             .withColumn(
-                "calibration_factor", col("sum(auxiliary)") / col("sum(aux_design)")
+                "calibration_factor", (col("sum(auxiliary)") / col("sum(aux_design)")).cast(output_type)
             )
         )
 

@@ -574,7 +574,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
 
-    ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs)
+    ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs, output_type=decimal_type)
     print(ret_val.dtypes)
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))

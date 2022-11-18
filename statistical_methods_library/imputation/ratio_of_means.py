@@ -54,6 +54,7 @@ def impute(
     count_backward_col: typing.Optional[str] = "count_backward",
     back_data_df: typing.Optional[DataFrame] = None,
     link_filter: typing.Optional[typing.Union[str, Column]] = None,
+    output_type: DecimalType = DecimalType(38,18),
 ) -> DataFrame:
     """
     Perform Ratio of means (also known as Ratio of Sums) imputation on a
@@ -506,7 +507,7 @@ def impute(
                     "ref",
                     "period",
                     "strata",
-                    (col(link_col) * col("other_output")).alias("output"),
+                    (col(link_col) * col("other_output")).cast(output_type).alias("output"),
                     lit(marker.value).alias("marker"),
                     "previous_period",
                     "next_period",

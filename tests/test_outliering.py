@@ -323,7 +323,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
 
-    ret_val = winsorisation.outlier(test_dataframe, *params, **winsorisation_kwargs)
+    ret_val = winsorisation.outlier(test_dataframe, *params, **winsorisation_kwargs, output_type=decimal_type)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]

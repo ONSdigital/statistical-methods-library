@@ -209,7 +209,7 @@ def outlier(
                 ),
             ).otherwise(col("target")),
         )
-        .withColumn("outlier", expr("modified_target/target"))
+        .withColumn("outlier", (expr("modified_target/target")).cast(output_type))
         .fillna(1.0, ["outlier"])
         .withColumn("marker", lit(Marker.WINSORISED.value))
         .drop(
