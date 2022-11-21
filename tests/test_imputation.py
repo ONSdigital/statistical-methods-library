@@ -5,7 +5,7 @@ import pathlib
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col, lit, when
-from pyspark.sql.types import DecimalType, StringType, LongType
+from pyspark.sql.types import DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import ratio_of_means
 from statistical_methods_library.utilities.exceptions import ValidationError
