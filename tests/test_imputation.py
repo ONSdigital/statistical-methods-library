@@ -25,7 +25,7 @@ count_backward_col = "count_backward"
 count_construction_col = "count_construction"
 exclude_col = "exclude"
 
-decimal_type = DecimalType(15,6)
+decimal_type = DecimalType(15, 6)
 
 reference_type = StringType()
 period_type = StringType()
@@ -577,8 +577,12 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs)
     ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
     ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
-    ret_val = ret_val.withColumn(backward_col, bround(col(backward_col).cast(decimal_type), 6))
-    ret_val = ret_val.withColumn(construction_col, bround(col(construction_col).cast(decimal_type), 6))
+    ret_val = ret_val.withColumn(
+        backward_col, bround(col(backward_col).cast(decimal_type), 6)
+    )
+    ret_val = ret_val.withColumn(
+        construction_col, bround(col(construction_col).cast(decimal_type), 6)
+    )
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
@@ -686,8 +690,12 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
     ret_val = ratio_of_means.impute(input_df, *params, **imputation_kwargs)
     ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
     ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
-    ret_val = ret_val.withColumn(backward_col, bround(col(backward_col).cast(decimal_type), 6))
-    ret_val = ret_val.withColumn(construction_col, bround(col(construction_col).cast(decimal_type), 6))
+    ret_val = ret_val.withColumn(
+        backward_col, bround(col(backward_col).cast(decimal_type), 6)
+    )
+    ret_val = ret_val.withColumn(
+        construction_col, bround(col(construction_col).cast(decimal_type), 6)
+    )
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))

@@ -35,7 +35,7 @@ dataframe_columns = (
     unadjusted_design_weight_col,
     calibration_factor_col,
 )
-decimal_type = DecimalType(15,6)
+decimal_type = DecimalType(15, 6)
 
 dataframe_types = {
     unique_identifier_col: StringType(),
@@ -422,7 +422,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
-        ret_val = ret_val.withColumn(calibration_factor_col, bround(col(calibration_factor_col), 6))
+        ret_val = ret_val.withColumn(
+            calibration_factor_col, bround(col(calibration_factor_col), 6)
+        )
 
     assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),

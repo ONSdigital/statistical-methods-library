@@ -34,7 +34,7 @@ dataframe_columns = (
     outlier_weight_col,
     winsorisation_marker_col,
 )
-decimal_type = DecimalType(15,6)
+decimal_type = DecimalType(15, 6)
 
 dataframe_types = {
     reference_col: StringType(),
