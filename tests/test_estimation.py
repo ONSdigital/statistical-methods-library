@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 from chispa import assert_df_equality
-from pyspark.sql.functions import col, lit
+from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.estimation import ht_ratio
@@ -422,7 +422,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
-        ret_val = ret_val.withColumn("calibration_factor", col("calibration_factor").cast(decimal_type))
+        ret_val = ret_val.withColumn(calibration_factor_col, bround(col(calibration_factor_col), 6))
 
     assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
