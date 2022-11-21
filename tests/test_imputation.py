@@ -32,7 +32,7 @@ period_type = StringType()
 strata_type = StringType()
 target_type = decimal_type
 auxiliary_type = decimal_type
-output_type = decimal_type
+min_accuracy = decimal_type
 marker_type = StringType()
 backward_type = decimal_type
 forward_type = decimal_type
@@ -67,7 +67,7 @@ dataframe_types = {
     strata_col: strata_type,
     target_col: target_type,
     auxiliary_col: auxiliary_type,
-    output_col: output_type,
+    output_col: min_accuracy,
     marker_col: marker_type,
     backward_col: backward_type,
     forward_col: forward_type,
@@ -574,7 +574,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
 
-    ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs, output_type=decimal_type)
+    ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs)
     print(ret_val.dtypes)
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))

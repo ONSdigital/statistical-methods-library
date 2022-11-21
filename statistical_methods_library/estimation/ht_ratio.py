@@ -25,7 +25,6 @@ def estimate(
     unadjusted_design_weight_col: typing.Optional[str] = None,
     design_weight_col: typing.Optional[str] = "design_weight",
     calibration_factor_col: typing.Optional[str] = "calibration_factor",
-    output_type: DecimalType = DecimalType(38,18),
 ) -> DataFrame:
     """
     Perform Horvitz-Thompson estimation of design weights and calibration factors
@@ -189,16 +188,16 @@ def estimate(
 
     # --- prepare our working data frame ---
     working_df = aliased_df.withColumn(
-        "sample_marker", col("sample_marker").cast("integer")
+        "sample_marker", col("sample_marker").cast(DecimalType(38,18))
     )
     if adjustment_marker_col is None:
         working_df = working_df.withColumn("adjustment_marker", lit("I"))
         working_df = working_df.withColumn("h_value", lit(0))
     else:
-        working_df = working_df.withColumn("h_value", col("h_value").cast("integer"))
+        working_df = working_df.withColumn("h_value", col("h_value").cast(DecimalType(38,18)))
 
     def count_conditional(cond):
-        return sum(when(cond, 1).otherwise(0).cast(output_type))
+        return sum(when(cond, 1).otherwise(0))
 
     # --- Expansion estimation ---
     # If we've got an adjustment marker and h value then we'll use these, otherwise
@@ -214,17 +213,17 @@ def estimate(
     design_df = (
         working_df.groupBy(["period", "strata"])
         .agg(
-            sum(col("sample_marker").cast(output_type)).alias("sample_sum"),
+            sum(col("sample_marker")).alias("sample_sum"),
             count_conditional(col("adjustment_marker") == "D").alias("death_marker"),
             first(col("h_value")),
             count_conditional(col("adjustment_marker") == "O").alias(
                 "out_of_scope_marker"
             ),
-            count(col("sample_marker").cast(output_type)).alias("sample_count"),
+            count(col("sample_marker")).alias("sample_count"),
         )
         .withColumn(
             "unadjusted_design_weight",
-            (col("sample_count") / col("sample_sum")).cast(output_type),
+            (col("sample_count") / col("sample_sum")),
         )
     )
 
@@ -257,7 +256,7 @@ def estimate(
                     )
                 )
             )
-        ).cast(output_type),
+        ),
     ).drop(
         "sample_sum",
         "death_marker",
@@ -285,7 +284,7 @@ def estimate(
             .groupBy(group_cols)
             .agg({"auxiliary": "sum", "aux_design": "sum"})
             .withColumn(
-                "calibration_factor", (col("sum(auxiliary)") / col("sum(aux_design)")).cast(output_type)
+                "calibration_factor", (col("sum(auxiliary)") / col("sum(aux_design)"))
             )
         )
 

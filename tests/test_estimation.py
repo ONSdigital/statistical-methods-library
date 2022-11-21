@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 from chispa import assert_df_equality
-from pyspark.sql.functions import lit
+from pyspark.sql.functions import col, lit
 from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.estimation import ht_ratio
@@ -35,7 +35,7 @@ dataframe_columns = (
     unadjusted_design_weight_col,
     calibration_factor_col,
 )
-decimal_type = DecimalType(15,3)
+decimal_type = DecimalType(15,6)
 
 dataframe_types = {
     unique_identifier_col: StringType(),
@@ -415,13 +415,14 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
 
-    ret_val = ht_ratio.estimate(test_dataframe, **estimation_kwargs, output_type=decimal_type)
+    ret_val = ht_ratio.estimate(test_dataframe, **estimation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["date", "group"]
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
+        ret_val = ret_val.withColumn("calibration_factor", col("calibration_factor").cast(decimal_type))
 
     assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
