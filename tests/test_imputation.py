@@ -3,8 +3,9 @@ import os
 import pathlib
 
 import pytest
-from chispa.dataframe_comparer import assert_approx_df_equality
-from pyspark.sql.functions import col, lit, when
+from chispa.dataframe_comparer import assert_df_equality
+from pyspark.sql.functions import bround, col, lit, when
+from pyspark.sql.types import DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import ratio_of_means
 from statistical_methods_library.utilities.exceptions import ValidationError
@@ -24,20 +25,22 @@ count_backward_col = "count_backward"
 count_construction_col = "count_construction"
 exclude_col = "exclude"
 
-reference_type = "string"
-period_type = "string"
-strata_type = "string"
-target_type = "double"
-auxiliary_type = "double"
-output_type = "double"
-marker_type = "string"
-backward_type = "double"
-forward_type = "double"
-construction_type = "double"
-count_forward_type = "long"
-count_backward_type = "long"
-count_construction_type = "long"
-exclude_type = "string"
+decimal_type = DecimalType(15, 6)
+
+reference_type = StringType()
+period_type = StringType()
+strata_type = StringType()
+target_type = decimal_type
+auxiliary_type = decimal_type
+min_accuracy = decimal_type
+marker_type = StringType()
+backward_type = decimal_type
+forward_type = decimal_type
+construction_type = decimal_type
+count_forward_type = LongType()
+count_backward_type = LongType()
+count_construction_type = LongType()
+exclude_type = StringType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -64,7 +67,7 @@ dataframe_types = {
     strata_col: strata_type,
     target_col: target_type,
     auxiliary_col: auxiliary_type,
-    output_col: output_type,
+    output_col: min_accuracy,
     marker_col: marker_type,
     backward_col: backward_type,
     forward_col: forward_type,
@@ -572,14 +575,20 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     )
 
     ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs)
-
+    ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
+    ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
+    ret_val = ret_val.withColumn(
+        backward_col, bround(col(backward_col).cast(decimal_type), 6)
+    )
+    ret_val = ret_val.withColumn(
+        construction_col, bround(col(construction_col).cast(decimal_type), 6)
+    )
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
-    assert_approx_df_equality(
+    assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
         exp_val.sort(sort_col_list).select(select_cols),
-        0.0001,
         ignore_nullable=True,
     )
 
@@ -679,13 +688,19 @@ def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
         }
 
     ret_val = ratio_of_means.impute(input_df, *params, **imputation_kwargs)
-
+    ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
+    ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
+    ret_val = ret_val.withColumn(
+        backward_col, bround(col(backward_col).cast(decimal_type), 6)
+    )
+    ret_val = ret_val.withColumn(
+        construction_col, bround(col(construction_col).cast(decimal_type), 6)
+    )
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
-    assert_approx_df_equality(
+    assert_df_equality(
         ret_val.sort(sort_col_list).select(select_cols),
         scenario_expected_output.sort(sort_col_list).select(select_cols),
-        0.0001,
         ignore_nullable=True,
     )

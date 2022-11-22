@@ -9,6 +9,7 @@ from enum import Enum
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
+from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -110,14 +111,14 @@ def outlier(
     expected_columns = {k: v for k, v in input_params.items() if v is not None}
 
     type_mapping = {
-        "reference": "string",
-        "period": "string",
-        "grouping": "string",
-        "target": "double",
-        "design": "double",
-        "l_value": "double",
-        "calibration": "double",
-        "auxiliary": "double",
+        "reference": StringType,
+        "period": StringType,
+        "grouping": StringType,
+        "target": DecimalType,
+        "design": DecimalType,
+        "l_value": DecimalType,
+        "calibration": DecimalType,
+        "auxiliary": DecimalType,
     }
 
     aliased_df = validation.validate_dataframe(
@@ -148,10 +149,14 @@ def outlier(
     # Expansion Winsorisation is performed.
     pre_marker_df = aliased_df
     if auxiliary_col is None:
-        pre_marker_df = pre_marker_df.withColumn("auxiliary", lit(1.0))
+        pre_marker_df = pre_marker_df.withColumn(
+            "auxiliary", lit(1.0).cast(DecimalType(38, 18))
+        )
 
     if calibration_col is None:
-        pre_marker_df = pre_marker_df.withColumn("calibration", lit(1.0))
+        pre_marker_df = pre_marker_df.withColumn(
+            "calibration", lit(1.0).cast(DecimalType(38, 18))
+        )
 
     group_cols = ["period", "grouping"]
     # Separate out rows that are not to be winsorised and mark appropriately.
@@ -168,7 +173,7 @@ def outlier(
     )
 
     not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
-        "outlier", lit(1.0)
+        "outlier", lit(1.0).cast(DecimalType(38, 18))
     )
     to_be_winsorised_df = df.filter(col("marker").isNull())
 

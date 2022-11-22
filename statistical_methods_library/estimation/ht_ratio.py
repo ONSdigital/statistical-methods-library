@@ -6,6 +6,7 @@ import typing
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, first, lit, sum, when
+from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -141,14 +142,14 @@ def estimate(
     expected_columns = {k: v for k, v in input_params.items() if v is not None}
 
     type_mapping = {
-        "unique_identifier": "string",
-        "period": "string",
-        "strata": "string",
-        "sample_marker": "boolean",
-        "adjustment_marker": "string",
-        "h_value": "boolean",
-        "auxiliary": "double",
-        "calibration_group": "string",
+        "unique_identifier": StringType,
+        "period": StringType,
+        "strata": StringType,
+        "sample_marker": BooleanType,
+        "adjustment_marker": StringType,
+        "h_value": BooleanType,
+        "auxiliary": DecimalType,
+        "calibration_group": StringType,
     }
 
     aliased_df = validation.validate_dataframe(
@@ -187,13 +188,15 @@ def estimate(
 
     # --- prepare our working data frame ---
     working_df = aliased_df.withColumn(
-        "sample_marker", col("sample_marker").cast("integer")
+        "sample_marker", col("sample_marker").cast(DecimalType(38, 18))
     )
     if adjustment_marker_col is None:
         working_df = working_df.withColumn("adjustment_marker", lit("I"))
         working_df = working_df.withColumn("h_value", lit(0))
     else:
-        working_df = working_df.withColumn("h_value", col("h_value").cast("integer"))
+        working_df = working_df.withColumn(
+            "h_value", col("h_value").cast(DecimalType(38, 18))
+        )
 
     def count_conditional(cond):
         return sum(when(cond, 1).otherwise(0))
@@ -212,17 +215,17 @@ def estimate(
     design_df = (
         working_df.groupBy(["period", "strata"])
         .agg(
-            sum(col("sample_marker")),
+            sum(col("sample_marker")).alias("sample_sum"),
             count_conditional(col("adjustment_marker") == "D").alias("death_marker"),
             first(col("h_value")),
             count_conditional(col("adjustment_marker") == "O").alias(
                 "out_of_scope_marker"
             ),
-            count(col("sample_marker")),
+            count(col("sample_marker")).alias("sample_count"),
         )
         .withColumn(
             "unadjusted_design_weight",
-            col("count(sample_marker)") / col("sum(sample_marker)"),
+            col("sample_count") / col("sample_sum"),
         )
     )
 
@@ -249,7 +252,7 @@ def estimate(
                     col("first(h_value)")
                     * (col("death_marker") + col("out_of_scope_marker_numerator"))
                     / (
-                        col("sum(sample_marker)")
+                        col("sample_sum")
                         - col("death_marker")
                         - col("out_of_scope_marker_denominator")
                     )
@@ -257,12 +260,12 @@ def estimate(
             )
         ),
     ).drop(
-        "sum(sample_marker)",
+        "sample_sum",
         "death_marker",
         "first(h_value)",
         "out_of_scope_marker_numerator",
         "out_of_scope_marker_denominator",
-        "count(sample_marker)",
+        "sample_count",
     )
 
     # --- Ratio estimation ---

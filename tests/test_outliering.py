@@ -3,8 +3,9 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_approx_df_equality
+from chispa import assert_df_equality
 from pyspark.sql.functions import lit
+from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.outliering import winsorisation
 from statistical_methods_library.utilities.exceptions import ValidationError
@@ -33,22 +34,23 @@ dataframe_columns = (
     outlier_weight_col,
     winsorisation_marker_col,
 )
+decimal_type = DecimalType(15, 6)
 
 dataframe_types = {
-    reference_col: "string",
-    period_col: "string",
-    grouping_col: "string",
-    auxiliary_col: "double",
-    design_weight_col: "double",
-    calibration_factor_col: "double",
-    l_value_col: "double",
-    target_col: "double",
-    outlier_weight_col: "double",
-    winsorisation_marker_col: "string",
+    reference_col: StringType(),
+    period_col: StringType(),
+    grouping_col: StringType(),
+    auxiliary_col: decimal_type,
+    design_weight_col: decimal_type,
+    calibration_factor_col: decimal_type,
+    l_value_col: decimal_type,
+    target_col: decimal_type,
+    outlier_weight_col: decimal_type,
+    winsorisation_marker_col: StringType(),
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[reference_col] = "double"
+bad_dataframe_types[reference_col] = decimal_type
 
 params = (
     reference_col,
@@ -325,10 +327,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
-    assert_approx_df_equality(
+    assert_df_equality(
         ret_val.sort(sort_col_list),
         exp_val.sort(sort_col_list),
-        0.01,
         ignore_nullable=True,
     )
 
