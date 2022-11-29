@@ -2,8 +2,8 @@
 # Change Log
 
 ## [9.0.0] - 2022-11-29
-  
-Here we would have the update steps for 1.2.4 for people to follow.
+
+To update to this version, data passed to the methods will need to be of a decimal type and not of a float type.
 
 ### Added
  - Created a changlog to keep track of changes between versions.
