@@ -3,7 +3,7 @@
 
 ## [9.0.0] - 2022-11-29
 
-To update to this version, data passed to the methods will need to be of a decimal type and not of a float type.
+To update to this version, dataframes passed to the methods will need to change all float type columns to be decimal type columns.
 
 ### Added
  - Created a changlog to keep track of changes between versions.
