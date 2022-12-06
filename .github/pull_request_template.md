@@ -1,17 +1,13 @@
-# Checklist
+## Synopsis
+
+Briefly describe the purpose of the pr.
+
+## Checklist
 
 - [ ] Documentation created/updated
-    - [ ] If documentation descoped, a JIRA Ticket has been created to complete
-      the documentation
+- [ ] Tests created/updated
 
-- [ ] Deployed and tested in a sandbox/dev environment
-- [ ] Confirmed that no breakage to contract with automated testing/other teams
-  and remedial PRs or tickets raised.
+## Description
 
-Please briefly summarise how the PR has been tested:
-
-## JIRA references
-
-**Feature:** SPP-
-
-**Task/Story:** SPP-
+Add a more detailed description of the pr including background and ticket
+references if necessary. 
