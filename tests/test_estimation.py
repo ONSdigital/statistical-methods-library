@@ -420,6 +420,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = ["date", "group"]
     select_cols = list(set(dataframe_columns) & set(exp_val.columns))
+    if "unadjusted" in scenario:
+        sort_col_list.append(unadjusted_design_weight_col)
+        ret_val = ret_val.withColumn(
+            unadjusted_design_weight_col, bround(col(unadjusted_design_weight_col), 6)
+        )
     if calibration_group_col in test_dataframe.columns:
         sort_col_list.append(calibration_group_col)
         ret_val = ret_val.withColumn(
