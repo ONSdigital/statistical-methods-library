@@ -188,14 +188,14 @@ def estimate(
 
     # --- prepare our working data frame ---
     working_df = aliased_df.withColumn(
-        "sample_marker", col("sample_marker").cast(DecimalType(38, 18))
+        "sample_marker", col("sample_marker").cast(DecimalType())
     )
     if adjustment_marker_col is None:
         working_df = working_df.withColumn("adjustment_marker", lit("I"))
         working_df = working_df.withColumn("h_value", lit(0))
     else:
         working_df = working_df.withColumn(
-            "h_value", col("h_value").cast(DecimalType(38, 18))
+            "h_value", col("h_value").cast(DecimalType())
         )
 
     def count_conditional(cond):

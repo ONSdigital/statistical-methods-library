@@ -150,12 +150,12 @@ def outlier(
     pre_marker_df = aliased_df
     if auxiliary_col is None:
         pre_marker_df = pre_marker_df.withColumn(
-            "auxiliary", lit(1.0).cast(DecimalType(38, 18))
+            "auxiliary", lit(1).cast(DecimalType())
         )
 
     if calibration_col is None:
         pre_marker_df = pre_marker_df.withColumn(
-            "calibration", lit(1.0).cast(DecimalType(38, 18))
+            "calibration", lit(1).cast(DecimalType())
         )
 
     group_cols = ["period", "grouping"]
@@ -173,7 +173,7 @@ def outlier(
     )
 
     not_winsorised_df = df.filter(col("marker").isNotNull()).withColumn(
-        "outlier", lit(1.0).cast(DecimalType(38, 18))
+        "outlier", lit(1).cast(DecimalType())
     )
     to_be_winsorised_df = df.filter(col("marker").isNull())
 
