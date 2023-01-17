@@ -12,10 +12,9 @@ However, here is the approach if you want to do it.
 
 Prerequisites: Java 8 needs to be installed.
 
-```
+```sh
 poetry install
-pytest
-``` 
+poetry run pytest -x
 
 Note: You may get a 'chispa' not installed error despite it being in the pyproject.toml. If this happens run the following:
 
