@@ -14,6 +14,6 @@ Note: You may get a 'chispa' not installed error despite it being in the pyproje
 cd ..
 pip install chispa
 cd tests/
-pytest
+poetry run pytest -x
 ``` 
 
