@@ -2,7 +2,7 @@
 
 Unit tests are run when a pull request is open.
 
-Prerequisites: Java 8 needs to be installed.
+Prerequisites: Java needs to be installed.
 
 ```
 poetry run pytest -x
@@ -16,4 +16,3 @@ pip install chispa
 cd tests/
 poetry run pytest -x
 ``` 
-
