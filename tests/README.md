@@ -2,7 +2,7 @@
 
 Unit tests are run when a pull request is open.
 
-Prerequisites: Java needs to be installed.
+Prerequisites: Java 8 needs to be installed.
 
 ```
 poetry run pytest -x
