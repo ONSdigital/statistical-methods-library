@@ -1,4 +1,4 @@
-## Testing 
+## Testing
 
 Unit tests are run when a pull request is open.
 
