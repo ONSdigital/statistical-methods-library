@@ -575,6 +575,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         back_data_df = scenario_expected_output.join(
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
+        
+        if scenario.endswith("filtered") and "dev" in scenario_type:
+            back_data_df = back_data_df.join(
+            scenario_input.select(reference_col, period_col, exclude_col), [reference_col, period_col]
+            )
 
         imputation_kwargs["back_data_df"] = back_data_df
 
