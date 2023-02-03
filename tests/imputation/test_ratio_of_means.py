@@ -105,25 +105,19 @@ test_scenarios = [
     ("unit", "imputation_link_counts"),
 ]
 
+scenario_path_prefix = pathlib.Path(
+    "tests", "fixture_data", "imputation", "ratio_of_means"
+)
 for scenario_category in ("dev", "methodology"):
-    for file_name in glob.iglob(
-        str(
-            pathlib.Path(
-                "tests",
-                "fixture_data",
-                "imputation",
-                "ratio_of_means",
-                f"{scenario_category}_scenarios",
-                "*_input.csv",
-            )
-        )
-    ):
-        test_scenarios.append(
-            (
-                f"{scenario_category}_scenarios",
-                os.path.basename(file_name).replace("_input.csv", ""),
-            )
-        )
+    scenario_type = f"{scenario_category}_scenarios"
+    test_files = glob.glob(str(scenario_path_prefix / scenario_type / "*_input.csv"))
+    test_scenarios += sorted(
+        (
+            (scenario_type, os.path.basename(f).replace("_input.csv", ""))
+            for f in test_files
+        ),
+        key=lambda t: t[1],
+    )
 
 test_scenarios += [
     (f"back_data_{scenario_type}", scenario_file)
@@ -575,25 +569,36 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         back_data_df = scenario_expected_output.join(
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
-        
+
         if scenario.endswith("filtered") and "dev" in scenario_type:
             back_data_df = back_data_df.join(
-            scenario_input.select(reference_col, period_col, exclude_col), [reference_col, period_col]
+                scenario_input.select(reference_col, period_col, exclude_col),
+                [reference_col, period_col],
             )
 
         imputation_kwargs["back_data_df"] = back_data_df
 
         scenario_input = scenario_input.join(
-            min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
+            min_period_df,
+            [col(period_col) == col("min(" + period_col + ")")],
+            "leftanti",
         ).drop("min(" + period_col + ")")
 
         scenario_expected_output = scenario_expected_output.join(
-            min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
+            min_period_df,
+            [col(period_col) == col("min(" + period_col + ")")],
+            "leftanti",
         ).drop("min(" + period_col + ")")
 
-    scenario_actual_output = ratio_of_means.impute(scenario_input, *params, **imputation_kwargs)
-    scenario_actual_output = scenario_actual_output.withColumn(output_col, bround(col(output_col), 6))
-    scenario_actual_output = scenario_actual_output.withColumn(forward_col, bround(col(forward_col), 6))
+    scenario_actual_output = ratio_of_means.impute(
+        scenario_input, *params, **imputation_kwargs
+    )
+    scenario_actual_output = scenario_actual_output.withColumn(
+        output_col, bround(col(output_col), 6)
+    )
+    scenario_actual_output = scenario_actual_output.withColumn(
+        forward_col, bround(col(forward_col), 6)
+    )
     scenario_actual_output = scenario_actual_output.withColumn(
         backward_col, bround(col(backward_col).cast(decimal_type), 6)
     )
