@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
-from pyspark.sql.functions import bround, col, lit, when
+from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import ratio_of_means
@@ -570,11 +570,14 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
 
-        if scenario.endswith("filtered") and "dev" in scenario_type:
-            back_data_df = back_data_df.join(
-                scenario_input.select(reference_col, period_col, exclude_col),
-                [reference_col, period_col],
-            )
+        if scenario.endswith("filtered"):
+            if "dev" in scenario_type:
+                back_data_df = back_data_df.join(
+                    scenario_input.select(reference_col, period_col, exclude_col),
+                    [reference_col, period_col],
+                )
+            else:
+                back_data_df = back_data_df.withColumn(target_col, col(output_col))
 
         imputation_kwargs["back_data_df"] = back_data_df
 
