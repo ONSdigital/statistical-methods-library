@@ -576,6 +576,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
 
+        imputation_kwargs["back_data_df"] = back_data_df
+
         scenario_input = scenario_input.join(
             min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
         ).drop("min(" + period_col + ")")
