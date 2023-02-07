@@ -7,7 +7,6 @@ from statistical_methods_library.utilities.exceptions import ValidationError
 def validate_dataframe(
     input_df, expected_columns, type_mapping, unique_cols, excluded_columns=[]
 ):
-
     if not isinstance(input_df, DataFrame):
         raise TypeError("input_df must be an instance of pyspark.sql.DataFrame")
     expected_input_col_names = set(expected_columns.values())
