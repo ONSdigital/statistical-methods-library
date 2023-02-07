@@ -290,7 +290,6 @@ def impute(
                         & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
                 )
-                .drop("target")
                 .withColumn("previous_period", calculate_previous_period(col("period")))
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
