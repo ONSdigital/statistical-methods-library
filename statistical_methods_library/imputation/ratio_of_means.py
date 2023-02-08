@@ -619,8 +619,8 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
-        del full_col_mapping("aux")
-        del full_col_mapping("strata")
+        del full_col_mapping["aux"]
+        del full_col_mapping["strata"]
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)
