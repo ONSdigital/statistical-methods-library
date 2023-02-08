@@ -1,10 +1,7 @@
-name: CI Checks
+name: CI Checks - PR
 
 on:
-  push:
-    branches:
-      - main
-    tags:
+  pull_request_target
 
 permissions:
   statuses: write
@@ -13,25 +10,28 @@ permissions:
 
 jobs:
   markdownlint:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     name: markdownlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: MarkdownLint
         uses: nosborn/github-action-markdown-cli@v3.2.0
         with:
           files: ./output_queries/
           config_file: .markdownlint.yml
   shellcheck:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@1.1.0
   tests:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -40,6 +40,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -73,7 +76,6 @@ jobs:
           path: htmlcov/
           if-no-files-found: warn
   mypy:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -82,6 +84,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -101,7 +106,6 @@ jobs:
       - name: run mypy
         run: poetry run mypy
   flake8:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -110,6 +114,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -129,7 +136,6 @@ jobs:
       - name: run flake8
         run: poetry run flake8 .
   isort:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -138,6 +144,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -157,7 +166,6 @@ jobs:
       - name: run isort
         run: poetry run isort --check-only .
   black:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -166,6 +174,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -185,17 +196,18 @@ jobs:
       - name: run black
         run: poetry run black --check --diff .
   terraform-fmt-check:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.3.4
       - id: check
-        run: terraform fmt -check -diff conf/terraform/
+        run: terraform fmt -recursive -check -diff conf/terraform/
   bandit:
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -204,6 +216,9 @@ jobs:
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:

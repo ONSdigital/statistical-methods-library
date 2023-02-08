@@ -1,0 +1,216 @@
+name: Release code
+
+on:
+  push:
+    tags:
+     - "*"
+  schedule:
+    - cron: "0 1 1 * *"
+  workflow_dispatch: {}
+
+jobs:
+  create-release:
+    name: Create github release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    outputs:
+      tag-name: ${{ steps.tag-name.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: tag-name
+        name: define tag name
+        run: |-
+          if [ ! "$EVENT_NAME" = "push" ]
+          then
+            latest_tag=$(gh api /repos/ONSdigital/spp-results-pipeline/releases -q ".[] | .tag_name" | grep -Ev '.+-rc\d*$|rls-.+' | head -n 1)
+            major=$(echo "$latest_tag" | cut -d "." -f 1)
+            minor=$(echo "$latest_tag" | cut -d "." -f 2)
+            patch=${latest_tag##*.}
+            patch=$((patch+1))
+            tag_name="${major}.${minor}.${patch}"
+            echo "Tag name - $tag_name"
+          else
+            tag_name=${GITHUB_REF##*/}
+          fi
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag-name.outputs.tag }}
+          files: |
+            *.zip
+            *.tar
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  add-zips:
+    name: Add zipped code to github release
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up env
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: zip
+      - name: bundle-terraform
+        run: sh -e ci/bin/package_zip.sh -i ',src/glue_scripts' -d conf -z terraform.zip terraform
+      - name: bundle-queuing-lambda
+        run: sh -e ci/bin/package_zip.sh -i src,run_conf -i src,run_class_util -i ,conf/run_classes -z queuing_lambda_handler.zip queuing_lambda
+      - name: bundle-notification-event-proxy-lambda
+        run: sh -e ci/bin/package_zip.sh -z notification_event_proxy_lambda_handler.zip notification_event_proxy_lambda
+      - name: bundle-dlq-proxy-lambda
+        run: sh -e ci/bin/package_zip.sh -z dlq_proxy_lambda_handler.zip dlq_proxy_lambda
+      - name: bundle-alerting-lambda
+        run: sh -e ci/bin/package_zip.sh -z alerting_lambda_handler.zip alerting_lambda
+      - name: bundle-alerting-lambda
+        run: sh -e ci/bin/package_zip.sh -z db_snapshot_caretaker_lambda.zip db_snapshot_caretaker_lambda
+      - name: bundle-new-files-process-lambda
+        run: sh -e ci/bin/package_zip.sh -z new_files_to_process_lambda_handler.zip new_files_to_process_lambda
+      - name: bundle-log-collation-request-lambda
+        run: sh -e ci/bin/package_zip.sh -i src,logging_util -z log_collation_request_lambda_handler.zip log_collation_request_lambda
+      - name: bundle-log-collation-request-processor-lambda
+        run: sh -e ci/bin/package_zip.sh -i src,logging_util -z log_collation_request_processor_lambda_handler.zip log_collation_request_processor_lambda
+      - name: bundle-digital-checklist-check-lambda
+        run: sh -e ci/bin/package_zip.sh -z digital_checklist_check_lambda_handler.zip digital_checklist_check_lambda
+      - name: bundle-trigger-pipeline-from-digital-checklist-lambda
+        run: sh -e ci/bin/package_zip.sh -i ,conf/run_classes/ -i src,run_class_util -z handle_checklist_completion_event.zip handle_checklist_completion_event
+      - name: bundle-begin-unvalidated-files-ingest-lambda
+        run: sh -e ci/bin/package_zip.sh -z begin_unvalidated_files_ingest_lambda.zip begin_unvalidated_files_ingest_lambda
+      - name: bundle-response-snapshot-request-lambda
+        run: sh -e ci/bin/package_zip.sh -z response_snapshot_request_lambda.zip response_snapshot_request_lambda
+      - name: bundle-new-response-snapshot-lambda
+        run: sh -e ci/bin/package_zip.sh -z new_response_snapshot_lambda.zip new_response_snapshot_lambda
+      - name: bundle-pipeline-completion-lambda
+        run: sh -e ci/bin/package_zip.sh -z pipeline_completion_lambda.zip pipeline_completion_lambda
+      - name: bundle-request-new-results-run-lambda
+        run: sh -e ci/bin/package_zip.sh -i ,conf/run_classes/  -i src,run_conf -i src,run_class_util -i src,logging_util -z request_new_results_run_lambda.zip request_new_results_run_lambda
+      - name: upload-zips
+        run: |-
+          gh release upload \
+            "${{ needs.create-release.outputs.tag-name }}" \
+            *.zip
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  add-dependencies:
+    name: Add dependencies to github release
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: copy-glue-modues-to-root
+        run: mv src/glue_scripts ./
+      - name: Set up env
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: moreutils
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: setup poetry
+        uses: abatilo/actions-poetry@v2.2.0
+        with:
+          poetry-version: 1.3.2
+      - name: setup-netrc
+        run: |-
+          echo "machine github.com login $PAT password x-oauth-basic" > ~/.netrc
+          chmod 600 ~/.netrc
+        env:
+          PAT: ${{ secrets.CONCOURSE_PAT }}
+      - name: build-dependency-layer
+        run: |-
+          ci/bin/package_dependencies_zip.sh
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+      - name: setup poetry
+        uses: abatilo/actions-poetry@v2.2.0
+        with:
+          poetry-version: 1.3.2
+      - name: build-glue-dependency-zip
+        run: |-
+          ci/bin/package_glue_zip.sh "glue_scripts/results_modules/"
+      - name: remove netrc
+        run: |-
+          rm  ~/.netrc
+      - name: upload-zips
+        run: |-
+          gh release upload \
+            "${{ needs.create-release.outputs.tag-name }}" \
+            *.zip
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  
+  add-regen-image:
+    name: Add regenesees image to github release
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: copy-regen-code-to-root
+        run: mv src/regenesees ./
+      - id: build-regenesees-container
+        name: Build Regen Container
+        run: |-
+          docker buildx build -o type=oci,dest=regenimage.tar --file=RegenDockerfile .
+      - name: upload-tar
+        run: |-
+          gh release upload \
+            "${{ needs.create-release.outputs.tag-name }}" \
+            *.tar
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  add-pipeline-image:
+    name: Add pipeline image to github release
+    runs-on: ubuntu-latest
+    needs: create-release
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - id: build-postprocessing-container
+        name: Build Container
+        run: |-
+          docker buildx build -o type=oci,dest=image.tar .
+      - name: upload-tar
+        run: |-
+          gh release upload \
+            "${{ needs.create-release.outputs.tag-name }}" \
+            *.tar
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  mark-release-as-released:
+    name: Set release as not draft
+    runs-on: ubuntu-latest
+    needs: [add-zips, add-regen-image, add-pipeline-image, add-dependencies, create-release]
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Mark as not-draft
+        run: gh release edit "${{ needs.create-release.outputs.tag-name }}" --draft=false --latest
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
