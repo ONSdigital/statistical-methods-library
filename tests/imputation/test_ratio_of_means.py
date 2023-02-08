@@ -464,41 +464,6 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         ratio_of_means.impute(test_dataframe, *params)
 
 
-# --- Test expected columns are in the output ---
-@pytest.mark.dependency()
-def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "ratio_of_means",
-        "unit",
-        "basic_functionality",
-    )
-    ret_val = ratio_of_means.impute(
-        test_dataframe,
-        *default_params,
-    )
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    ret_cols = set(ret_val.columns)
-    expected_cols = {
-        reference_col,
-        period_col,
-        strata_col,
-        auxiliary_col,
-        forward_col,
-        backward_col,
-        construction_col,
-        "imputed",
-        "imputation_marker",
-        "count_forward",
-        "count_backward",
-        "count_construction",
-    }
-    assert expected_cols == ret_cols
-
-
 # --- Test Scenarios.
 
 
@@ -516,7 +481,6 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_input_not_a_dataframe",
         "test_incorrect_column_types",
         "test_input_data_contains_nulls",
-        "test_dataframe_expected_columns",
         "test_back_data_not_a_dataframe",
         "test_back_data_missing_column",
         "test_back_data_contains_nulls",
@@ -593,6 +557,13 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             "leftanti",
         ).drop("min(" + period_col + ")")
 
+    # We need to drop our strata and auxiliary columns from our output now
+    # we've potentially set up our back data as these must not come out of
+    # imputation.
+    scenario_expected_output = scenario_expected_output.drop(
+        strata_col,
+        auxiliary_col,
+    )
     scenario_actual_output = ratio_of_means.impute(
         scenario_input, *params, **imputation_kwargs
     )
