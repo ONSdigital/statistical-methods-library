@@ -219,11 +219,6 @@ def impute(
         ["target", "forward", "backward", "construction"],
     )
 
-    if link_filter:
-        filtered_refs = input_df.filter(link_filter).select(
-            col(reference_col).alias("ref"), col(period_col).alias("period")
-        )
-
     # Cache the prepared back data df since we'll need a few differently
     # filtered versions
     prepared_back_data_df = None
@@ -231,6 +226,12 @@ def impute(
     if back_data_df:
         prepared_back_data_df = validation.validate_dataframe(
             back_data_df, back_expected_columns, type_mapping, ["ref", "period"]
+        )
+        input_df = input_df.unionByName(back_data_df, allowMissingColumns=True)
+
+    if link_filter:
+        filtered_refs = input_df.filter(link_filter).select(
+            col(reference_col).alias("ref"), col(period_col).alias("period")
         )
 
     # Store the value for the period prior to the start of imputation.
@@ -289,7 +290,6 @@ def impute(
                         & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
                 )
-                .drop("target")
                 .withColumn("previous_period", calculate_previous_period(col("period")))
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
@@ -619,6 +619,8 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
+        del full_col_mapping["aux"]
+        del full_col_mapping["strata"]
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)

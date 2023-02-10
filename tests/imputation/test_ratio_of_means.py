@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
-from pyspark.sql.functions import bround, col, lit, when
+from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import ratio_of_means
@@ -105,41 +105,25 @@ test_scenarios = [
     ("unit", "imputation_link_counts"),
 ]
 
-for scenario_category in ("dev", "methodology", "back_data"):
-    for file_name in glob.iglob(
-        str(
-            pathlib.Path(
-                "tests",
-                "fixture_data",
-                "imputation",
-                "ratio_of_means",
-                f"{scenario_category}_scenarios",
-                "*_input.csv",
-            )
-        )
-    ):
-        test_scenarios.append(
-            (
-                f"{scenario_category}_scenarios",
-                os.path.basename(file_name).replace("_input.csv", ""),
-            )
-        )
-
-
-def scenarios(categories):
-    return sum(
+scenario_path_prefix = pathlib.Path(
+    "tests", "fixture_data", "imputation", "ratio_of_means"
+)
+for scenario_category in ("dev", "methodology"):
+    scenario_type = f"{scenario_category}_scenarios"
+    test_files = glob.glob(str(scenario_path_prefix / scenario_type / "*_input.csv"))
+    test_scenarios += sorted(
         (
-            sorted(
-                (
-                    scenario
-                    for scenario in test_scenarios
-                    if scenario[0].replace("_scenarios", "") == category
-                )
-            )
-            for category in categories
+            (scenario_type, os.path.basename(f).replace("_input.csv", ""))
+            for f in test_files
         ),
-        [],
+        key=lambda t: t[1],
     )
+
+test_scenarios += [
+    (f"back_data_{scenario_type}", scenario_file)
+    for scenario_type, scenario_file in test_scenarios
+    if scenario_type.split("_", 1)[0] in ("dev", "methodology")
+]
 
 
 # --- Test type validation on the input dataframe(s) ---
@@ -480,47 +464,12 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         ratio_of_means.impute(test_dataframe, *params)
 
 
-# --- Test expected columns are in the output ---
-@pytest.mark.dependency()
-def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "ratio_of_means",
-        "unit",
-        "basic_functionality",
-    )
-    ret_val = ratio_of_means.impute(
-        test_dataframe,
-        *default_params,
-    )
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    ret_cols = set(ret_val.columns)
-    expected_cols = {
-        reference_col,
-        period_col,
-        strata_col,
-        auxiliary_col,
-        forward_col,
-        backward_col,
-        construction_col,
-        "imputed",
-        "imputation_marker",
-        "count_forward",
-        "count_backward",
-        "count_construction",
-    }
-    assert expected_cols == ret_cols
-
-
 # --- Test Scenarios.
 
 
 @pytest.mark.parametrize(
     "scenario_type, scenario",
-    scenarios(["unit", "dev", "methodology"]),
+    test_scenarios,
 )
 @pytest.mark.dependency(
     depends=[
@@ -532,23 +481,36 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
         "test_input_not_a_dataframe",
         "test_incorrect_column_types",
         "test_input_data_contains_nulls",
-        "test_dataframe_expected_columns",
+        "test_back_data_not_a_dataframe",
+        "test_back_data_missing_column",
+        "test_back_data_contains_nulls",
+        "test_back_data_without_output_is_invalid",
+        "test_back_data_drops_link_cols_when_present",
+        "test_input_has_link_cols_and_back_data_does_not_have_link_cols",
     ]
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
-    test_dataframe = fxt_load_test_csv(
+    scenario_file_type = scenario_type.replace("back_data_", "")
+    scenario_input = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
         "ratio_of_means",
-        scenario_type,
+        scenario_file_type,
         f"{scenario}_input",
     )
-
+    scenario_expected_output = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        scenario_file_type,
+        f"{scenario}_output",
+    )
     # We use imputation_kwargs to allow us to pass in the forward, backward
     # and construction link columns which are usually defaulted to None. This
     # means that we can autodetect when we should pass these.
-    if forward_col in test_dataframe.columns:
+    if forward_col in scenario_input.columns:
         imputation_kwargs = {
             "forward_link_col": forward_col,
             "backward_link_col": backward_col,
@@ -565,142 +527,63 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
                 "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
             )
 
-    exp_val = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "ratio_of_means",
-        scenario_type,
-        f"{scenario}_output",
-    )
+    if scenario_type.startswith("back_data"):
+        min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
 
-    ret_val = ratio_of_means.impute(test_dataframe, *params, **imputation_kwargs)
-    ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
-    ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
-    ret_val = ret_val.withColumn(
-        backward_col, bround(col(backward_col).cast(decimal_type), 6)
-    )
-    ret_val = ret_val.withColumn(
-        construction_col, bround(col(construction_col).cast(decimal_type), 6)
-    )
-    select_cols = list(set(dataframe_columns) & set(exp_val.columns))
-    assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = [reference_col, period_col]
-    assert_df_equality(
-        ret_val.sort(sort_col_list).select(select_cols),
-        exp_val.sort(sort_col_list).select(select_cols),
-        ignore_nullable=True,
-    )
+        back_data_df = scenario_expected_output.join(
+            min_period_df, [col(period_col) == col("min(" + period_col + ")")]
+        )
 
+        if scenario.endswith("filtered"):
+            if "dev" in scenario_type:
+                back_data_df = back_data_df.join(
+                    scenario_input.select(reference_col, period_col, exclude_col),
+                    [reference_col, period_col],
+                )
+            else:
+                back_data_df = back_data_df.withColumn(target_col, col(output_col))
 
-@pytest.mark.dependency(
-    depends=[
-        "test_back_data_not_a_dataframe",
-        "test_back_data_missing_column",
-        "test_back_data_contains_nulls",
-        "test_back_data_without_output_is_invalid",
-        "test_back_data_drops_link_cols_when_present",
-        "test_input_has_link_cols_and_back_data_does_not_have_link_cols",
-    ]
-)
-@pytest.mark.parametrize(
-    "scenario_type, scenario",
-    scenarios(["dev", "back_data"]),
-)
-def test_back_data_calculations(fxt_load_test_csv, scenario_type, scenario):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "ratio_of_means",
-        scenario_type,
-        f"{scenario}_input",
-    )
+        imputation_kwargs["back_data_df"] = back_data_df
 
-    back_data_cols = [
-        reference_col,
-        period_col,
+        scenario_input = scenario_input.join(
+            min_period_df,
+            [col(period_col) == col("min(" + period_col + ")")],
+            "leftanti",
+        ).drop("min(" + period_col + ")")
+
+        scenario_expected_output = scenario_expected_output.join(
+            min_period_df,
+            [col(period_col) == col("min(" + period_col + ")")],
+            "leftanti",
+        ).drop("min(" + period_col + ")")
+
+    # We need to drop our strata and auxiliary columns from our output now
+    # we've potentially set up our back data as these must not come out of
+    # imputation.
+    scenario_expected_output = scenario_expected_output.drop(
         strata_col,
-        target_col,
         auxiliary_col,
-        output_col,
-        marker_col,
-        forward_col,
-        backward_col,
-    ]
-
-    scenario_output = fxt_load_test_csv(
-        back_data_cols,
-        dataframe_types,
-        "imputation",
-        "ratio_of_means",
-        scenario_type,
-        f"{scenario}_output",
     )
-
-    select_back_data_cols = [
-        col(reference_col),
-        col(period_col),
-        col(strata_col),
-        col(auxiliary_col),
-        col(output_col),
-        col(output_col).alias(target_col),
-        when(col(marker_col).isNotNull(), col(marker_col))
-        .otherwise("BI")
-        .alias(marker_col),
-    ]
-
-    min_period_df = scenario_output.selectExpr("min(" + period_col + ")")
-
-    back_data_df = scenario_output.join(
-        min_period_df, [col(period_col) == col("min(" + period_col + ")")]
+    scenario_actual_output = ratio_of_means.impute(
+        scenario_input, *params, **imputation_kwargs
     )
-
-    input_df = test_dataframe.join(
-        min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
-    ).drop("min(" + period_col + ")")
-
-    scenario_expected_output = scenario_output.join(
-        min_period_df, [col(period_col) == col("min(" + period_col + ")")], "leftanti"
-    ).drop("min(" + period_col + ")")
-
-    # We use imputation_kwargs to allow us to pass in the forward, backward
-    # and construction link columns which are usually defaulted to None. This
-    # means that we can autodetect when we should pass these.
-    if forward_col in test_dataframe.columns:
-        select_back_data_cols += [
-            when(col(forward_col).isNotNull(), col(forward_col))
-            .otherwise(1)
-            .alias(forward_col),
-            when(col(backward_col).isNotNull(), col(backward_col))
-            .otherwise(1)
-            .alias(backward_col),
-        ]
-        imputation_kwargs = {
-            "forward_link_col": forward_col,
-            "backward_link_col": backward_col,
-            "construction_link_col": construction_col,
-            "back_data_df": back_data_df.select(select_back_data_cols),
-        }
-    else:
-        imputation_kwargs = {
-            "back_data_df": back_data_df.select(select_back_data_cols),
-        }
-
-    ret_val = ratio_of_means.impute(input_df, *params, **imputation_kwargs)
-    ret_val = ret_val.withColumn(output_col, bround(col(output_col), 6))
-    ret_val = ret_val.withColumn(forward_col, bround(col(forward_col), 6))
-    ret_val = ret_val.withColumn(
+    scenario_actual_output = scenario_actual_output.withColumn(
+        output_col, bround(col(output_col), 6)
+    )
+    scenario_actual_output = scenario_actual_output.withColumn(
+        forward_col, bround(col(forward_col), 6)
+    )
+    scenario_actual_output = scenario_actual_output.withColumn(
         backward_col, bround(col(backward_col).cast(decimal_type), 6)
     )
-    ret_val = ret_val.withColumn(
+    scenario_actual_output = scenario_actual_output.withColumn(
         construction_col, bround(col(construction_col).cast(decimal_type), 6)
     )
-    assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = [reference_col, period_col]
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
+    assert isinstance(scenario_actual_output, type(scenario_input))
+    sort_col_list = [reference_col, period_col]
     assert_df_equality(
-        ret_val.sort(sort_col_list).select(select_cols),
+        scenario_actual_output.sort(sort_col_list).select(select_cols),
         scenario_expected_output.sort(sort_col_list).select(select_cols),
         ignore_nullable=True,
     )
