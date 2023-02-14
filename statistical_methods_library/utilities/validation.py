@@ -1,3 +1,7 @@
+'''
+For Copyright information, please see LICENCE.
+'''
+
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 
