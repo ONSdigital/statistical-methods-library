@@ -2,6 +2,7 @@
 Perform imputation on a data frame.
 
 Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
+For Copyright information, please see LICENCE.
 """
 
 import typing

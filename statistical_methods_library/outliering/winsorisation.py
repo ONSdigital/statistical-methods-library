@@ -2,6 +2,7 @@
 This module performs Winsorisation.
 
 Currently only One-sided Winsorisation is implemented.
+For Copyright information, please see LICENCE.
 """
 
 import typing
