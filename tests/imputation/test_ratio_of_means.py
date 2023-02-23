@@ -475,7 +475,7 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         "test_dataframe_returned_as_expected",
         "test_params_not_string",
         "test_params_none",
-        "test_params_empty_string"
+        "test_params_empty_string",
         "test_params_missing_link_column",
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
