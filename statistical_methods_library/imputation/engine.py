@@ -5,11 +5,11 @@ Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 For Copyright information, please see LICENCE.
 """
 
-from typing import Callable, Optional, Union
 from enum import Enum
+from typing import Callable, Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, count, lit, sum, when
+from pyspark.sql.functions import col, lit, when
 from pyspark.sql.types import DecimalType, IntegerType, StringType
 
 from statistical_methods_library.utilities import validation
@@ -166,6 +166,9 @@ def impute(
         "strata": strata_col,
         "target": target_col,
         "aux": auxiliary_col,
+    }
+
+    optional_params = {
         "forward": forward_link_col,
         "backward": backward_link_col,
         "construction": construction_link_col,
@@ -186,9 +189,11 @@ def impute(
         "construction": "construction",
     }
 
-    input_expected_columns = {k: v for k, v in input_params.items() if v is not None}
+    if forward_link_col is not None:
+        input_params.update(optional_params)
 
-    full_col_mapping = {**input_expected_columns, **created_col_mapping}
+    full_col_mapping = {**input_params, **created_col_mapping}
+
     if forward_link_col is None:
         full_col_mapping = {**full_col_mapping, **new_link_map}
 
@@ -216,7 +221,7 @@ def impute(
 
     aliased_input_df = validation.validate_dataframe(
         input_df,
-        input_expected_columns,
+        input_params,
         type_mapping,
         ["ref", "period"],
         ["target", "forward", "backward", "construction"],

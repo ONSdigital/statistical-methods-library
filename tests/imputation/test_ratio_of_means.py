@@ -143,7 +143,9 @@ def test_back_data_not_a_dataframe(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        ratio_of_means.impute(input_df=test_dataframe, **params, back_data_df="not_a_dataframe")
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df="not_a_dataframe"
+        )
 
 
 # --- Test if cols missing from input dataframe(s) ---
@@ -252,6 +254,7 @@ def test_params_not_string(fxt_load_test_csv):
 
 # --- Test if output contents are as expected, both new columns and data ---
 
+
 @pytest.mark.dependency()
 def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -290,7 +293,9 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
         "back_data_missing_column",
     )
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
 @pytest.mark.dependency()
@@ -313,7 +318,9 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     )
 
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
 @pytest.mark.dependency()
@@ -336,7 +343,9 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
     )
 
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
 # Test if when the back data input has link cols and the main data input does not
@@ -361,7 +370,9 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
         "back_data_with_link_cols",
     )
 
-    ret_val = ratio_of_means.impute(input_df=test_dataframe, **params, back_data_df=back_data)
+    ret_val = ratio_of_means.impute(
+        input_df=test_dataframe, **params, back_data_df=back_data
+    )
 
     assert ret_val.count() == 1
 
@@ -397,7 +408,7 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
             "backward_link_col": backward_col,
             "construction_link_col": construction_col,
             "input_df": test_dataframe,
-            "back_data_df": back_data
+            "back_data_df": back_data,
         }
     )
 
