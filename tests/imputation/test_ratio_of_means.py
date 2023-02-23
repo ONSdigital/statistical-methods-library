@@ -203,7 +203,7 @@ def test_dataframe_target_missing(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
-def test_params_null(fxt_load_test_csv):
+def test_params_empty_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -213,7 +213,7 @@ def test_params_null(fxt_load_test_csv):
         "basic_functionality",
     )
     bad_params = params.copy()
-    bad_params["target_col"] = None
+    bad_params["target_col"] = ""
     with pytest.raises(ValueError):
         ratio_of_means.impute(input_df=test_dataframe, **bad_params)
 
