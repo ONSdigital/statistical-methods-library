@@ -1,8 +1,7 @@
 # For Copyright information, please see LICENCE.
 
-from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, count, lit, sum, when
-from pyspark.sql.types import DecimalType, IntegerType, StringType
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col, count, sum, when
 
 from . import engine
 
