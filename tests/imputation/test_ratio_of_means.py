@@ -205,6 +205,22 @@ def test_dataframe_target_missing(fxt_load_test_csv):
 
 
 @pytest.mark.dependency()
+def test_params_none(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
+    )
+    bad_params = params.copy()
+    bad_params["target_col"] = None
+    with pytest.raises(TypeError):
+        ratio_of_means.impute(input_df=test_dataframe, **bad_params)
+
+
+@pytest.mark.dependency()
 def test_params_empty_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
@@ -458,7 +474,8 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     depends=[
         "test_dataframe_returned_as_expected",
         "test_params_not_string",
-        "test_params_null",
+        "test_params_none",
+        "test_params_empty_string"
         "test_params_missing_link_column",
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
