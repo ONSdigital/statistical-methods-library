@@ -363,6 +363,7 @@ def impute(
             col("current.aux").alias("aux"),
             col("prev.output").alias("other_output"),
             col("current.output").alias("output_for_construction"),
+            col("current.next_period").alias("next_period"),
         )
 
         # Join the strata ratios onto the input such that each contributor has
