@@ -190,7 +190,7 @@ def test_params_none(fxt_load_test_csv):
     )
     bad_params = params.copy()
     bad_params["strata_col"] = None
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         ht_ratio.estimate(test_dataframe, **bad_params)
 
 
