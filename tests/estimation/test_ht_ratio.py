@@ -58,7 +58,7 @@ params = {
     "unique_identifier_col": unique_identifier_col,
     "period_col": period_col,
     "strata_col": strata_col,
-    "sample_marker_col": sample_marker_col
+    "sample_marker_col": sample_marker_col,
 }
 
 test_scenarios = []
@@ -106,10 +106,9 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
 
     with pytest.raises(TypeError):
         ht_ratio.estimate(
-            test_dataframe,
-            **params,
-            adjustment_marker_col=adjustment_marker_col
+            test_dataframe, **params, adjustment_marker_col=adjustment_marker_col
         )
+
 
 @pytest.mark.dependency()
 def test_params_mismatched_out_of_scope_cols(fxt_load_test_csv):
@@ -123,10 +122,21 @@ def test_params_mismatched_out_of_scope_cols(fxt_load_test_csv):
     )
 
     with pytest.raises(TypeError):
-        ht_ratio.estimate(test_dataframe, **params, out_of_scope_full=True, adjustment_marker_col=adjustment_marker_col)
+        ht_ratio.estimate(
+            test_dataframe,
+            **params,
+            out_of_scope_full=True,
+            adjustment_marker_col=adjustment_marker_col,
+        )
 
     with pytest.raises(TypeError):
-        ht_ratio.estimate(test_dataframe, **params, out_of_scope_full=False, h_value_col=adjustment_marker_col)
+        ht_ratio.estimate(
+            test_dataframe,
+            **params,
+            out_of_scope_full=False,
+            h_value_col=adjustment_marker_col,
+        )
+
 
 # Test validation fail if mismatched calibration cols
 @pytest.mark.dependency()
@@ -141,7 +151,9 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     )
 
     with pytest.raises(TypeError):
-        ht_ratio.estimate(test_dataframe, **params, calibration_group_col=calibration_group_col)
+        ht_ratio.estimate(
+            test_dataframe, **params, calibration_group_col=calibration_group_col
+        )
 
 
 # Test if params not strings
@@ -177,7 +189,8 @@ def test_params_empty_string(fxt_load_test_csv):
     with pytest.raises(ValueError):
         ht_ratio.estimate(test_dataframe, **bad_params)
 
-#Test validation fails if params explicitly None
+
+# Test validation fails if params explicitly None
 @pytest.mark.dependency()
 def test_params_none(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -251,9 +264,10 @@ def test_dataframe_deaths_in_unsampled(fxt_load_test_csv):
         "deaths_in_unsampled",
     )
     with pytest.raises(ValidationError):
-
         estimation_params = params.copy()
-        estimation_params.update({"adjustment_marker_col": adjustment_marker_col, "h_value_col": h_col})
+        estimation_params.update(
+            {"adjustment_marker_col": adjustment_marker_col, "h_value_col": h_col}
+        )
         ht_ratio.estimate(test_dataframe, **estimation_params)
 
 
@@ -270,7 +284,9 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
     )
     with pytest.raises(ValidationError):
         estimation_params = params.copy()
-        estimation_params.update({"adjustment_marker_col": adjustment_marker_col, "h_value_col": h_col})
+        estimation_params.update(
+            {"adjustment_marker_col": adjustment_marker_col, "h_value_col": h_col}
+        )
         ht_ratio.estimate(test_dataframe, **estimation_params)
 
 
