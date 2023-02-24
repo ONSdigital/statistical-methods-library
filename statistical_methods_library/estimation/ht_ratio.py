@@ -134,13 +134,16 @@ def estimate(
         "period": period_col,
         "strata": strata_col,
         "sample_marker": sample_marker_col,
+    }
+
+    optional_params = {
         "adjustment_marker": adjustment_marker_col,
         "h_value": h_value_col,
         "auxiliary": auxiliary_col,
         "calibration_group": calibration_group_col,
     }
 
-    expected_columns = {k: v for k, v in input_params.items() if v is not None}
+    input_params.update({k: v for k, v in optional_params.items() if v is not None})
 
     type_mapping = {
         "unique_identifier": StringType,
@@ -154,7 +157,7 @@ def estimate(
     }
 
     aliased_df = validation.validate_dataframe(
-        input_df, expected_columns, type_mapping, ["unique_identifier", "period"]
+        input_df, input_params, type_mapping, ["unique_identifier", "period"]
     )
 
     # h values must not change within a stratum
