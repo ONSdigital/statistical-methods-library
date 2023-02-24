@@ -79,7 +79,7 @@ for scenario_category in ("dev", "methodology"):
         )
 
 
-# --- Test type validation on the input dataframe(s) ---
+# Test type validation on the input dataframe(s)
 @pytest.mark.dependency()
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
@@ -87,7 +87,7 @@ def test_input_not_a_dataframe():
         ht_ratio.estimate("not_a_dataframe", *params)
 
 
-# --- Test validation fail if mismatched death cols  ---
+# Test validation fail if mismatched death cols
 @pytest.mark.dependency()
 def test_params_mismatched_death_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -108,8 +108,27 @@ def test_params_mismatched_death_cols(fxt_load_test_csv):
     with pytest.raises(TypeError):
         ht_ratio.estimate(test_dataframe, *bad_params)
 
+@pytest.mark.dependency()
+def test_params_mismatched_death_cols(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "estimation",
+        "ht_ratio",
+        "unit",
+        "basic_functionality",
+    )
+    bad_params = (
+        unique_identifier_col,
+        period_col,
+        strata_col,
+        sample_col,
+        adjustment_col,
+    )
+    with pytest.raises(TypeError):
+        ht_ratio.estimate(test_dataframe, *bad_params)
 
-# --- Test validation fail if mismatched calibration cols  ---
+# Test validation fail if mismatched calibration cols
 @pytest.mark.dependency()
 def test_params_mismatched_calibration_cols(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -131,7 +150,7 @@ def test_params_mismatched_calibration_cols(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *bad_params)
 
 
-# --- Test if params not strings  ---
+# Test if params not strings
 @pytest.mark.dependency()
 def test_params_not_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -147,7 +166,7 @@ def test_params_not_string(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *bad_params)
 
 
-# --- Test if params null  ---
+# Test if params null
 @pytest.mark.dependency()
 def test_params_null(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -163,7 +182,7 @@ def test_params_null(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *bad_params)
 
 
-# --- Test validation fail if nulls in data  ---
+# Test validation fail if nulls in data
 @pytest.mark.dependency()
 def test_dataframe_nulls_in_data(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -178,7 +197,7 @@ def test_dataframe_nulls_in_data(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *params)
 
 
-# --- Test if cols missing from input dataframe(s)  ---
+# Test if cols missing from input dataframe(s)
 @pytest.mark.dependency()
 def test_dataframe_column_missing(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -194,7 +213,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         ht_ratio.estimate(bad_dataframe, *params)
 
 
-# --- Test if references are duplicated in the input dataframe  ---
+# Test if references are duplicated in the input dataframe
 @pytest.mark.dependency()
 def test_dataframe_duplicate_reference(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -224,7 +243,7 @@ def test_dataframe_deaths_in_unsampled(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *estimation_params)
 
 
-# --- Test validation fail if mixed h values in a strata  ---
+# Test validation fail if mixed h values in a strata
 @pytest.mark.dependency()
 def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -240,7 +259,7 @@ def test_dataframe_mixed_h_values_in_strata(fxt_load_test_csv):
         ht_ratio.estimate(test_dataframe, *estimation_params)
 
 
-# --- Test output is correct type ---
+# Test output is correct type
 @pytest.mark.dependency()
 def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -257,7 +276,7 @@ def test_dataframe_correct_type(fxt_spark_session, fxt_load_test_csv):
     assert isinstance(ret_val, type(test_dataframe))
 
 
-# --- Test no extra columns are copied to the output ---
+# Test no extra columns are copied to the output
 @pytest.mark.dependency()
 def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -276,7 +295,7 @@ def test_dataframe_no_extra_columns(fxt_spark_session, fxt_load_test_csv):
     assert "bonus_column" not in ret_cols
 
 
-# --- Test expected columns are in the output ---
+# Test expected columns are in the output
 @pytest.mark.dependency()
 def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -306,7 +325,7 @@ def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
     assert expected_cols == ret_cols
 
 
-# --- Test expected columns are in the output when default names aren't used ---
+# Test expected columns are in the output when default names aren't used
 @pytest.mark.dependency()
 def test_dataframe_expected_columns_not_defaults(fxt_spark_session, fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
