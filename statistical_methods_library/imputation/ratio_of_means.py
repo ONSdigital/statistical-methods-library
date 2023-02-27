@@ -177,7 +177,13 @@ def impute(**kwargs) -> DataFrame:
             col("count_construction"),
             col("count_forward"),
         )
-        return [engine.RatioCalculationResult(data=returned_df, join_columns=["period", "strata"], fill_columns=["forward", "backward", "construction"])]
+        return [
+            engine.RatioCalculationResult(
+                data=returned_df,
+                join_columns=["period", "strata"],
+                fill_columns=["forward", "backward", "construction"],
+            )
+        ]
 
     kwargs["ratio_calculation_function"] = ratio_of_means
 

@@ -16,6 +16,7 @@ from statistical_methods_library.utilities import validation
 
 # --- Marker constants ---
 
+
 class Marker(Enum):
     """Values for the marker column created during imputation."""
 
@@ -34,6 +35,7 @@ class Marker(Enum):
 
     FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
     """The value has been forward imputed from a constructed value."""
+
 
 @dataclass
 class RatioCalculationResult:
@@ -277,9 +279,7 @@ def impute(
         # a set of ratios.
         all_fill_cols = []
         for result in ratio_calculation_function(working_df):
-            df = df.join(
-                result.data, result.join_columns, "left"
-            )
+            df = df.join(result.data, result.join_columns, "left")
             if result.fill_columns:
                 all_fill_cols += result.fill_columns
 
@@ -287,6 +287,7 @@ def impute(
             df = df.fillna(1.0, all_fill_cols)
 
         return df
+
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
