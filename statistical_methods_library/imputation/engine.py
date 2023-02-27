@@ -278,7 +278,7 @@ def impute(
         all_fill_cols = []
         for result in ratio_calculation_function(working_df):
             df = df.join(
-                result.data, result.join_columns, "left outer"
+                result.data, result.join_columns, "left"
             )
             if result.fill_columns:
                 all_fill_cols += result.fill_columns
