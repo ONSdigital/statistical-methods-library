@@ -105,7 +105,7 @@ def impute(**kwargs) -> DataFrame:
         *`marker_col`
     """
 
-    def ratio_of_means(df: DataFrame) -> DataFrame:
+    def ratio_of_means(df: DataFrame) -> list[engine.RatioCalculationResult]:
         working_df = df.groupBy("period", "strata").agg(
             sum(col("output")),
             sum(col("other_output")),
@@ -151,7 +151,7 @@ def impute(**kwargs) -> DataFrame:
 
         # Calculate backward ratio for each strata; reuse calculations from
         # above where applicable.
-        return forward_df.join(
+        returned = forward_df.join(
             forward_df.select(
                 col("period").alias("other_period"),
                 col("strata").alias("other_strata"),
@@ -177,6 +177,7 @@ def impute(**kwargs) -> DataFrame:
             col("count_construction"),
             col("count_forward"),
         )
+        return [engine.RatioCalculationResult(data=returned_df, columns=["period", "strata"], fill_columns=["fforward", "backward", "construction"])]
 
     kwargs["ratio_calculation_function"] = ratio_of_means
 
