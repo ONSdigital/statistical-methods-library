@@ -104,12 +104,15 @@ def outlier(
         "grouping": grouping_col,
         "target": target_col,
         "design": design_col,
+    }
+    
+    optional_params = {
         "l_value": l_value_col,
         "calibration": calibration_col,
         "auxiliary": auxiliary_col,
     }
 
-    expected_columns = {k: v for k, v in input_params.items() if v is not None}
+    input_params.update({k: v for k, v in optional_params.items() if v is not None})
 
     type_mapping = {
         "reference": StringType,
