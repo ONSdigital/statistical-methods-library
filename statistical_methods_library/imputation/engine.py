@@ -277,11 +277,12 @@ def impute(
         # a set of ratios.
         for result in ratio_calculation_function(working_df):
             df = df.join(
-                result.data, result.columns,
-        )
-        if result.fill_columns:
-            df = df.fillna(1.0, result.fill_columns)
+                result.data, result.join_columns,
+            )
+            if result.fill_columns:
+                df = df.fillna(1.0, result.fill_columns)
 
+        return df
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
