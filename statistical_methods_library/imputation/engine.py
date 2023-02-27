@@ -275,12 +275,16 @@ def impute(
 
         # Join the strata ratios onto the input such that each contributor has
         # a set of ratios.
+        all_fill_cols = []
         for result in ratio_calculation_function(working_df):
             df = df.join(
-                result.data, result.join_columns,
+                result.data, result.join_columns, "left outer"
             )
             if result.fill_columns:
-                df = df.fillna(1.0, result.fill_columns)
+                all_fill_cols += result.fill_columns
+
+        if all_fill_cols:
+            df.fillna(1.0, all_fill_cols)
 
         return df
     # Caching for both imputed and unimputed data.
