@@ -105,7 +105,7 @@ def outlier(
         "target": target_col,
         "design": design_col,
     }
-    
+
     optional_params = {
         "l_value": l_value_col,
         "calibration": calibration_col,

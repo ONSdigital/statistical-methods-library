@@ -154,6 +154,7 @@ def test_params_none(fxt_load_test_csv):
     with pytest.raises(TypeError):
         winsorisation.outlier(test_dataframe, *bad_params)
 
+
 @pytest.mark.dependency()
 def test_params_empty_string(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -175,6 +176,7 @@ def test_params_empty_string(fxt_load_test_csv):
     )
     with pytest.raises(ValueError):
         winsorisation.outlier(test_dataframe, *bad_params)
+
 
 # --- Test validation fail if mismatched calibration cols  ---
 
@@ -312,8 +314,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "test_input_not_a_dataframe",
         "test_params_not_string",
         "test_params_none",
-        "test_params_empty_string"
-        "test_dataframe_nulls_in_data",
+        "test_params_empty_string" "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
         "test_params_mismatched_calibration_cols",
         "test_dataframe_returned_as_expected",
