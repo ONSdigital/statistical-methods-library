@@ -2,6 +2,7 @@
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, sum, when
+from typing import List
 
 from . import engine
 
@@ -180,8 +181,8 @@ def impute(**kwargs) -> DataFrame:
         return [
             engine.RatioCalculationResult(
                 data=returned_df,
-                join_columns=["period", "strata"],
-                fill_columns=["forward", "backward", "construction"],
+                join_columns=List["period", "strata"],
+                fill_columns=List["forward", "backward", "construction"],
             )
         ]
 
