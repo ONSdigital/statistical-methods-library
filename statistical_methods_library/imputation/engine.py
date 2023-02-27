@@ -6,7 +6,7 @@ For Copyright information, please see LICENCE.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Iterable, Optional, Union
+from typing import Callable, List, Iterable, Optional, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
@@ -40,8 +40,8 @@ class Marker(Enum):
 @dataclass
 class RatioCalculationResult:
     data: DataFrame
-    join_columns: list[Union[str, Column]]
-    fill_columns: list[Union[str, Column]] = None
+    join_columns: List[Union[str, Column]]
+    fill_columns: List[Union[str, Column]] = None
 
 
 def impute(
