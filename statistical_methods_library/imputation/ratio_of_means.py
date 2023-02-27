@@ -106,7 +106,7 @@ def impute(**kwargs) -> DataFrame:
         *`marker_col`
     """
 
-    def ratio_of_means(df: DataFrame) -> list[engine.RatioCalculationResult]:
+    def ratio_of_means(df: DataFrame) -> List[engine.RatioCalculationResult]:
         working_df = df.groupBy("period", "strata").agg(
             sum(col("output")),
             sum(col("other_output")),
@@ -181,8 +181,8 @@ def impute(**kwargs) -> DataFrame:
         return [
             engine.RatioCalculationResult(
                 data=returned_df,
-                join_columns=List["period", "strata"],
-                fill_columns=List["forward", "backward", "construction"],
+                join_columns=["period", "strata"],
+                fill_columns=["forward", "backward", "construction"],
             )
         ]
 
