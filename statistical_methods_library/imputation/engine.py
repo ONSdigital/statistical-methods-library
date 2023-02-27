@@ -284,7 +284,7 @@ def impute(
                 all_fill_cols += result.fill_columns
 
         if all_fill_cols:
-            df.fillna(1.0, all_fill_cols)
+            df = df.fillna(1.0, all_fill_cols)
 
         return df
     # Caching for both imputed and unimputed data.
