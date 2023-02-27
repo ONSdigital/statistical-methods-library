@@ -1,8 +1,9 @@
 # For Copyright information, please see LICENCE.
 
+from typing import List
+
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, sum, when
-from typing import List
 
 from . import engine
 

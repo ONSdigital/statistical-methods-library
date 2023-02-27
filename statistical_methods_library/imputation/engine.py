@@ -6,7 +6,7 @@ For Copyright information, please see LICENCE.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, List, Iterable, Optional, Union
+from typing import Callable, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
