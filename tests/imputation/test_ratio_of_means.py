@@ -82,23 +82,15 @@ bad_dataframe_types = dataframe_types.copy()
 bad_dataframe_types[target_col] = reference_type
 
 # Params used when calling impute
-params = (
-    reference_col,
-    period_col,
-    strata_col,
-    target_col,
-    auxiliary_col,
-    output_col,
-    marker_col,
-)
-
-default_params = (
-    reference_col,
-    period_col,
-    strata_col,
-    target_col,
-    auxiliary_col,
-)
+params = {
+    "reference_col": reference_col,
+    "period_col": period_col,
+    "strata_col": strata_col,
+    "target_col": target_col,
+    "auxiliary_col": auxiliary_col,
+    "output_col": output_col,
+    "marker_col": marker_col,
+}
 
 test_scenarios = [
     ("unit", "ratio_calculation"),
@@ -133,7 +125,7 @@ test_scenarios += [
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        ratio_of_means.impute("not_a_dataframe", *params)
+        ratio_of_means.impute(input_df="not_a_dataframe", **params)
 
 
 # --- Test type validation on the back_data dataframe(s) ---
@@ -151,7 +143,9 @@ def test_back_data_not_a_dataframe(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        ratio_of_means.impute(test_dataframe, *params, back_data_df="not_a_dataframe")
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df="not_a_dataframe"
+        )
 
 
 # --- Test if cols missing from input dataframe(s) ---
@@ -169,7 +163,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
     )
     bad_dataframe = test_dataframe.drop(strata_col)
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(bad_dataframe, *params)
+        ratio_of_means.impute(input_df=bad_dataframe, **params)
 
 
 # --- Test if dataframe has duplicate rows ---
@@ -186,7 +180,7 @@ def test_dataframe_duplicate_rows(fxt_load_test_csv):
         "duplicate_rows",
     )
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params)
+        ratio_of_means.impute(input_df=test_dataframe, **params)
 
 
 # --- Test if target missing from input dataframe(s) ---
@@ -204,14 +198,14 @@ def test_dataframe_target_missing(fxt_load_test_csv):
     )
     bad_dataframe = test_dataframe.drop(target_col)
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(bad_dataframe, *params)
+        ratio_of_means.impute(input_df=bad_dataframe, **params)
 
 
 # --- Test if params null ---
 
 
 @pytest.mark.dependency()
-def test_params_null(fxt_load_test_csv):
+def test_params_none(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
@@ -220,17 +214,26 @@ def test_params_null(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    bad_params = (
-        reference_col,
-        period_col,
-        strata_col,
-        "",
-        auxiliary_col,
-        output_col,
-        marker_col,
+    bad_params = params.copy()
+    bad_params["target_col"] = None
+    with pytest.raises(TypeError):
+        ratio_of_means.impute(input_df=test_dataframe, **bad_params)
+
+
+@pytest.mark.dependency()
+def test_params_empty_string(fxt_load_test_csv):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "ratio_of_means",
+        "unit",
+        "basic_functionality",
     )
+    bad_params = params.copy()
+    bad_params["target_col"] = ""
     with pytest.raises(ValueError):
-        ratio_of_means.impute(test_dataframe, *bad_params)
+        ratio_of_means.impute(input_df=test_dataframe, **bad_params)
 
 
 @pytest.mark.dependency()
@@ -245,7 +248,7 @@ def test_params_missing_link_column(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         ratio_of_means.impute(
-            test_dataframe, *params, construction_link_col=construction_col
+            input_df=test_dataframe, **params, construction_link_col=construction_col
         )
 
 
@@ -259,17 +262,10 @@ def test_params_not_string(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    bad_params = (
-        reference_col,
-        period_col,
-        strata_col,
-        ["target_col"],
-        auxiliary_col,
-        output_col,
-        marker_col,
-    )
+    bad_params = params.copy()
+    bad_params["reference_col"] = 23
     with pytest.raises(TypeError):
-        ratio_of_means.impute(test_dataframe, *bad_params)
+        ratio_of_means.impute(input_df=test_dataframe, **bad_params)
 
 
 # --- Test if output contents are as expected, both new columns and data ---
@@ -287,9 +283,7 @@ def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
     )
     # Make sure that no extra columns pass through.
     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = ratio_of_means.impute(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
+    ret_val = ratio_of_means.impute(input_df=test_dataframe, **params)
     assert isinstance(ret_val, type(test_dataframe))
     ret_cols = ret_val.columns
     assert "bonus_column" not in ret_cols
@@ -315,7 +309,9 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
         "back_data_missing_column",
     )
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
 @pytest.mark.dependency()
@@ -338,7 +334,9 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     )
 
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
 @pytest.mark.dependency()
@@ -361,13 +359,13 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
     )
 
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params, back_data_df=bad_back_data)
+        ratio_of_means.impute(
+            input_df=test_dataframe, **params, back_data_df=bad_back_data
+        )
 
 
-# --- Test if when the back data input has link cols and the main data input does not
-# --- then the columns are ignored.
-
-
+# Test if when the back data input has link cols and the main data input does not
+# then the columns are ignored.
 @pytest.mark.dependency()
 def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
@@ -388,15 +386,15 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
         "back_data_with_link_cols",
     )
 
-    ret_val = ratio_of_means.impute(test_dataframe, *params, back_data_df=back_data)
+    ret_val = ratio_of_means.impute(
+        input_df=test_dataframe, **params, back_data_df=back_data
+    )
 
     assert ret_val.count() == 1
 
 
-# --- Test when main data input has link cols and the back data input does not
-# --- then columns aren't lost.
-
-
+# Test when main data input has link cols and the back data input does not
+# then columns aren't lost.
 @pytest.mark.dependency()
 def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
     fxt_load_test_csv, fxt_spark_session
@@ -419,22 +417,23 @@ def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
         "back_data_without_link_cols",
     )
 
-    imputation_kwargs = {
-        "forward_link_col": forward_col,
-        "backward_link_col": backward_col,
-        "construction_link_col": construction_col,
-    }
-
-    ret_val = ratio_of_means.impute(
-        test_dataframe, *params, **imputation_kwargs, back_data_df=back_data
+    imputation_kwargs = params.copy()
+    imputation_kwargs.update(
+        {
+            "forward_link_col": forward_col,
+            "backward_link_col": backward_col,
+            "construction_link_col": construction_col,
+            "input_df": test_dataframe,
+            "back_data_df": back_data,
+        }
     )
+
+    ret_val = ratio_of_means.impute(**imputation_kwargs)
 
     assert ret_val.count() == 1
 
 
-# --- Test if columns of the incorrect type are caught.
-
-
+# Test if columns of the incorrect type are caught.
 @pytest.mark.dependency()
 def test_incorrect_column_types(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -446,7 +445,7 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "basic_functionality",
     )
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params)
+        ratio_of_means.impute(input_df=test_dataframe, **params)
 
 
 @pytest.mark.dependency()
@@ -461,7 +460,7 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     )
 
     with pytest.raises(ValidationError):
-        ratio_of_means.impute(test_dataframe, *params)
+        ratio_of_means.impute(input_df=test_dataframe, **params)
 
 
 # --- Test Scenarios.
@@ -475,7 +474,8 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     depends=[
         "test_dataframe_returned_as_expected",
         "test_params_not_string",
-        "test_params_null",
+        "test_params_none",
+        "test_params_empty_string",
         "test_params_missing_link_column",
         "test_dataframe_column_missing",
         "test_input_not_a_dataframe",
@@ -507,17 +507,15 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         scenario_file_type,
         f"{scenario}_output",
     )
-    # We use imputation_kwargs to allow us to pass in the forward, backward
-    # and construction link columns which are usually defaulted to None. This
-    # means that we can autodetect when we should pass these.
+    imputation_kwargs = params.copy()
     if forward_col in scenario_input.columns:
-        imputation_kwargs = {
-            "forward_link_col": forward_col,
-            "backward_link_col": backward_col,
-            "construction_link_col": construction_col,
-        }
-    else:
-        imputation_kwargs = {}
+        imputation_kwargs.update(
+            {
+                "forward_link_col": forward_col,
+                "backward_link_col": backward_col,
+                "construction_link_col": construction_col,
+            }
+        )
 
     if scenario.endswith("filtered"):
         if "dev" in scenario_type:
@@ -565,7 +563,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         auxiliary_col,
     )
     scenario_actual_output = ratio_of_means.impute(
-        scenario_input, *params, **imputation_kwargs
+        input_df=scenario_input, **imputation_kwargs
     )
     scenario_actual_output = scenario_actual_output.withColumn(
         output_col, bround(col(output_col), 6)
