@@ -148,6 +148,8 @@ def impute(**kwargs) -> DataFrame:
             expr(
                 """
                     CASE
+                        WHEN sum(next.output) = 0
+                        THEN 0
                         WHEN sum(next.output) IS NOT NULL
                         THEN sum(
                             CASE
