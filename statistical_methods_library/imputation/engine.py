@@ -266,6 +266,7 @@ def impute(
             ],
             "leftouter",
         ).select(
+            col("current.ref").alias("ref"),
             col("current.grouping").alias("grouping"),
             col("current.period").alias("period"),
             when(~col("prev.output").isNull(), col("current.output")).alias("output"),
