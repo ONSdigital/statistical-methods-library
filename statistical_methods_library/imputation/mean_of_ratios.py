@@ -15,7 +15,7 @@ def impute(**kwargs) -> DataFrame:
             "grouping",
             "ref",
             "current.output/previous.output AS growth_forward",
-            "current.output/next.output AS growth_backward"
+            "current.output/next.output AS growth_backward",
         ).fillna(1.0, "growth_forward", "growth_backward")
 
         return [
