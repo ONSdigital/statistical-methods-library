@@ -11,6 +11,27 @@ from . import engine
 def impute(**kwargs) -> DataFrame:
 
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
+        working_df = df.withColumn(
+            "growth_ratio_forward",
+            col("output")/col("other_output")
+            ).join(
+            df.select(
+                col("period").alias("other_period"),
+                col("grouping").alias("other_grouping"),
+                col("other_output").alias("reverse_output"),
+                col("output").alias("reverse_other_output"),
+            ),
+            [
+                col("next_period") == col("other_period"),
+                col("grouping") == col("other_grouping"),
+            ],
+            "leftouter",
+        ).select(
+            col("period"),
+            col("grouping"),
+            col("growth_ratio_forward"),
+            (col("reverse_output") / col("reverse_other_output")).alias("growth_ratio_backward"),
+        )
 
         # Calculate the construction links as a ratio of means between the returned values and the auxiliary value
         construction_df = (
