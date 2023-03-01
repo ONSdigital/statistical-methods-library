@@ -3,7 +3,7 @@
 from typing import List
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, sum, when
+from pyspark.sql.functions import expr
 
 from . import engine
 
@@ -108,20 +108,53 @@ def impute(**kwargs) -> DataFrame:
     """
 
     def ratio_of_means(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        returned_df = df.selectExpr(
-            "period",
-            "grouping",
-            "sum(CASE WHEN previous.output IS NOT NULL THEN current.output END)/sum(previous.output) AS forward",
-            "sum(CASE WHEN next.output IS NOT NULL THEN current.output END)/sum(next.output) AS backward",
-            "sum(current.output)/sum(aux) AS construction",
-            "sum(CASE WHEN previous.output IS NOT NULL THEN 1 END) AS count_forward",
-            "sum(CASE WHEN next.output IS NOT NULL THEN 1 END) AS count_backward",
-            "count(current.output) AS count_construction",
-            ).groupBy("period", "grouping")
-
+        df = df.groupBy("period", "grouping").agg(
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN previous.output IS NOT NULL
+                            THEN current.output 
+                        END
+                    )/sum(previous.output) AS forward
+                """
+            ),
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN next.output IS NOT NULL
+                            THEN current.output
+                        END
+                    )/sum(next.output) AS backward
+                """
+            ),
+            expr("sum(current.output)/sum(aux) AS construction"),
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN previous.output IS NOT NULL
+                            THEN 1 
+                        END
+                    ) AS count_forward
+                """
+            ),
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN next.output IS NOT NULL
+                            THEN 1
+                        END
+                    ) AS count_backward
+                """
+            ),
+            expr("count(current.output) AS count_construction")
+        )
         return [
             engine.RatioCalculationResult(
-                data=returned_df,
+                data= df,
                 join_columns=["period", "grouping"],
                 fill_columns=["forward", "backward", "construction"],
             )
