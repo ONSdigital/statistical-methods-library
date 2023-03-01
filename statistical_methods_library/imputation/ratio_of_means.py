@@ -108,16 +108,16 @@ def impute(**kwargs) -> DataFrame:
     """
 
     def ratio_of_means(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        returned_df = df.groupBy("period", "grouping").selectExpr(
+        returned_df = df.selectExpr(
             "period",
             "grouping",
-            "sum(CASE WHEN previous.output IS NOT NULL THEN current.output)/sum(previous.output END) AS forward",
-            "sum(CASE WHEN next.output IS NOT NULL THEN current.output)/sum(next.output END) AS backward",
+            "sum(CASE WHEN previous.output IS NOT NULL THEN current.output END)/sum(previous.output) AS forward",
+            "sum(CASE WHEN next.output IS NOT NULL THEN current.output END)/sum(next.output) AS backward",
             "sum(current.output)/sum(aux) AS construction",
             "sum(CASE WHEN previous.output IS NOT NULL THEN 1 END) AS count_forward",
             "sum(CASE WHEN next.output IS NOT NULL THEN 1 END) AS count_backward",
             "count(current.output) AS count_construction",
-            )
+            ).groupBy("period", "grouping")
 
         return [
             engine.RatioCalculationResult(
