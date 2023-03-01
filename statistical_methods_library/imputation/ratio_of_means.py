@@ -136,12 +136,7 @@ def impute(**kwargs) -> DataFrame:
                         WHEN sum(previous.output) = 0
                         THEN 0
                         WHEN sum(previous.output) IS NOT NULL
-                        THEN sum(
-                            CASE
-                                WHEN previous.output IS NOT NULL
-                                THEN 1
-                            END
-                        )
+                        THEN sum(cast(previous.output IS NOT NULL AS integer))
                     END AS count_forward
                 """
             ),
@@ -151,12 +146,7 @@ def impute(**kwargs) -> DataFrame:
                         WHEN sum(next.output) = 0
                         THEN 0
                         WHEN sum(next.output) IS NOT NULL
-                        THEN sum(
-                            CASE
-                                WHEN next.output IS NOT NULL
-                                THEN 1
-                            END
-                    )
+                        THEN sum(cast(next.output IS NOT NULL AS integer))
                     END AS count_backward
                 """
             ),
