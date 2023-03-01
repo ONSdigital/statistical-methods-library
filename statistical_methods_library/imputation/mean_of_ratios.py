@@ -13,14 +13,12 @@ def impute(**kwargs) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
 
         # Calculate the construction links as a ratio of means between the returned values and the auxiliary value
-        working_df = df.groupBy("period", "grouping").agg(
+        construction_df = (
+            df.groupBy("period", "grouping").agg(
             sum(col("aux")),
             sum(col("output_for_construction")),
             count(col("output_for_construction")),
-        )
-
-        construction_df = (
-            working_df.withColumn(
+            ).withColumn(
                 "construction", col("sum(output_for_construction)") / col("sum(aux)")
             )
             .withColumn(
