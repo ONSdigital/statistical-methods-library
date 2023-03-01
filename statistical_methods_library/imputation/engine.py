@@ -258,22 +258,29 @@ def impute(
         # contributor on the same row.
         working_df = filtered_df.alias("current")
         working_df = working_df.join(
-            filtered_df.select("ref", "period", "output", "grouping").alias("prev"),
+            filtered_df.select("ref", "period", "output", "grouping").alias("previous"),
             [
-                col("current.ref") == col("prev.ref"),
-                col("current.previous_period") == col("prev.period"),
-                col("current.grouping") == col("prev.grouping"),
+                col("current.ref") == col("previous.ref"),
+                col("current.previous_period") == col("previous.period"),
+                col("current.grouping") == col("previous.grouping"),
+            ],
+            "leftouter",
+        ).join(
+            filtered_df.select("ref", "period", "output", "grouping").alias("next"),
+            [
+                col("current.ref") == col("next.ref"),
+                col("current.next_period") == col("next.period"),
+                col("current.grouping") == col("next.grouping"),
             ],
             "leftouter",
         ).select(
             col("current.ref").alias("ref"),
             col("current.grouping").alias("grouping"),
             col("current.period").alias("period"),
-            when(~col("prev.output").isNull(), col("current.output")).alias("output"),
             col("current.aux").alias("aux"),
-            col("prev.output").alias("other_output"),
-            col("current.output").alias("output_for_construction"),
-            col("current.next_period").alias("next_period"),
+            col("current.output"),
+            col("next.output"),
+            col("previous.output"),
         )
 
         # Join the grouping ratios onto the input such that each contributor has
