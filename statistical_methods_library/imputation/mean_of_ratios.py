@@ -16,14 +16,12 @@ def impute(**kwargs) -> DataFrame:
             "ref",
             "current.output/previous.output AS growth_forward",
             "current.output/next.output AS growth_backward"
-
-        )
+        ).fillna(1.0, "growth_forward", "growth_backward")
 
         return [
             engine.RatioCalculationResult(
                 data=growth_df,
-                join_columns=["period", "ref", "grouping"],
-                fill_columns=["growth_forward", "growth_backward"]
+                join_columns=["period", "grouping", "ref"],
             )
         ]
 
