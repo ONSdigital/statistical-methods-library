@@ -132,25 +132,41 @@ def impute(**kwargs) -> DataFrame:
             expr("sum(current.output)/sum(aux) AS construction"),
             expr(
                 """
-                    sum(
-                        CASE
-                            WHEN previous.output IS NOT NULL
-                            THEN 1 
-                        END
-                    ) AS count_forward
+                    CASE
+                        WHEN sum(previous.output) = 0
+                        THEN 0
+                        WHEN sum(previous.output) IS NOT NULL
+                        THEN sum(
+                            CASE
+                                WHEN previous.output IS NOT NULL
+                                THEN 1 
+                            END
+                        )
+                    END AS count_forward  
                 """
             ),
             expr(
                 """
-                    sum(
-                        CASE
-                            WHEN next.output IS NOT NULL
-                            THEN 1
-                        END
-                    ) AS count_backward
+                    CASE
+                        WHEN sum(next.output) IS NOT NULL
+                        THEN sum(
+                            CASE
+                                WHEN next.output IS NOT NULL
+                                THEN 1
+                            END
+                    )
+                    END AS count_backward
                 """
             ),
-            expr("count(current.output) AS count_construction"),
+            expr(
+                """
+                    CASE
+                        WHEN sum(aux) = 0
+                        THEN 0
+                        ELSE count(current.output)
+                    END AS count_construction
+                """
+            ),
         )
         return [
             engine.RatioCalculationResult(
