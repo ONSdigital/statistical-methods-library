@@ -114,7 +114,7 @@ def impute(**kwargs) -> DataFrame:
                     sum(
                         CASE
                             WHEN previous.output IS NOT NULL
-                            THEN current.output 
+                            THEN current.output
                         END
                     )/sum(previous.output) AS forward
                 """
@@ -139,10 +139,10 @@ def impute(**kwargs) -> DataFrame:
                         THEN sum(
                             CASE
                                 WHEN previous.output IS NOT NULL
-                                THEN 1 
+                                THEN 1
                             END
                         )
-                    END AS count_forward  
+                    END AS count_forward
                 """
             ),
             expr(
