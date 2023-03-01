@@ -19,7 +19,7 @@ def impute(**kwargs) -> DataFrame:
       contributor.
     * `period_col`: The name of the column containing the period
       information for the contributor.
-    * `strata_col`: The Name of the column containing the strata information
+    * `grouping_col`: The Name of the column containing the grouping information
       for the contributor.
     * `target_col`: The name of the column containing the target
       variable.
@@ -101,14 +101,14 @@ def impute(**kwargs) -> DataFrame:
     If `back_data_df` is provided it must contain the following columns:
         *`reference_col`
         *`period_col`
-        *`strata_col`
+        *`grouping_col`
         *`auxiliary_col`
         *`output_col`
         *`marker_col`
     """
 
     def ratio_of_means(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        working_df = df.groupBy("period", "strata").agg(
+        working_df = df.groupBy("period", "grouping").agg(
             sum(col("output")),
             sum(col("other_output")),
             sum(col("aux")),
@@ -146,29 +146,29 @@ def impute(**kwargs) -> DataFrame:
                 .cast("long"),
             )
             .join(
-                df.select("period", "strata", "next_period").distinct(),
-                ["period", "strata"],
+                df.select("period", "grouping", "next_period").distinct(),
+                ["period", "grouping"],
             )
         )
 
-        # Calculate backward ratio for each strata; reuse calculations from
+        # Calculate backward ratio for each grouping; reuse calculations from
         # above where applicable.
         returned_df = forward_df.join(
             forward_df.select(
                 col("period").alias("other_period"),
-                col("strata").alias("other_strata"),
+                col("grouping").alias("other_grouping"),
                 col("sum(other_output)").alias("sum_output"),
                 col("sum(output)").alias("sum_other_output"),
                 col("count(output)").alias("count_output"),
             ),
             [
                 col("next_period") == col("other_period"),
-                col("strata") == col("other_strata"),
+                col("grouping") == col("other_grouping"),
             ],
             "leftouter",
         ).select(
             col("period"),
-            col("strata"),
+            col("grouping"),
             col("forward"),
             (col("sum_output") / col("sum_other_output")).alias("backward"),
             when(col("sum_other_output") == 0, 0)
@@ -182,7 +182,7 @@ def impute(**kwargs) -> DataFrame:
         return [
             engine.RatioCalculationResult(
                 data=returned_df,
-                join_columns=["period", "strata"],
+                join_columns=["period", "grouping"],
                 fill_columns=["forward", "backward", "construction"],
             )
         ]

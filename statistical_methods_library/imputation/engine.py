@@ -49,7 +49,7 @@ def impute(
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
-    strata_col: str,
+    grouping_col: str,
     target_col: str,
     auxiliary_col: str,
     ratio_calculation_function: Callable[[DataFrame], Iterable[RatioCalculationResult]],
@@ -72,7 +72,7 @@ def impute(
     input_params = {
         "ref": reference_col,
         "period": period_col,
-        "strata": strata_col,
+        "grouping": grouping_col,
         "target": target_col,
         "aux": auxiliary_col,
     }
@@ -109,7 +109,7 @@ def impute(
     back_expected_columns = {
         "ref": reference_col,
         "period": period_col,
-        "strata": strata_col,
+        "grouping": grouping_col,
         "aux": auxiliary_col,
         "output": output_col,
         "marker": marker_col,
@@ -118,7 +118,7 @@ def impute(
     type_mapping = {
         "ref": StringType,
         "period": StringType,
-        "strata": StringType,
+        "grouping": StringType,
         "target": DecimalType,
         "aux": DecimalType,
         "output": DecimalType,
@@ -238,7 +238,7 @@ def impute(
             return df
 
         # Since we're going to join on to the main df at the end filtering here
-        # won't cause us to lose strata as they'll just be filled with
+        # won't cause us to lose grouping as they'll just be filled with
         # default ratios.
         if link_filter:
             filtered_df = df.join(filtered_refs, ["ref", "period"])
@@ -247,7 +247,7 @@ def impute(
         filtered_df = filtered_df.filter(~df.output.isNull()).select(
             "ref",
             "period",
-            "strata",
+            "grouping",
             "output",
             "aux",
             "previous_period",
@@ -258,15 +258,15 @@ def impute(
         # contributor on the same row.
         working_df = filtered_df.alias("current")
         working_df = working_df.join(
-            filtered_df.select("ref", "period", "output", "strata").alias("prev"),
+            filtered_df.select("ref", "period", "output", "grouping").alias("prev"),
             [
                 col("current.ref") == col("prev.ref"),
                 col("current.previous_period") == col("prev.period"),
-                col("current.strata") == col("prev.strata"),
+                col("current.grouping") == col("prev.grouping"),
             ],
             "leftouter",
         ).select(
-            col("current.strata").alias("strata"),
+            col("current.grouping").alias("grouping"),
             col("current.period").alias("period"),
             when(~col("prev.output").isNull(), col("current.output")).alias("output"),
             col("current.aux").alias("aux"),
@@ -275,7 +275,7 @@ def impute(
             col("current.next_period").alias("next_period"),
         )
 
-        # Join the strata ratios onto the input such that each contributor has
+        # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         all_fill_cols = []
         for result in ratio_calculation_function(working_df):
@@ -309,7 +309,7 @@ def impute(
             working_df = df.select(
                 "ref",
                 "period",
-                "strata",
+                "grouping",
                 "output",
                 "marker",
                 "previous_period",
@@ -342,7 +342,7 @@ def impute(
                 "ref AS other_ref",
                 "period AS other_period",
                 "output AS other_output",
-                "strata AS other_strata",
+                "grouping AS other_grouping",
             )
             calculation_df = (
                 null_response_df.join(
@@ -350,13 +350,13 @@ def impute(
                     [
                         col(other_period_col) == col("other_period"),
                         col("ref") == col("other_ref"),
-                        col("strata") == col("other_strata"),
+                        col("grouping") == col("other_grouping"),
                     ],
                 )
                 .select(
                     "ref",
                     "period",
-                    "strata",
+                    "grouping",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker.value).alias("marker"),
                     "previous_period",
@@ -418,16 +418,16 @@ def impute(
             allowMissingColumns=True,
         )
         construction_df = df.filter(df.output.isNull()).select(
-            "ref", "period", "strata", "aux", "construction", "previous_period"
+            "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "strata").alias("other")
+        other_df = df.select("ref", "period", "grouping").alias("other")
         construction_df = construction_df.alias("construction")
         construction_df = construction_df.join(
             other_df,
             [
                 col("construction.ref") == col("other.ref"),
                 col("construction.previous_period") == col("other.period"),
-                col("construction.strata") == col("other.strata"),
+                col("construction.grouping") == col("other.grouping"),
             ],
             "leftanti",
         ).select(
@@ -471,7 +471,7 @@ def impute(
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
         del full_col_mapping["aux"]
-        del full_col_mapping["strata"]
+        del full_col_mapping["grouping"]
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)

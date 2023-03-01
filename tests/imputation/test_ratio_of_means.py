@@ -17,7 +17,7 @@ marker_col = "marker"
 output_col = "output"
 period_col = "date"
 reference_col = "identifier"
-strata_col = "group"
+grouping_col = "group"
 target_col = "question"
 construction_col = "construction"
 count_forward_col = "count_forward"
@@ -29,7 +29,7 @@ decimal_type = DecimalType(15, 6)
 
 reference_type = StringType()
 period_type = StringType()
-strata_type = StringType()
+grouping_type = StringType()
 target_type = decimal_type
 auxiliary_type = decimal_type
 min_accuracy = decimal_type
@@ -47,7 +47,7 @@ exclude_type = StringType()
 dataframe_columns = (
     reference_col,
     period_col,
-    strata_col,
+    grouping_col,
     target_col,
     auxiliary_col,
     output_col,
@@ -64,7 +64,7 @@ dataframe_columns = (
 dataframe_types = {
     reference_col: reference_type,
     period_col: period_type,
-    strata_col: strata_type,
+    grouping_col: grouping_type,
     target_col: target_type,
     auxiliary_col: auxiliary_type,
     output_col: min_accuracy,
@@ -85,7 +85,7 @@ bad_dataframe_types[target_col] = reference_type
 params = {
     "reference_col": reference_col,
     "period_col": period_col,
-    "strata_col": strata_col,
+    "grouping_col": grouping_col,
     "target_col": target_col,
     "auxiliary_col": auxiliary_col,
     "output_col": output_col,
@@ -161,7 +161,7 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         "unit",
         "basic_functionality",
     )
-    bad_dataframe = test_dataframe.drop(strata_col)
+    bad_dataframe = test_dataframe.drop(grouping_col)
     with pytest.raises(ValidationError):
         ratio_of_means.impute(input_df=bad_dataframe, **params)
 
@@ -350,7 +350,7 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         "basic_functionality",
     )
     bad_back_data = fxt_load_test_csv(
-        [reference_col, period_col, strata_col, target_col, marker_col, auxiliary_col],
+        [reference_col, period_col, grouping_col, target_col, marker_col, auxiliary_col],
         dataframe_types,
         "imputation",
         "ratio_of_means",
@@ -555,11 +555,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             "leftanti",
         ).drop("min(" + period_col + ")")
 
-    # We need to drop our strata and auxiliary columns from our output now
+    # We need to drop our grouping and auxiliary columns from our output now
     # we've potentially set up our back data as these must not come out of
     # imputation.
     scenario_expected_output = scenario_expected_output.drop(
-        strata_col,
+        grouping_col,
         auxiliary_col,
     )
     scenario_actual_output = ratio_of_means.impute(
