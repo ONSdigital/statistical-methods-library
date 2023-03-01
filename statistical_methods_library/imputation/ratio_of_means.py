@@ -150,11 +150,11 @@ def impute(**kwargs) -> DataFrame:
                     ) AS count_backward
                 """
             ),
-            expr("count(current.output) AS count_construction")
+            expr("count(current.output) AS count_construction"),
         )
         return [
             engine.RatioCalculationResult(
-                data= df,
+                data=df,
                 join_columns=["period", "grouping"],
                 fill_columns=["forward", "backward", "construction"],
             )

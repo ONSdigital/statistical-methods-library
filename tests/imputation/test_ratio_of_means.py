@@ -350,7 +350,14 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
         "basic_functionality",
     )
     bad_back_data = fxt_load_test_csv(
-        [reference_col, period_col, grouping_col, target_col, marker_col, auxiliary_col],
+        [
+            reference_col,
+            period_col,
+            grouping_col,
+            target_col,
+            marker_col,
+            auxiliary_col,
+        ],
         dataframe_types,
         "imputation",
         "ratio_of_means",
