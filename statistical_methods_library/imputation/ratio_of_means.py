@@ -108,77 +108,17 @@ def impute(**kwargs) -> DataFrame:
     """
 
     def ratio_of_means(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        working_df = df.groupBy("period", "grouping").agg(
-            sum(col("output")),
-            sum(col("other_output")),
-            sum(col("aux")),
-            sum(col("output_for_construction")),
-            count(col("output_for_construction")),
-            count(col("other_output")),
-            count(col("output")),
-        )
+        returned_df = df.groupBy("period", "grouping").selectExpr(
+            "period",
+            "grouping",
+            "sum(CASE WHEN previous.output IS NOT NULL THEN current.output)/sum(previous.output END) AS forward",
+            "sum(CASE WHEN next.output IS NOT NULL THEN current.output)/sum(next.output END) AS backward",
+            "sum(current.output)/sum(aux) AS construction",
+            "sum(CASE WHEN previous.output IS NOT NULL THEN 1 END) AS count_forward",
+            "sum(CASE WHEN next.output IS NOT NULL THEN 1 END) AS count_backward",
+            "count(current.output) AS count_construction",
+            )
 
-        # Calculate the forward ratio for every period using 1 as the link in
-        # the case of a 0 denominator. We also calculate construction
-        # links at the same time for efficiency reasons. This shares
-        # the same behaviour of defaulting to a 1 in the case of a 0
-        # denominator.
-
-        forward_df = (
-            working_df.withColumn(
-                "forward", col("sum(output)") / col("sum(other_output)")
-            )
-            .withColumn(
-                "count_forward",
-                when(col("sum(other_output)") == 0, 0)
-                .when(col("sum(other_output)").isNotNull(), col("count(other_output)"))
-                .cast("long"),
-            )
-            .withColumn(
-                "construction", col("sum(output_for_construction)") / col("sum(aux)")
-            )
-            .withColumn(
-                "count_construction",
-                when(col("sum(aux)") == 0, 0)
-                .when(
-                    col("sum(aux)").isNotNull(), col("count(output_for_construction)")
-                )
-                .cast("long"),
-            )
-            .join(
-                df.select("period", "grouping", "next_period").distinct(),
-                ["period", "grouping"],
-            )
-        )
-
-        # Calculate backward ratio for each grouping; reuse calculations from
-        # above where applicable.
-        returned_df = forward_df.join(
-            forward_df.select(
-                col("period").alias("other_period"),
-                col("grouping").alias("other_grouping"),
-                col("sum(other_output)").alias("sum_output"),
-                col("sum(output)").alias("sum_other_output"),
-                col("count(output)").alias("count_output"),
-            ),
-            [
-                col("next_period") == col("other_period"),
-                col("grouping") == col("other_grouping"),
-            ],
-            "leftouter",
-        ).select(
-            col("period"),
-            col("grouping"),
-            col("forward"),
-            (col("sum_output") / col("sum_other_output")).alias("backward"),
-            when(col("sum_other_output") == 0, 0)
-            .when(col("sum_other_output").isNotNull(), col("count_output"))
-            .cast("long")
-            .alias("count_backward"),
-            col("construction"),
-            col("count_construction"),
-            col("count_forward"),
-        )
         return [
             engine.RatioCalculationResult(
                 data=returned_df,
