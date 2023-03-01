@@ -3,6 +3,7 @@
 from typing import List, Number, Optional
 
 from pyspark.sql import DataFrame
+from pyspark.sql.functions import col, expr
 
 from . import engine
 
@@ -28,16 +29,16 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
         trimmed_df = (
             growth_df.groupBy("period", "grouping")
             .agg(
-                expr("sum(growth_forward IS NOT NULL) AS count_forward"),
-                expr("sum(growth_backward IS NOT NULL) AS count_backward"),
+                expr("sum(cast(growth_forward IS NOT NULL AS integer)) AS count_forward"),
+                expr("sum(cast(growth_backward IS NOT NULL AS integer)) AS count_backward"),
             )
             .select(
                 col("period"),
                 col("grouping"),
                 (1 + (col("count_forward") * int(lower_trim) / 100)).alias("lower_forward"),
-                (col("count_forward") * (100 - int(upper_trim)) / 100).alias("lower_forward"),
+                (col("count_forward") * (100 - int(upper_trim)) / 100).alias("upper_forward"),
                 (1 + (col("count_backward") * int(lower_trim) / 100)).alias("lower_backward"),
-                (col("count_backward") * (100 - int(upper_trim)) / 100).alias("lower_backward"),
+                (col("count_backward") * (100 - int(upper_trim)) / 100).alias("upper_backward"),
             )
         )
 
