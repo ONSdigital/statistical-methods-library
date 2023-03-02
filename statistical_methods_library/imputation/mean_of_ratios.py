@@ -59,13 +59,13 @@ def impute(
                         (col("count_forward") * decimal(lower_trim) / 100).alias(
                             "lower_forward"
                         ),
-                        (col("count_forward") * (100 - int(upper_trim)) / 100).alias(
+                        (col("count_forward") * (100 - decimal(upper_trim)) / 100).alias(
                             "upper_forward"
                         ),
                         (col("count_backward") * decimal(lower_trim) / 100).alias(
                             "lower_backward"
                         ),
-                        (col("count_backward") * (100 - int(upper_trim)) / 100).alias(
+                        (col("count_backward") * (100 - decimal(upper_trim)) / 100).alias(
                             "upper_backward"
                         ),
                     )
