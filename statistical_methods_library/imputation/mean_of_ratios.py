@@ -1,4 +1,4 @@
-lower_# For Copyright information, please see LICENCE.
+# For Copyright information, please see LICENCE.
 
 from typing import List, Number, Optional
 
@@ -115,6 +115,11 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
             engine.RatioCalculationResult(
                 data=growth_df,
                 join_columns=["period", "grouping", "ref"],
+            ),
+            engine.RatioCalculationResult(
+                data=ratio_df,
+                join_columns=["period", "grouping"],
+                fill_columns=["forward", "backward", "construction"]
             )
         ]
 
