@@ -10,7 +10,7 @@ from typing import Callable, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
-from pyspark.sql.types import DecimalType, IntegerType, StringType
+from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
@@ -509,25 +509,25 @@ def impute(
     def calculate_previous_period(
         period: Column, num_periods: Optional[int] = 1
     ) -> Column:
-        period = period.cast(IntegerType)
+        period = period.cast("integer")
         return (
             period
             - num_periods
             - 88
-            * (num_periods // 12 + (period % 100 <= num_periods % 12).cast(IntegerType))
-        ).cast(StringType)
+            * (num_periods // 12 + (period % 100 <= num_periods % 12).cast("integer"))
+        ).cast("string")
 
     def calculate_next_period(period: Column, num_periods: Optional[int] = 1) -> Column:
-        period = period.cast(IntegerType)
+        period = period.cast("integer")
         return (
             period
             + num_periods
             + 88
             * (
                 num_periods // 12
-                + ((period % 100) + (num_periods % 12) > 12).cast(IntegerType)
+                + ((period % 100) + (num_periods % 12) > 12).cast("integer")
             )
-        ).cast(StringType)
+        ).cast("string")
 
     def filter_back_data(filter_col: Column) -> DataFrame:
         return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)
