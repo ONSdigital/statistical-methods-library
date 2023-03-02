@@ -8,7 +8,13 @@ from pyspark.sql.functions import col, expr, when
 from . import engine
 
 
-def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=None, **kwargs) -> DataFrame:
+def impute(
+    *,
+    trim_threshold: Optional[Number] = 10,
+    lower_trim: Optional[Number] = None,
+    upper_trim: Optional[Number] = None,
+    **kwargs
+) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
         growth_df = df.selectExpr(
             "period",
@@ -24,7 +30,7 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
                 WHEN next.output = 0
                 THEN 1
                 ELSE current.output/next.output AS growth_backward
-            END"""
+            END""",
         )
 
         ratio_df = (
@@ -32,53 +38,61 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
                 (
                     growth_df.groupBy("period", "grouping")
                     .agg(
-                        expr("""
+                        expr(
+                            """
                             sum(
                                 cast(growth_forward IS NOT NULL AS integer)
                             ) AS count_forward
-                        """),
-                        expr("""
+                        """
+                        ),
+                        expr(
+                            """
                             sum(
                                 cast(growth_backward IS NOT NULL AS integer)
                             ) AS count_backward
-                        """),
+                        """
+                        ),
                     )
                     .select(
                         col("period"),
                         col("grouping"),
-                        (
-                            1 + (col("count_forward") * int(lower_trim) / 100)
-                        ).alias("lower_forward"),
-                        (
-                            col("count_forward") * (100 - int(upper_trim)) / 100
-                        ).alias("upper_forward"),
-                        (
-                            1 + (col("count_backward") * int(lower_trim) / 100)
-                        ).alias("lower_backward"),
-                        (
-                            col("count_backward") * (100 - int(upper_trim)) / 100
-                        ).alias("upper_backward"),
+                        (1 + (col("count_forward") * int(lower_trim) / 100)).alias(
+                            "lower_forward"
+                        ),
+                        (col("count_forward") * (100 - int(upper_trim)) / 100).alias(
+                            "upper_forward"
+                        ),
+                        (1 + (col("count_backward") * int(lower_trim) / 100)).alias(
+                            "lower_backward"
+                        ),
+                        (col("count_backward") * (100 - int(upper_trim)) / 100).alias(
+                            "upper_backward"
+                        ),
                     )
                 ),
-                ["period", "grouping"]
+                ["period", "grouping"],
             )
             .withColumn(
                 "num_forward",
-                expr("""
+                expr(
+                    """
                     row_number() OVER (
                         PARTITION BY period, grouping
                         ORDER BY growth_forward ASC
                     )
-                """)
+                """
+                ),
             )
             .withColumn(
                 "num_backward",
-                expr("""
+                expr(
+                    """
                     row_number() OVER (
                         PARTITION BY period, grouping
                         ORDER BY growth_backward ASC
                     )
-                """)
+                """
+                ),
             )
             .select(
                 col("period"),
@@ -86,29 +100,30 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
                 when(
                     (
                         col("num_forward").between(
-                            col("lower_forward""),
-                            col("upper_forward")
+                            col("lower_forward"), col("upper_forward")
                         )
-                        | trim_threshold < col("count_forward")
+                        | trim_threshold
+                        < col("count_forward")
                     ),
-                    col("growth_forward")
+                    col("growth_forward"),
                 ).alias("trimmed_forward"),
                 when(
                     (
                         col("num_backward").between(
-                            col("lower_backward""),
-                            col("upper_backward")
+                            col("lower_backward"), col("upper_backward")
                         )
-                        | trim_threshold < col("count_backward")
+                        | trim_threshold
+                        < col("count_backward")
                     ),
-                    col("growth_backward")
-                ).alias("trimmed_backward")
+                    col("growth_backward"),
+                ).alias("trimmed_backward"),
             )
             .groupBy("period", "grouping")
             .agg(
                 expr("mean(trimmed_forward) AS forward"),
                 expr("mean(trimmed_backward) AS backward"),
-            expr("sum(current.output)/sum(aux) AS construction"),
+                expr("sum(current.output)/sum(aux) AS construction"),
+            )
         )
 
         return [
@@ -119,8 +134,8 @@ def impute(*, lower_trim: Optional[Number]=None, upper_trim: Optional[Number]=No
             engine.RatioCalculationResult(
                 data=ratio_df,
                 join_columns=["period", "grouping"],
-                fill_columns=["forward", "backward", "construction"]
-            )
+                fill_columns=["forward", "backward", "construction"],
+            ),
         ]
 
     kwargs["ratio_calculation_function"] = mean_of_ratios
