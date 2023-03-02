@@ -506,14 +506,28 @@ def impute(
             ]
         )
 
-    def calculate_previous_period(period: Column, num_periods: Optional[int]=1) -> Column:
+    def calculate_previous_period(
+        period: Column, num_periods: Optional[int] = 1
+    ) -> Column:
         period = period.cast(IntegerType)
-        return (period-(num_periods + (num/_periods/12 + (period % 100 <= num_periods % 12).cast(IntegerType))*88)).cast(StringType)
+        return (
+            period
+            - num_periods
+            - 88
+            * (num_periods // 12 + (period % 100 <= num_periods % 12).cast(IntegerType))
+        ).cast(StringType)
 
-
-    def calculate_next_period(period: Column, num_periods: Optional[int]=1) -> Column:
+    def calculate_next_period(period: Column, num_periods: Optional[int] = 1) -> Column:
         period = period.cast(IntegerType)
-        return (period+ num_periods + ((num_periods//12 + ((period % 100) + (num_periods % 12) > 12).cast(IntegerType))*88)).cast(StringType)
+        return (
+            period
+            + num_periods
+            + 88
+            * (
+                num_periods // 12
+                + ((period % 100) + (num_periods % 12) > 12).cast(IntegerType)
+            )
+        ).cast(StringType)
 
     def filter_back_data(filter_col: Column) -> DataFrame:
         return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)
