@@ -10,7 +10,7 @@ from . import engine
 
 def impute(
     *,
-    trim_threshold: Optional[Number] = 10,
+    trim_threshold: Optional[Number] = None,
     lower_trim: Optional[Number] = None,
     upper_trim: Optional[Number] = None,
     **kwargs
@@ -103,7 +103,7 @@ def impute(
                             col("lower_forward"), col("upper_forward")
                         )
                         | trim_threshold
-                        < col("count_forward")
+                        >= col("count_forward")
                     ),
                     col("growth_forward"),
                 ).alias("trimmed_forward"),
@@ -113,7 +113,7 @@ def impute(
                             col("lower_backward"), col("upper_backward")
                         )
                         | trim_threshold
-                        < col("count_backward")
+                        >= col("count_backward")
                     ),
                     col("growth_backward"),
                 ).alias("trimmed_backward"),
