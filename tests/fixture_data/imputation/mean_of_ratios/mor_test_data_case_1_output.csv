@@ -1,5 +1,0 @@
-reference,period,imputationClass,targetColumn,auxiliaryColumn,lower_trim,upper_trim,fi_gr,bi_gr,fi_link,bi_link,c_link,final_target_03,imp_mkr,count_fi,count_bi,count_c
-10001,202001,100,,1,,,,,,,147.8876404,3892,R,,,3
-10002,202001,100,,75,,,,,,,147.8876404,3873,R,,,3
-10003,202001,100,,13,,,,,,,147.8876404,5397,R,,,3
-10004,202001,100,,71,,,,,,,147.8876404,10500.02247,C,,,3

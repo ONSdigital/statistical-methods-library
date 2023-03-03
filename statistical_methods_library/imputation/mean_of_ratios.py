@@ -24,13 +24,13 @@ def impute(
             """CASE
                 WHEN previous.output = 0
                 THEN 1
-                ELSE current.output/previous.output AS growth_forward
-            END""",
+                ELSE current.output/previous.output
+            END AS growth_forward""",
             """CASE
                 WHEN next.output = 0
                 THEN 1
-                ELSE current.output/next.output AS growth_backward
-            END""",
+                ELSE current.output/next.output
+            END AS growth_backward""",
         )
 
         ratio_df = (
