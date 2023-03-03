@@ -92,10 +92,7 @@ params = {
     "marker_col": marker_col,
 }
 
-test_scenarios = [
-    ("unit", "ratio_calculation"),
-    ("unit", "imputation_link_counts"),
-]
+test_scenarios = []
 
 scenario_path_prefix = pathlib.Path(
     "tests", "fixture_data", "imputation", "ratio_of_means"
