@@ -14,7 +14,7 @@ def impute(
     trim_threshold: Optional[Number] = None,
     lower_trim: Optional[Number] = None,
     upper_trim: Optional[Number] = None,
-    include_zeros: Optional[Boolean] = False,
+    include_zeros: Optional[bool] = False,
     **kwargs
 ) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
