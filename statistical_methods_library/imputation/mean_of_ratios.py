@@ -15,6 +15,8 @@ def impute(
     lower_trim: Optional[Number] = None,
     upper_trim: Optional[Number] = None,
     include_zeros: Optional[bool] = False,
+    growth_forward_col: Optional[str] = "growth_forward",
+    growth_backward_col: Optional[str] = "growth_backward",
     **kwargs
 ) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
@@ -32,7 +34,7 @@ def impute(
                 *common_cols,
                 "previous.output AS previous_output",
                 "current.output AS current_output",
-                "next.output AS next_output"
+                "next.output AS next_output",
             )
 
         df = df.selectExpr(
@@ -170,7 +172,9 @@ def impute(
         ]
 
     kwargs["ratio_calculation_function"] = mean_of_ratios
-    kwargs["additional_outputs"] = {"growth_forward":"growth_forward","growth_backward":"growth_backward"}
-
+    kwargs["additional_outputs"] = {
+        "growth_forward": growth_forward_col,
+        "growth_backward": growth_backward_col,
+    }
 
     return engine.impute(**kwargs)
