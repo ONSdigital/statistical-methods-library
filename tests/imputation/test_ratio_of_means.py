@@ -91,7 +91,7 @@ params = {
     "auxiliary_col": auxiliary_col,
     "output_col": output_col,
     "marker_col": marker_col,
-    "ratio_calculator_factory": ratio_of_means
+    "ratio_calculator_factory": ratio_of_means,
 }
 
 test_scenarios = []
@@ -142,9 +142,7 @@ def test_back_data_not_a_dataframe(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        impute(
-            input_df=test_dataframe, **params, back_data_df="not_a_dataframe"
-        )
+        impute(input_df=test_dataframe, **params, back_data_df="not_a_dataframe")
 
 
 # --- Test if cols missing from input dataframe(s) ---
@@ -308,9 +306,7 @@ def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
         "back_data_missing_column",
     )
     with pytest.raises(ValidationError):
-        impute(
-            input_df=test_dataframe, **params, back_data_df=bad_back_data
-        )
+        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
 @pytest.mark.dependency()
@@ -333,9 +329,7 @@ def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
     )
 
     with pytest.raises(ValidationError):
-        impute(
-            input_df=test_dataframe, **params, back_data_df=bad_back_data
-        )
+        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
 @pytest.mark.dependency()
@@ -365,9 +359,7 @@ def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_sessio
     )
 
     with pytest.raises(ValidationError):
-        impute(
-            input_df=test_dataframe, **params, back_data_df=bad_back_data
-        )
+        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
 # Test if when the back data input has link cols and the main data input does not
@@ -392,9 +384,7 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
         "back_data_with_link_cols",
     )
 
-    ret_val = impute(
-        input_df=test_dataframe, **params, back_data_df=back_data
-    )
+    ret_val = impute(input_df=test_dataframe, **params, back_data_df=back_data)
 
     assert ret_val.count() == 1
 
@@ -568,9 +558,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         grouping_col,
         auxiliary_col,
     )
-    scenario_actual_output = impute(
-        input_df=scenario_input, **imputation_kwargs
-    )
+    scenario_actual_output = impute(input_df=scenario_input, **imputation_kwargs)
     scenario_actual_output = scenario_actual_output.withColumn(
         output_col, bround(col(output_col), 6)
     )

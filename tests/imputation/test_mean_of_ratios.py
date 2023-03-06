@@ -7,9 +7,8 @@ from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import DecimalType, LongType, StringType
 
-from statistical_methods_library.imputation.ratio_calculators import mean_of_ratios
-
 from statistical_methods_library.imputation.engine import impute
+from statistical_methods_library.imputation.ratio_calculators import mean_of_ratios
 from statistical_methods_library.utilities.exceptions import ValidationError
 
 auxiliary_col = "other"
@@ -100,7 +99,7 @@ params = {
     "auxiliary_col": auxiliary_col,
     "output_col": output_col,
     "marker_col": marker_col,
-    "ratio_calculator_factory": mean_of_ratios
+    "ratio_calculator_factory": mean_of_ratios,
 }
 
 test_scenarios = []
@@ -127,6 +126,7 @@ test_scenarios += [
 
 
 # --- Test type validation on the input dataframe(s) ---
+
 
 @pytest.mark.parametrize(
     "scenario_type, scenario",
@@ -208,9 +208,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         grouping_col,
         auxiliary_col,
     )
-    scenario_actual_output = impute(
-        input_df=scenario_input, **imputation_kwargs
-    )
+    scenario_actual_output = impute(input_df=scenario_input, **imputation_kwargs)
     scenario_actual_output = scenario_actual_output.withColumn(
         output_col, bround(col(output_col), 6)
     )
