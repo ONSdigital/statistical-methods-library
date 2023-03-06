@@ -1,11 +1,11 @@
 # For Copyright information, please see LICENCE.
+from dataclasses import dataclass
 from decimal import Decimal
 from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
-from pyspark.sql import DataFrame, Column
+from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, expr, when
-from dataclasses import dataclass
 
 
 @dataclass
@@ -14,6 +14,7 @@ class RatioCalculationResult:
     join_columns: List[Union[str, Column]]
     fill_columns: List[Union[str, Column]] = None
     additional_outputs: Optional[Dict[str, str]] = None
+
 
 RatioCalculator = Callable[[DataFrame], Iterable[RatioCalculationResult]]
 RatioCalculatorFactory = Callable[[Any], RatioCalculator]
@@ -174,10 +175,10 @@ def mean_of_ratios(
             RatioCalculationResult(
                 data=growth_df,
                 join_columns=["period", "grouping", "ref"],
-                additional_outputs = {
+                additional_outputs={
                     "growth_forward": growth_forward_col,
                     "growth_backward": growth_backward_col,
-                }
+                },
             ),
             RatioCalculationResult(
                 data=ratio_df,
@@ -187,6 +188,7 @@ def mean_of_ratios(
         ]
 
     return calculate
+
 
 def ratio_of_means(**_kw) -> RatioCalculator:
     def calculate(df: DataFrame) -> List[RatioCalculationResult]:
@@ -249,6 +251,5 @@ def ratio_of_means(**_kw) -> RatioCalculator:
                 fill_columns=["forward", "backward", "construction"],
             )
         ]
+
     return calculate
-
-
