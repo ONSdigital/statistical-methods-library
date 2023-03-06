@@ -18,16 +18,16 @@ def impute(
     **kwargs
 ) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        common_cols = ["period", "grouping", "ref", "aux"]
         if not include_zeros:
-            df = df.select(common_cols).join(
-                df.filter("0 NOT IN (previous.output, current.output, next.output)"),
-                common_cols,
-                "left",
+            df = df.filter(
+                "0 NOT IN (previous.output, current.output, next.output)"
             )
 
         df = df.selectExpr(
-            *common_cols,
+            "period",
+            "grouping",
+            "ref",
+            "aux",
             "current.output",
             """CASE
                 WHEN previous.output = 0
