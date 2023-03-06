@@ -1,7 +1,7 @@
 # For Copyright information, please see LICENCE.
 from decimal import Decimal
 from numbers import Number
-from typing import Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import DataFrame, Column
 from pyspark.sql.functions import col, expr, when
@@ -13,13 +13,10 @@ class RatioCalculationResult:
     data: DataFrame
     join_columns: List[Union[str, Column]]
     fill_columns: List[Union[str, Column]] = None
-
-
-@dataclass
-class RatioCalculator:
-    calculate: Callable[[DataFrame], Iterable[RatioCalculationResult]]
     additional_outputs: Optional[Dict[str, str]] = None
 
+RatioCalculator = Callable[[DataFrame], Iterable[RatioCalculationResult]]
+RatioCalculatorFactory = Callable[[Any], RatioCalculator]
 
 
 def mean_of_ratios(
@@ -172,10 +169,15 @@ def mean_of_ratios(
         growth_df = df.select(
             "ref", "period", "grouping", "growth_forward", "growth_backward"
         )
+
         return [
             RatioCalculationResult(
                 data=growth_df,
                 join_columns=["period", "grouping", "ref"],
+                additional_outputs = {
+                    "growth_forward": growth_forward_col,
+                    "growth_backward": growth_backward_col,
+                }
             ),
             RatioCalculationResult(
                 data=ratio_df,
@@ -184,12 +186,7 @@ def mean_of_ratios(
             ),
         ]
 
-    additional_outputs = {
-        "growth_forward": growth_forward_col,
-        "growth_backward": growth_backward_col,
-    }
-
-    return RatioCalculator(calculate, additional_outputs)
+    return calculate
 
 def ratio_of_means(**_kw) -> RatioCalculator:
     def calculate(df: DataFrame) -> List[RatioCalculationResult]:
@@ -252,6 +249,6 @@ def ratio_of_means(**_kw) -> RatioCalculator:
                 fill_columns=["forward", "backward", "construction"],
             )
         ]
-    return RatioCalculator(calculate)
+    return calculate
 
 

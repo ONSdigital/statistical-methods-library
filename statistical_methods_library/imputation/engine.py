@@ -10,7 +10,7 @@ from typing import Any, Callable, List, Optional, Union
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 from pyspark.sql.types import DecimalType, StringType
-from .ratio_calculators import RatioCalculator, RatioCalculationResult
+from .ratio_calculators import RatioCalculatorFactory, RatioCalculationResult
 from statistical_methods_library.utilities import validation
 
 # --- Marker constants ---
@@ -44,7 +44,7 @@ def impute(
     grouping_col: str,
     target_col: str,
     auxiliary_col: str,
-    ratio_calculator_factory: Callable[[Any], RatioCalculator],
+    ratio_calculator_factory: RatioCalculatorFactory,
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
     forward_link_col: Optional[str] = None,
@@ -58,6 +58,7 @@ def impute(
     **kwargs,
 ) -> DataFrame:
     ratio_calculator = ratio_calculator_factory(**kwargs)
+    additional_outputs = {}
     # --- Validate params ---
     link_cols = [forward_link_col, backward_link_col, construction_link_col]
     if any(link_cols) and not all(link_cols):
@@ -286,10 +287,12 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         all_fill_cols = []
-        for result in ratio_calculator.calculate(working_df):
+        for result in ratio_calculator(working_df):
             df = df.join(result.data, result.join_columns, "left")
             if result.fill_columns:
                 all_fill_cols += result.fill_columns
+            if result.additional_outputs:
+                additional_outputs.update(result.additional_outputs)
 
         if all_fill_cols:
             df = df.fillna(1.0, all_fill_cols)
@@ -480,7 +483,7 @@ def impute(
     def create_output(df: DataFrame) -> DataFrame:
         del full_col_mapping["aux"]
         del full_col_mapping["grouping"]
-        if ratio_calculator.additional_outputs is not None:
+        if additional_outputs:
             full_col_mapping.update(ratio_calculator.additional_outputs)
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
