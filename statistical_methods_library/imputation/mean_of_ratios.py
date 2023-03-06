@@ -14,14 +14,20 @@ def impute(
     trim_threshold: Optional[Number] = None,
     lower_trim: Optional[Number] = None,
     upper_trim: Optional[Number] = None,
+    include_zeros: Optional[Boolean] = False,
     **kwargs
 ) -> DataFrame:
     def mean_of_ratios(df: DataFrame) -> List[engine.RatioCalculationResult]:
-        working_df = df.selectExpr(
-            "period",
-            "grouping",
-            "ref",
-            "aux",
+        common_cols = ["period", "grouping", "ref", "aux"]
+        if not include_zeros:
+            df = df.select(common_cols).join(
+                df.filter("0 NOT IN (previous.output, current.output, next.output)"),
+                common_cols,
+                "left",
+            )
+
+        df = df.selectExpr(
+            *common_cols,
             "current.output",
             """CASE
                 WHEN previous.output = 0
@@ -37,9 +43,9 @@ def impute(
 
         if lower_trim is not None:
             trimmed_df = (
-                working_df.join(
+                df.join(
                     (
-                        working_df.groupBy("period", "grouping")
+                        df.groupBy("period", "grouping")
                         .agg(
                             expr(
                                 """
@@ -62,15 +68,17 @@ def impute(
                             (col("count_forward") * Decimal(lower_trim) / 100).alias(
                                 "lower_forward"
                             ),
-                            (col("count_forward") * (100 - Decimal(upper_trim)) / 100).alias(
-                                "upper_forward"
-                            ),
+                            (
+                                col("count_forward") * (100 - Decimal(upper_trim)) / 100
+                            ).alias("upper_forward"),
                             (col("count_backward") * Decimal(lower_trim) / 100).alias(
                                 "lower_backward"
                             ),
-                            (col("count_backward") * (100 - Decimal(upper_trim)) / 100).alias(
-                                "upper_backward"
-                            ),
+                            (
+                                col("count_backward")
+                                * (100 - Decimal(upper_trim))
+                                / 100
+                            ).alias("upper_backward"),
                         )
                     ),
                     ["period", "grouping"],
@@ -124,35 +132,21 @@ def impute(
             )
 
         else:
-            trimmed_df = (
-                working_df.withColumn(
-                    "trimmed_forward",
-                    col("growth_forward")
-                )
-                .withColumn(
-                    "trimmed_backward",
-                    col("growth_backward")
-                )
-            )
+            trimmed_df = df.withColumn(
+                "trimmed_forward", col("growth_forward")
+            ).withColumn("trimmed_backward", col("growth_backward"))
 
-        ratio_df = (
-            trimmed_df.groupBy("period", "grouping")
-            .agg(
-                expr("mean(trimmed_forward) AS forward"),
-                expr("mean(trimmed_backward) AS backward"),
-                expr("sum(current.output)/sum(aux) AS construction"),
-                expr("count(trimmed_forward) AS count_forward"),
-                expr("count(trimmed_backward) AS count_backward"),
-                expr("count(current.output) AS count_construction"),
-            )
+        ratio_df = trimmed_df.groupBy("period", "grouping").agg(
+            expr("mean(trimmed_forward) AS forward"),
+            expr("mean(trimmed_backward) AS backward"),
+            expr("sum(current.output)/sum(aux) AS construction"),
+            expr("count(trimmed_forward) AS count_forward"),
+            expr("count(trimmed_backward) AS count_backward"),
+            expr("count(current.output) AS count_construction"),
         )
 
-        growth_df = working_df.select(
-            "ref",
-            "period",
-            "grouping",
-            "growth_forward",
-            "growth_backward"
+        growth_df = df.select(
+            "ref", "period", "grouping", "growth_forward", "growth_backward"
         )
         return [
             engine.RatioCalculationResult(
