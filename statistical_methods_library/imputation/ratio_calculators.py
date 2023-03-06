@@ -36,7 +36,7 @@ def mean_of_ratios(
             df = df.selectExpr(
                 *common_cols,
                 """
-                    CASE 
+                    CASE
                         WHEN previous.output != 0 THEN previous.output
                     END AS previous_output
                 """,

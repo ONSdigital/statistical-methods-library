@@ -5,7 +5,7 @@ For Copyright information, please see LICENCE.
 """
 
 from enum import Enum
-from typing import Any, Callable, List, Optional, Union
+from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
@@ -13,7 +13,7 @@ from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
-from .ratio_calculators import RatioCalculationResult, RatioCalculatorFactory
+from .ratio_calculators import RatioCalculatorFactory
 
 # --- Marker constants ---
 
