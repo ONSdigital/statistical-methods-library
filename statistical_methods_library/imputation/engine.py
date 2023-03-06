@@ -291,10 +291,8 @@ def impute(
         all_fill_cols = []
         for result in ratio_calculator(working_df):
             df = df.join(result.data, result.join_columns, "left")
-            if result.fill_columns:
-                all_fill_cols += result.fill_columns
-            if result.additional_outputs:
-                additional_outputs.update(result.additional_outputs)
+            all_fill_cols += result.fill_columns
+            additional_outputs.update(result.additional_outputs)
 
         if all_fill_cols:
             df = df.fillna(1.0, all_fill_cols)
@@ -485,8 +483,7 @@ def impute(
     def create_output(df: DataFrame) -> DataFrame:
         del full_col_mapping["aux"]
         del full_col_mapping["grouping"]
-        if additional_outputs:
-            full_col_mapping.update(ratio_calculator.additional_outputs)
+        full_col_mapping.update(additional_outputs)
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)

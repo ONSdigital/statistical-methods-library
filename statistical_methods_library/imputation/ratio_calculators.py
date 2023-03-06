@@ -12,8 +12,8 @@ from pyspark.sql.functions import col, expr, when
 class RatioCalculationResult:
     data: DataFrame
     join_columns: List[Union[str, Column]]
-    fill_columns: List[Union[str, Column]] = None
-    additional_outputs: Optional[Dict[str, str]] = None
+    fill_columns: List[Union[str, Column]] = []
+    additional_outputs: Optional[Dict[str, str]] = {}
 
 
 RatioCalculator = Callable[[DataFrame], Iterable[RatioCalculationResult]]
@@ -35,8 +35,16 @@ def mean_of_ratios(
         if not include_zeros:
             df = df.selectExpr(
                 *common_cols,
-                "CASE WHEN previous.output != 0 THEN previous.output END AS previous_output",
-                "CASE WHEN current.output != 0 THEN current.output END AS current_output",
+                """
+                    CASE 
+                        WHEN previous.output != 0 THEN previous.output
+                    END AS previous_output
+                """,
+                """
+                    CASE
+                        WHEN current.output != 0 THEN current.output
+                    END AS current_output
+                """,
                 "CASE WHEN next.output != 0 THEN next.output END AS next_output",
             )
 
