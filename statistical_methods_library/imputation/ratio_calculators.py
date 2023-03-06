@@ -49,7 +49,7 @@ def mean_of_ratios(
             )
 
         else:
-            df.selectExpr(
+            df = df.selectExpr(
                 *common_cols,
                 "previous.output AS previous_output",
                 "current.output AS current_output",
