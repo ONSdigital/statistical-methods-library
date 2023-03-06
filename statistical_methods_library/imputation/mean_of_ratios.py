@@ -153,7 +153,7 @@ def impute(
             expr("sum(current_output)/sum(aux) AS construction"),
             expr("count(trimmed_forward) AS count_forward"),
             expr("count(trimmed_backward) AS count_backward"),
-            expr("count(current_output) AS count_construction"),
+            expr("count(aux) AS count_construction"),
         )
 
         growth_df = df.select(
