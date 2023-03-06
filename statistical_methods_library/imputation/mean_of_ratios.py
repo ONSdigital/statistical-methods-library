@@ -22,23 +22,31 @@ def impute(
         if not include_zeros:
             df = df.selectExpr(
                 *common_cols,
-                "CASE WHEN previous.output <> 0 THEN previous.output END AS previous.output",
-                "CASE WHEN current.output <> 0 THEN current.output END AS current.output",
-                "CASE WHEN next.output <> 0 THEN next.output END AS next.output",
+                "CASE WHEN previous.output != 0 THEN previous.output END AS previous_output",
+                "CASE WHEN current.output != 0 THEN current.output END AS current_output",
+                "CASE WHEN next.output != 0 THEN next.output END AS next_output",
+            )
+
+        else:
+            df.selectExpr(
+                *common_cols,
+                "previous.output AS previous_output",
+                "current.output AS current_output",
+                "next.output AS next_output"
             )
 
         df = df.selectExpr(
             *common_cols,
-            "current.output",
+            "current_output",
             """CASE
-                WHEN previous.output = 0
+                WHEN previous_output = 0
                 THEN 1
-                ELSE current.output/previous.output
+                ELSE current_output/previous_output
             END AS growth_forward""",
             """CASE
-                WHEN next.output = 0
+                WHEN next_output = 0
                 THEN 1
-                ELSE current.output/next.output
+                ELSE current_output/next_output
             END AS growth_backward""",
         )
 
@@ -140,10 +148,10 @@ def impute(
         ratio_df = trimmed_df.groupBy("period", "grouping").agg(
             expr("mean(trimmed_forward) AS forward"),
             expr("mean(trimmed_backward) AS backward"),
-            expr("sum(current.output)/sum(aux) AS construction"),
+            expr("sum(current_output)/sum(aux) AS construction"),
             expr("count(trimmed_forward) AS count_forward"),
             expr("count(trimmed_backward) AS count_backward"),
-            expr("count(current.output) AS count_construction"),
+            expr("count(current_output) AS count_construction"),
         )
 
         growth_df = df.select(
