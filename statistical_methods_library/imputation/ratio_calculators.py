@@ -1,5 +1,5 @@
 # For Copyright information, please see LICENCE.
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
@@ -12,8 +12,8 @@ from pyspark.sql.functions import col, expr, when
 class RatioCalculationResult:
     data: DataFrame
     join_columns: List[Union[str, Column]]
-    fill_columns: List[Union[str, Column]] = []
-    additional_outputs: Optional[Dict[str, str]] = {}
+    fill_columns: List[Union[str, Column]] = field(default_factory=list)
+    additional_outputs: Optional[Dict[str, str]] = field(default_factory=dict)
 
 
 RatioCalculator = Callable[[DataFrame], Iterable[RatioCalculationResult]]
