@@ -1,12 +1,25 @@
 # For Copyright information, please see LICENCE.
 from decimal import Decimal
 from numbers import Number
-from typing import List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Union
 
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Column
 from pyspark.sql.functions import col, expr, when
+from dataclasses import dataclass
 
-from .engine import RatioCalculationResult
+
+@dataclass
+class RatioCalculationResult:
+    data: DataFrame
+    join_columns: List[Union[str, Column]]
+    fill_columns: List[Union[str, Column]] = None
+
+
+@dataclass
+class RatioCalculator:
+    calculate: Callable[[DataFrame], Iterable[RatioCalculationResult]]
+    additional_outputs: Optional[Dict[str, str]] = None
+
 
 
 def mean_of_ratios(
@@ -18,7 +31,7 @@ def mean_of_ratios(
     growth_forward_col: Optional[str] = "growth_forward",
     growth_backward_col: Optional[str] = "growth_backward",
     **_kwargs,
-):
+) -> RatioCalculator:
     def calculate(df: DataFrame) -> List[RatioCalculationResult]:
         common_cols = ["period", "grouping", "ref", "aux"]
         if not include_zeros:
@@ -176,9 +189,9 @@ def mean_of_ratios(
         "growth_backward": growth_backward_col,
     }
 
-    return calculate, additional_outputs
+    return RatioCalculator(calculate, additional_outputs)
 
-def ratio_of_means(*, **_kwargs):
+def ratio_of_means(**_kw) -> RatioCalculator:
     def calculate(df: DataFrame) -> List[RatioCalculationResult]:
         df = df.groupBy("period", "grouping").agg(
             expr(
@@ -239,6 +252,6 @@ def ratio_of_means(*, **_kwargs):
                 fill_columns=["forward", "backward", "construction"],
             )
         ]
-    return calculate, {}
+    return RatioCalculator(calculate)
 
 

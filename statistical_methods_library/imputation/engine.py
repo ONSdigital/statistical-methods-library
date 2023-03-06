@@ -1,17 +1,16 @@
 """
 Perform imputation on a data frame.
 
-Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
 For Copyright information, please see LICENCE.
 """
-from dataclasses import dataclass
+
 from enum import Enum
-from typing import Callable, Iterable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, lit, when
 from pyspark.sql.types import DecimalType, StringType
-
+from .ratio_calculators import RatioCalculator, RatioCalculationResult
 from statistical_methods_library.utilities import validation
 
 # --- Marker constants ---
@@ -37,13 +36,6 @@ class Marker(Enum):
     """The value has been forward imputed from a constructed value."""
 
 
-@dataclass
-class RatioCalculationResult:
-    data: DataFrame
-    join_columns: List[Union[str, Column]]
-    fill_columns: List[Union[str, Column]] = None
-
-
 def impute(
     *,
     input_df: DataFrame,
@@ -52,7 +44,7 @@ def impute(
     grouping_col: str,
     target_col: str,
     auxiliary_col: str,
-    ratio_calculation_function: Callable[[DataFrame], Iterable[RatioCalculationResult]],
+    ratio_calculator_factory: Callable[[Any], RatioCalculator],
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
     forward_link_col: Optional[str] = None,
@@ -63,8 +55,9 @@ def impute(
     count_backward_col: Optional[str] = "count_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
-    additional_outputs: Optional[dict] = None,
+    **kwargs,
 ) -> DataFrame:
+    ratio_calculator = ratio_calculator_factory(**kwargs)
     # --- Validate params ---
     link_cols = [forward_link_col, backward_link_col, construction_link_col]
     if any(link_cols) and not all(link_cols):
@@ -293,7 +286,7 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         all_fill_cols = []
-        for result in ratio_calculation_function(working_df):
+        for result in ratio_calculator.calculate(working_df):
             df = df.join(result.data, result.join_columns, "left")
             if result.fill_columns:
                 all_fill_cols += result.fill_columns
@@ -487,8 +480,8 @@ def impute(
     def create_output(df: DataFrame) -> DataFrame:
         del full_col_mapping["aux"]
         del full_col_mapping["grouping"]
-        if additional_outputs is not None:
-            full_col_mapping.update(additional_outputs)
+        if ratio_calculator.additional_outputs is not None:
+            full_col_mapping.update(ratio_calculator.additional_outputs)
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)
