@@ -63,6 +63,7 @@ def impute(
     count_backward_col: Optional[str] = "count_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
+    additional_outputs: Optional[dict] = None,
 ) -> DataFrame:
     # --- Validate params ---
     link_cols = [forward_link_col, backward_link_col, construction_link_col]
@@ -486,6 +487,8 @@ def impute(
     def create_output(df: DataFrame) -> DataFrame:
         del full_col_mapping["aux"]
         del full_col_mapping["grouping"]
+        if additional_outputs is not None:
+            full_col_mapping.update(additional_outputs)
         return select_cols(
             df.filter(col("period") != lit(prior_period)), reversed=False
         ).withColumnRenamed("output", output_col)

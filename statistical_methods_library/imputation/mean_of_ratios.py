@@ -170,5 +170,7 @@ def impute(
         ]
 
     kwargs["ratio_calculation_function"] = mean_of_ratios
+    kwargs["additional_outputs"] = {"growth_forward":"growth_forward","growth_backward":"growth_backward"}
+
 
     return engine.impute(**kwargs)
