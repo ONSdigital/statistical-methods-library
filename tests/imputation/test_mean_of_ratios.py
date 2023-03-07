@@ -7,8 +7,7 @@ from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col
 from pyspark.sql.types import DecimalType, LongType, StringType
 
-from statistical_methods_library.imputation.engine import impute
-from statistical_methods_library.imputation.ratio_calculators import mean_of_ratios
+from statistical_methods_library.imputation import impute, mean_of_ratios
 
 auxiliary_col = "other"
 backward_col = "backward"

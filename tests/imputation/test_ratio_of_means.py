@@ -7,8 +7,7 @@ from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import DecimalType, LongType, StringType
 
-from statistical_methods_library.imputation.engine import impute
-from statistical_methods_library.imputation.ratio_calculators import ratio_of_means
+from statistical_methods_library.imputation import impute, ratio_of_means
 from statistical_methods_library.utilities.exceptions import ValidationError
 
 auxiliary_col = "other"
