@@ -220,12 +220,20 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     scenario_actual_output = scenario_actual_output.withColumn(
         construction_col, bround(col(construction_col).cast(decimal_type), 6)
     )
-    scenario_actual_output = scenario_actual_output.withColumn(
-        forward_growth_col, bround(col(forward_growth_col).cast(decimal_type), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
-        backward_growth_col, bround(col(backward_growth_col).cast(decimal_type), 6)
-    )
+
+    if "link_columns" in scenario:
+        scenario_expected_output = scenario_expected_output.drop(
+        forward_growth_col,
+        backward_growth_col,
+        )
+    else:
+        scenario_actual_output = scenario_actual_output.withColumn(
+            forward_growth_col, bround(col(forward_growth_col).cast(decimal_type), 6)
+        )
+        scenario_actual_output = scenario_actual_output.withColumn(
+            backward_growth_col, bround(col(backward_growth_col).cast(decimal_type), 6)
+        )
+
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert isinstance(scenario_actual_output, type(scenario_input))
     sort_col_list = [reference_col, period_col]
