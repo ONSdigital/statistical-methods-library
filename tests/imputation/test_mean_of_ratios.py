@@ -223,8 +223,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     if "link_columns" in scenario:
         scenario_expected_output = scenario_expected_output.drop(
-        forward_growth_col,
-        backward_growth_col,
+            forward_growth_col,
+            backward_growth_col,
         )
     else:
         scenario_actual_output = scenario_actual_output.withColumn(
