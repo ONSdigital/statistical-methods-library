@@ -90,7 +90,7 @@ params = {
     "auxiliary_col": auxiliary_col,
     "output_col": output_col,
     "marker_col": marker_col,
-    "ratio_calculator_factory": ratio_of_means,
+    "ratio_calculator": ratio_of_means,
 }
 
 test_scenarios = []
