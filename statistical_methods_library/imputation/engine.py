@@ -13,7 +13,7 @@ from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
-from .ratio_calculators import RatioCalculatorFactory
+from .ratio_calculators import RatioCalculator
 
 # --- Marker constants ---
 
@@ -46,7 +46,7 @@ def impute(
     grouping_col: str,
     target_col: str,
     auxiliary_col: str,
-    ratio_calculator_factory: RatioCalculatorFactory,
+    ratio_calculator: RatioCalculator,
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
     forward_link_col: Optional[str] = None,
@@ -57,9 +57,8 @@ def impute(
     count_backward_col: Optional[str] = "count_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
-    **kwargs,
+    **ratio_calculator_params,
 ) -> DataFrame:
-    ratio_calculator = ratio_calculator_factory(**kwargs)
     additional_outputs = {}
     # --- Validate params ---
     link_cols = [forward_link_col, backward_link_col, construction_link_col]
@@ -289,7 +288,7 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         all_fill_cols = []
-        for result in ratio_calculator(working_df):
+        for result in ratio_calculator(df=working_df, **ratio_calculator_params):
             df = df.join(result.data, result.join_columns, "left")
             all_fill_cols += result.fill_columns
             additional_outputs.update(result.additional_outputs)
