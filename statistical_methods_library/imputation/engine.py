@@ -57,6 +57,7 @@ def impute(
     count_backward_col: Optional[str] = "count_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
+    periodicity: Optional[int] = 1,
     **ratio_calculator_params,
 ) -> DataFrame:
     additional_outputs = {}
@@ -503,26 +504,24 @@ def impute(
             ]
         )
 
-    def calculate_previous_period(
-        period: Column, num_periods: Optional[int] = 1
-    ) -> Column:
+    def calculate_previous_period(period: Column) -> Column:
         period = period.cast("integer")
         return (
             period
-            - num_periods
+            - periodicity
             - 88
-            * (num_periods // 12 + (period % 100 <= num_periods % 12).cast("integer"))
+            * (periodicity // 12 + (period % 100 <= periodicity % 12).cast("integer"))
         ).cast("string")
 
-    def calculate_next_period(period: Column, num_periods: Optional[int] = 1) -> Column:
+    def calculate_next_period(period: Column) -> Column:
         period = period.cast("integer")
         return (
             period
-            + num_periods
+            + periodicity
             + 88
             * (
-                num_periods // 12
-                + ((period % 100) + (num_periods % 12) > 12).cast("integer")
+                periodicity // 12
+                + ((period % 100) + (periodicity % 12) > 12).cast("integer")
             )
         ).cast("string")
 
