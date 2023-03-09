@@ -148,12 +148,10 @@ def estimate(
     type_mapping = {
         "unique_identifier": StringType,
         "period": StringType,
-        "strata": StringType,
         "sample_marker": BooleanType,
         "adjustment_marker": StringType,
         "h_value": BooleanType,
         "auxiliary": DecimalType,
-        "calibration_group": StringType,
     }
 
     aliased_df = validation.validate_dataframe(
