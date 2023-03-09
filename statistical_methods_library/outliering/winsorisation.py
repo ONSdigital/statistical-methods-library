@@ -115,7 +115,6 @@ def outlier(
     input_params.update({k: v for k, v in optional_params.items() if v is not None})
 
     type_mapping = {
-        "reference": StringType,
         "period": StringType,
         "target": DecimalType,
         "design": DecimalType,
