@@ -117,7 +117,6 @@ def outlier(
     type_mapping = {
         "reference": StringType,
         "period": StringType,
-        "grouping": StringType,
         "target": DecimalType,
         "design": DecimalType,
         "l_value": DecimalType,
