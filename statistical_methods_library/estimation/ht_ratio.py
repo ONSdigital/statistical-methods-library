@@ -1,5 +1,5 @@
 """
-Estimates design weigths and calibration factors based on Expansion and Ratio estimation.
+Estimates design weights and calibration factors based on Expansion and Ratio estimation.
 For Copyright information, please see LICENCE.
 """
 
