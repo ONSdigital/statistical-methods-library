@@ -1,5 +1,5 @@
 """
-Estimates design weigths and calibration factors based on Expansion and Ratio estimation.
+Estimates design weights and calibration factors based on Expansion and Ratio estimation.
 For Copyright information, please see LICENCE.
 """
 
@@ -146,14 +146,11 @@ def estimate(
     input_params.update({k: v for k, v in optional_params.items() if v is not None})
 
     type_mapping = {
-        "unique_identifier": StringType,
         "period": StringType,
-        "strata": StringType,
         "sample_marker": BooleanType,
         "adjustment_marker": StringType,
         "h_value": BooleanType,
         "auxiliary": DecimalType,
-        "calibration_group": StringType,
     }
 
     aliased_df = validation.validate_dataframe(

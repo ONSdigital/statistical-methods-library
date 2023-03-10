@@ -116,9 +116,7 @@ def impute(
     }
 
     type_mapping = {
-        "ref": StringType,
         "period": StringType,
-        "strata": StringType,
         "target": DecimalType,
         "aux": DecimalType,
         "output": DecimalType,
