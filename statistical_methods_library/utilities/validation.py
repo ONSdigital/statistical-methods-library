@@ -42,7 +42,10 @@ def validate_dataframe(
     wrong_types = [
         (field.name, field.dataType)
         for field in aliased_df.schema.fields
-        if not isinstance(field.dataType, type_mapping[field.name])
+        if (
+            field.name in type_mapping
+            and not isinstance(field.dataType, type_mapping[field.name])
+        )
     ]
     if wrong_types:
         raise ValidationError(
