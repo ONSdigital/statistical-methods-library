@@ -104,9 +104,7 @@ def mean_of_ratios(
                             "lower_backward"
                         ),
                         (
-                            col("count_backward")
-                            * (100 - Decimal(upper_trim))
-                            / 100
+                            col("count_backward") * (100 - Decimal(upper_trim)) / 100
                         ).alias("upper_backward"),
                     )
                 ),
@@ -161,9 +159,9 @@ def mean_of_ratios(
         )
 
     else:
-        trimmed_df = df.withColumn(
-            "trimmed_forward", col("growth_forward")
-        ).withColumn("trimmed_backward", col("growth_backward"))
+        trimmed_df = df.withColumn("trimmed_forward", col("growth_forward")).withColumn(
+            "trimmed_backward", col("growth_backward")
+        )
 
     ratio_df = trimmed_df.groupBy("period", "grouping").agg(
         expr("mean(trimmed_forward) AS forward"),
