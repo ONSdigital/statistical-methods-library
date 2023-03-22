@@ -59,12 +59,12 @@ def mean_of_ratios(
         *common_cols,
         "current_output",
         """CASE
-            WHEN 0 IN (previous_output, current_output)
+            WHEN previous_output = 0 OR (current_output = 0 AND previous_output IS NOT NULL)
             THEN 1
             ELSE current_output/previous_output
         END AS growth_forward""",
         """CASE
-            WHEN 0 IN (next_output, current_output)
+            WHEN next_output = 0 OR (current_output = 0 AND next_output IS NOT NULL)
             THEN 1
             ELSE current_output/next_output
         END AS growth_backward""",
