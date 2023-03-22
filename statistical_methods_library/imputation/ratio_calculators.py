@@ -72,6 +72,8 @@ def mean_of_ratios(
     )
 
     if lower_trim is not None:
+        upper_bound = lambda c: (sql_ceil(c * lower_trim / 100))
+        lower_bound = lambda c: 1 + sql_floor(c * (100 - upper_trim) / 100)
         trimmed_df = (
             df.join(
                 (
@@ -95,18 +97,10 @@ def mean_of_ratios(
                     .select(
                         col("period"),
                         col("grouping"),
-                        ceil(col("count_forward") * Decimal(lower_trim) / 100).alias(
-                            "lower_forward"
-                        ),
-                        (
-                            1 + floor(col("count_forward") * (100 - Decimal(upper_trim)) / 100)
-                        ).alias("upper_forward"),
-                        ceil(col("count_backward") * Decimal(lower_trim) / 100).alias(
-                            "lower_backward"
-                        ),
-                        (
-                            1 + floor(col("count_backward") * (100 - Decimal(upper_trim)) / 100)
-                        ).alias("upper_backward"),
+                        lower_bound(col("count_forward")).alias("lower_forward"),
+                        upper_bound(col("count_forward")).alias("upper_forward"),
+                        lower_bound(col("count_backward")).alias"lower_backward"),
+                        upper_bound(col("count_backward")).alias("upper_backward"),
                     )
                 ),
                 ["period", "grouping"],
