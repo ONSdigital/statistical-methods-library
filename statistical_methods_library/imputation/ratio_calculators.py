@@ -74,8 +74,13 @@ def mean_of_ratios(
     )
 
     if lower_trim is not None:
-        upper_bound = lambda c: (sql_ceil(c * Decimal(lower_trim) / 100))
-        lower_bound = lambda c: 1 + sql_floor(c * (100 - Decimal(upper_trim)) / 100)
+
+        def upper_bound(c):
+            return sql_ceil(c * Decimal(lower_trim) / 100)
+
+        def lower_bound(c):
+            return 1 + sql_floor(c * (100 - Decimal(upper_trim)) / 100)
+
         trimmed_df = (
             df.join(
                 (
