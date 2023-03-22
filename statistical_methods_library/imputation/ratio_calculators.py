@@ -5,7 +5,8 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import ceil, col, expr, floor, when
+# Avoid shadowing builtin floor and ceil functions
+from pyspark.sql.functions import ceil as sql_ceil, col, expr, floor as sql_floor, when
 
 
 @dataclass
@@ -72,8 +73,8 @@ def mean_of_ratios(
     )
 
     if lower_trim is not None:
-        upper_bound = lambda c: (sql_ceil(c * lower_trim / 100))
-        lower_bound = lambda c: 1 + sql_floor(c * (100 - upper_trim) / 100)
+        upper_bound = lambda c: (sql_ceil(c * Decimal(lower_trim) / 100))
+        lower_bound = lambda c: 1 + sql_floor(c * (100 - Decimal(upper_trim)) / 100)
         trimmed_df = (
             df.join(
                 (
