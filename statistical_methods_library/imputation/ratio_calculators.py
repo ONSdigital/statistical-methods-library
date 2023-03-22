@@ -5,6 +5,7 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
+
 # Avoid shadowing builtin floor and ceil functions
 from pyspark.sql.functions import ceil as sql_ceil, col, expr, floor as sql_floor, when
 
@@ -100,7 +101,7 @@ def mean_of_ratios(
                         col("grouping"),
                         lower_bound(col("count_forward")).alias("lower_forward"),
                         upper_bound(col("count_forward")).alias("upper_forward"),
-                        lower_bound(col("count_backward")).alias"lower_backward"),
+                        lower_bound(col("count_backward")).alias("lower_backward"),
                         upper_bound(col("count_backward")).alias("upper_backward"),
                     )
                 ),
