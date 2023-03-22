@@ -5,7 +5,7 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, when
+from pyspark.sql.functions import ceil, col, expr, floor, when
 
 
 @dataclass
@@ -95,17 +95,17 @@ def mean_of_ratios(
                     .select(
                         col("period"),
                         col("grouping"),
-                        (col("count_forward") * Decimal(lower_trim) / 100).alias(
+                        ceil(col("count_forward") * Decimal(lower_trim) / 100).alias(
                             "lower_forward"
                         ),
                         (
-                            col("count_forward") * (100 - Decimal(upper_trim)) / 100
+                            1 + floor(col("count_forward") * (100 - Decimal(upper_trim)) / 100)
                         ).alias("upper_forward"),
-                        (col("count_backward") * Decimal(lower_trim) / 100).alias(
+                        ceil(col("count_backward") * Decimal(lower_trim) / 100).alias(
                             "lower_backward"
                         ),
                         (
-                            col("count_backward") * (100 - Decimal(upper_trim)) / 100
+                            1 + floor(col("count_backward") * (100 - Decimal(upper_trim)) / 100)
                         ).alias("upper_backward"),
                     )
                 ),
