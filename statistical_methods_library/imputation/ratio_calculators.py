@@ -200,7 +200,7 @@ def mean_of_ratios(
 
 def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
     df = (
-        df.filter(col("match"))
+        df.filter(col("current.match"))
         .groupBy("period", "grouping")
         .agg(
             expr(

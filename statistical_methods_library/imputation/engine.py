@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when
+from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
@@ -143,8 +143,12 @@ def impute(
 
     if link_filter:
         filtered_refs = input_df.select(
-            col(reference_col).alias("ref"), col(period_col).alias("period")
-        ).withColumn("match", when(link_filter, True).otherwise(False))
+            col(reference_col).alias("ref"),
+            col(period_col).alias("period"),
+            (expr(link_filter) if isinstance(link_filter, str) else link_filter).alias(
+                "match"
+            ),
+        )
 
     # Store the value for the period prior to the start of imputation.
     # Stored as a value to avoid a join in output creation.
@@ -238,8 +242,8 @@ def impute(
         if link_filter:
             filtered_df = df.join(filtered_refs, ["ref", "period"])
         else:
-            filtered_df = df.withColumn("match", True)
-        filtered_df = filtered_df.filter(~df.output.isNull()).select(
+            filtered_df = df.withColumn("match", lit(True))
+        filtered_df = filtered_df.filter(~filtered_df.output.isNull()).select(
             "ref",
             "period",
             "grouping",
