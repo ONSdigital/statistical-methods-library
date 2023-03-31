@@ -142,9 +142,9 @@ def impute(
         input_df = input_df.unionByName(back_data_df, allowMissingColumns=True)
 
     if link_filter:
-        filtered_refs = input_df.filter(link_filter).select(
+        filtered_refs = input_df.select(
             col(reference_col).alias("ref"), col(period_col).alias("period")
-        )
+        ).withColumn("match", when(link_filter, True).otherwise(False))
 
     # Store the value for the period prior to the start of imputation.
     # Stored as a value to avoid a join in output creation.
@@ -238,7 +238,7 @@ def impute(
         if link_filter:
             filtered_df = df.join(filtered_refs, ["ref", "period"])
         else:
-            filtered_df = df
+            filtered_df = df.withColumn("match", True)
         filtered_df = filtered_df.filter(~df.output.isNull()).select(
             "ref",
             "period",
@@ -247,6 +247,7 @@ def impute(
             "aux",
             "previous_period",
             "next_period",
+            "match",
         )
 
         # Put the values from the current and previous periods for a
@@ -254,9 +255,9 @@ def impute(
         working_df = filtered_df.alias("current")
         working_df = (
             working_df.join(
-                filtered_df.select("ref", "period", "output", "grouping").alias(
-                    "previous"
-                ),
+                filtered_df.select(
+                    "ref", "period", "output", "grouping", "match"
+                ).alias("previous"),
                 [
                     col("current.ref") == col("previous.ref"),
                     col("current.previous_period") == col("previous.period"),
@@ -265,7 +266,9 @@ def impute(
                 "leftouter",
             )
             .join(
-                filtered_df.select("ref", "period", "output", "grouping").alias("next"),
+                filtered_df.select(
+                    "ref", "period", "output", "grouping", "match"
+                ).alias("next"),
                 [
                     col("current.ref") == col("next.ref"),
                     col("current.next_period") == col("next.period"),
@@ -279,8 +282,11 @@ def impute(
                 col("current.period").alias("period"),
                 col("current.aux").alias("aux"),
                 col("current.output"),
+                col("current.match"),
                 col("next.output"),
+                col("next.match"),
                 col("previous.output"),
+                col("previous.match"),
             )
         )
 

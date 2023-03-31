@@ -5,6 +5,7 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
+
 # Avoid shadowing builtin floor and ceil functions
 from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
@@ -198,57 +199,61 @@ def mean_of_ratios(
 
 
 def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
-    df = df.groupBy("period", "grouping").agg(
-        expr(
-            """
-                sum(
+    df = (
+        df.filter(col("match"))
+        .groupBy("period", "grouping")
+        .agg(
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN previous.output IS NOT NULL
+                            THEN current.output
+                        END
+                    )/sum(previous.output) AS forward
+                """
+            ),
+            expr(
+                """
+                    sum(
+                        CASE
+                            WHEN next.output IS NOT NULL
+                            THEN current.output
+                        END
+                    )/sum(next.output) AS backward
+                """
+            ),
+            expr("sum(current.output)/sum(aux) AS construction"),
+            expr(
+                """
                     CASE
-                        WHEN previous.output IS NOT NULL
-                        THEN current.output
-                    END
-                )/sum(previous.output) AS forward
-            """
-        ),
-        expr(
-            """
-                sum(
+                        WHEN sum(previous.output) = 0
+                        THEN 0
+                        WHEN sum(previous.output) IS NOT NULL
+                        THEN sum(cast(previous.output IS NOT NULL AS integer))
+                    END AS count_forward
+                """
+            ),
+            expr(
+                """
                     CASE
-                        WHEN next.output IS NOT NULL
-                        THEN current.output
-                    END
-                )/sum(next.output) AS backward
-            """
-        ),
-        expr("sum(current.output)/sum(aux) AS construction"),
-        expr(
-            """
-                CASE
-                    WHEN sum(previous.output) = 0
-                    THEN 0
-                    WHEN sum(previous.output) IS NOT NULL
-                    THEN sum(cast(previous.output IS NOT NULL AS integer))
-                END AS count_forward
-            """
-        ),
-        expr(
-            """
-                CASE
-                    WHEN sum(next.output) = 0
-                    THEN 0
-                    WHEN sum(next.output) IS NOT NULL
-                    THEN sum(cast(next.output IS NOT NULL AS integer))
-                END AS count_backward
-            """
-        ),
-        expr(
-            """
-                CASE
-                    WHEN sum(aux) = 0
-                    THEN 0
-                    ELSE count(current.output)
-                END AS count_construction
-            """
-        ),
+                        WHEN sum(next.output) = 0
+                        THEN 0
+                        WHEN sum(next.output) IS NOT NULL
+                        THEN sum(cast(next.output IS NOT NULL AS integer))
+                    END AS count_backward
+                """
+            ),
+            expr(
+                """
+                    CASE
+                        WHEN sum(aux) = 0
+                        THEN 0
+                        ELSE count(current.output)
+                    END AS count_construction
+                """
+            ),
+        )
     )
     return [
         RatioCalculationResult(
