@@ -37,70 +37,60 @@ def mean_of_ratios(
     filtered_backward_col: Optional[str] = "filtered_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
-    ratio_cols = [
+    df = df.select(
+        "period",
+        "grouping",
+        "ref",
+        when(col("current.match"), col("aux")).alias("aux"),
+        when(
+            col("previous.match")
+            & (lit(include_zeros) | (col(previous.output) != lit(0))),
+            col("previous.output").alias("previous_output"),
+        ),
+        when(
+            col("current_match")
+            & (lit(include_zeros) | (col(current.output) != lit(0))),
+            col("current.output").alias("current_output"),
+        ),
+        when(
+            col("next.match") & (lit(include_zeros) | (col(next.output) != lit(0))),
+            col("next.output").alias("next_output"),
+        ),
+        expr(
+            """
+            NOT (previous.match AND current.match) AND previous.match IS NOT NULL
+            AS filtered_forward"""
+        ),
+        expr(
+            """NOT (next.match AND current.match) AND next.match IS NOT NULL
+            AS filtered_backward"""
+        ),
+    ).selectExpr(
         "period",
         "grouping",
         "ref",
         "aux",
-    ]
-    match_cols = ["previous.match", "current.match", "next.match"]
-    if not include_zeros:
-        df = df.selectExpr(
-            *ratio_cols + match_cols,
-            """
-                CASE
-                    WHEN previous.output != 0 THEN previous.output
-                END AS previous_output
-            """,
-            """
-                CASE
-                    WHEN current.output != 0 THEN current.output
-                END AS current_output
-            """,
-            "CASE WHEN next.output != 0 THEN next.output END AS next_output",
-        )
-
-    else:
-        df = df.selectExpr(
-            *ratio_cols + match_cols,
-            "previous.output AS previous_output",
-            "current.output AS current_output",
-            "next.output AS next_output",
-        )
-
-    df = df.selectExpr(
-        *ratio_cols,
-        "CASE WHEN previous.match THEN previous_output END AS previous_output",
-        "CASE WHEN current.match THEN current_output END AS current_output",
-        "CASE WHEN next.match THEN next_output END AS next_output",
-        """NOT (previous.match AND current.match) AND previous.match IS NOT NULL
-        AS filtered_forward""",
-        """NOT (next.match AND current.match) AND next.match IS NOT NULL
-        AS filtered_backward""",
-    )
-    df = df.selectExpr(
-        *ratio_cols,
         "current_output",
         "filtered_forward",
         "filtered_backward",
         """CASE
-            WHEN NOT filtered_forward THEN CASE
-                WHEN previous_output = 0 OR
-                (current_output = 0 AND previous_output IS NOT NULL)
-                THEN 1
-                ELSE current_output/previous_output
-            END
-        END AS growth_forward""",
+                WHEN NOT filtered_forward THEN CASE
+                    WHEN previous_output = 0 OR
+                    (current_output = 0 AND previous_output IS NOT NULL)
+                    THEN 1
+                    ELSE current_output/previous_output
+                END
+            END AS growth_forward""",
         """CASE
-            WHEN NOT filtered_backward
-            THEN CASE
-                WHEN
-                    next_output = 0
-                    OR (current_output = 0 AND next_output IS NOT NULL)
-                THEN 1
-                ELSE current_output/next_output
-            END
-        END AS growth_backward""",
+                WHEN NOT filtered_backward
+                THEN CASE
+                    WHEN
+                        next_output = 0
+                        OR (current_output = 0 AND next_output IS NOT NULL)
+                    THEN 1
+                    ELSE current_output/next_output
+                END
+            END AS growth_backward""",
     )
 
     if lower_trim is not None:
