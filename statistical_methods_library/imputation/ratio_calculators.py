@@ -10,7 +10,7 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
 from pyspark.sql.functions import floor as sql_floor
-from pyspark.sql.functions import when
+from pyspark.sql.functions import lit, when
 
 
 @dataclass
@@ -44,18 +44,18 @@ def mean_of_ratios(
         when(col("current.match"), col("aux")).alias("aux"),
         when(
             col("previous.match")
-            & (lit(include_zeros) | (col(previous.output) != lit(0))),
-            col("previous.output").alias("previous_output"),
-        ),
+            & (lit(include_zeros) | (col("previous.output") != lit(0))),
+            col("previous.output"),
+        ).alias("previous_output"),
         when(
-            col("current_match")
-            & (lit(include_zeros) | (col(current.output) != lit(0))),
-            col("current.output").alias("current_output"),
-        ),
+            col("current.match")
+            & (lit(include_zeros) | (col("current.output") != lit(0))),
+            col("current.output"),
+        ).alias("current_output"),
         when(
-            col("next.match") & (lit(include_zeros) | (col(next.output) != lit(0))),
-            col("next.output").alias("next_output"),
-        ),
+            col("next.match") & (lit(include_zeros) | (col("next.output") != lit(0))),
+            col("next.output"),
+        ).alias("next_output"),
         expr(
             """
             NOT (previous.match AND current.match) AND previous.match IS NOT NULL
