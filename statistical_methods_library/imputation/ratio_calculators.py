@@ -215,8 +215,8 @@ def mean_of_ratios(
             ) AS backward"""
         ),
         expr("sum(current_output)/sum(aux) AS construction"),
-        expr("sum(cast(NOT trim_marker_forward AS integer)) AS count_forward"),
-        expr("sum(cast(NOT trim_marker_backward AS integer)) AS count_backward"),
+        expr("sum(cast(NOT trim_marker_forward AND growth_forward IS NOT NULL AS integer)) AS count_forward"),
+        expr("sum(cast(NOT trim_marker_backward AND growth_backward IS NOT NULL AS integer)) AS count_backward"),
         expr("count(aux) AS count_construction"),
     )
 
