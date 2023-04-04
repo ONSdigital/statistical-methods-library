@@ -35,6 +35,8 @@ def mean_of_ratios(
     growth_backward_col: Optional[str] = "growth_backward",
     filtered_forward_col: Optional[str] = "filtered_forward",
     filtered_backward_col: Optional[str] = "filtered_backward",
+    trim_marker_forward_col: Optional[str] = "trim_marker_forward",
+    trim_marker_backward_col: Optional[str] = "trim_marker_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
     df = df.select(
@@ -101,7 +103,7 @@ def mean_of_ratios(
         def upper_bound(c, f):
             return 1 + sql_floor(c * (100 - upper_trim) / 100)
 
-        trimmed_df = (
+        df = (
             df.join(
                 (
                     df.groupBy("period", "grouping")
@@ -174,50 +176,47 @@ def mean_of_ratios(
                 """
                 ),
             )
-            .select(
-                col("period"),
-                col("grouping"),
-                col("aux"),
-                col("current_output"),
-                when(
-                    (
-                        col("num_forward").between(
-                            col("lower_forward"), col("upper_forward")
-                        )
-                        | trim_threshold - col("count_filtered_forward")
-                        >= col("count_forward")
-                    ),
-                    col("growth_forward"),
-                ).alias("trimmed_forward"),
-                when(
-                    (
-                        col("num_backward").between(
-                            col("lower_backward"), col("upper_backward")
-                        )
-                        | trim_threshold - col("count_filtered_backward")
-                        >= col("count_backward")
-                    ),
-                    col("growth_backward"),
-                ).alias("trimmed_backward"),
-            ),
+            .withColumn(
+                "trim_marker_forward",
+                ~(
+                    col("num_forward").between(
+                        col("lower_forward"), col("upper_forward")
+                    )
+                    | trim_threshold - col("count_filtered_forward")
+                    >= col("count_forward")
+                ),
+            )
+            .withColumn(
+                "trim_marker_backward",
+                ~(
+                    col("num_backward").between(
+                        col("lower_backward"), col("upper_backward")
+                    )
+                    | trim_threshold - col("count_filtered_backward")
+                    >= col("count_backward")
+                ),
+            )
         )
 
     else:
-        trimmed_df = df.selectExpr(
-            "period",
-            "grouping",
-            "aux",
-            "current_output",
-            "growth_forward AS trimmed_forward",
-            "growth_backward AS trimmed_backward",
+        df = df.withColumn("trim_marker_forward", lit(False)).withColumn(
+            "trim_marker_backward", lit(False)
         )
 
-    ratio_df = trimmed_df.groupBy("period", "grouping").agg(
-        expr("mean(trimmed_forward) AS forward"),
-        expr("mean(trimmed_backward) AS backward"),
+    ratio_df = df.groupBy("period", "grouping").agg(
+        expr(
+            """mean(
+                CASE WHEN NOT trim_marker_forward THEN growth_forward END
+            ) AS forward"""
+        ),
+        expr(
+            """mean(
+                CASE WHEN NOT trim_marker_backward THEN growth_backward END
+            ) AS backward"""
+        ),
         expr("sum(current_output)/sum(aux) AS construction"),
-        expr("count(trimmed_forward) AS count_forward"),
-        expr("count(trimmed_backward) AS count_backward"),
+        expr("sum(cast(NOT trim_marker_forward AS integer)) AS count_forward"),
+        expr("sum(cast(NOT trim_marker_backward AS integer)) AS count_backward"),
         expr("count(aux) AS count_construction"),
     )
 
@@ -229,6 +228,8 @@ def mean_of_ratios(
         "growth_backward",
         "filtered_forward",
         "filtered_backward",
+        "trim_marker_forward",
+        "trim_marker_backward",
     )
 
     return [
@@ -240,6 +241,8 @@ def mean_of_ratios(
                 "growth_backward": growth_backward_col,
                 "filtered_forward": filtered_forward_col,
                 "filtered_backward": filtered_backward_col,
+                "trim_marker_forward": "trim_marker_forward_col",
+                "trim_marker_backward": "trim_marker_backward_col",
             },
         ),
         RatioCalculationResult(
