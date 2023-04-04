@@ -5,6 +5,7 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
+
 # Avoid shadowing builtin floor and ceil functions
 from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
@@ -38,6 +39,9 @@ def mean_of_ratios(
     trimmed_backward_col: Optional[str] = "trimmed_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
+    lower_trim = Decimal(lower_trim)
+    upper_trim = Decimal(upper_trim)
+    trim_threshold = Decimal(trim_threshold)
     df = df.select(
         "period",
         "grouping",
@@ -215,10 +219,14 @@ def mean_of_ratios(
         ),
         expr("sum(current_output)/sum(aux) AS construction"),
         expr(
-            "sum(cast(NOT trimmed_forward AND growth_forward IS NOT NULL AS integer)) AS count_forward"
+            """sum(cast(
+                NOT trimmed_forward AND growth_forward IS NOT NULL AS integer
+            )) AS count_forward"""
         ),
         expr(
-            "sum(cast(NOT trimmed_backward AND growth_backward IS NOT NULL AS integer)) AS count_backward"
+            """sum(cast(
+                NOT trimmed_backward AND growth_backward IS NOT NULL AS integer
+            )) AS count_backward"""
         ),
         expr("count(aux) AS count_construction"),
     )
