@@ -39,9 +39,11 @@ def mean_of_ratios(
     trimmed_backward_col: Optional[str] = "trimmed_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
-    lower_trim = Decimal(lower_trim)
-    upper_trim = Decimal(upper_trim)
-    trim_threshold = Decimal(trim_threshold)
+    if lower_trim is not None:
+        lower_trim = Decimal(lower_trim)
+        upper_trim = Decimal(upper_trim)
+        trim_threshold = Decimal(trim_threshold)
+
     df = df.select(
         "period",
         "grouping",
