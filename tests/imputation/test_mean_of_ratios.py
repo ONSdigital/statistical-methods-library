@@ -5,7 +5,7 @@ import pathlib
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col
-from pyspark.sql.types import DecimalType, LongType, StringType
+from pyspark.sql.types import BooleanType, DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import impute, mean_of_ratios
 
@@ -25,6 +25,10 @@ count_construction_col = "count_construction"
 exclude_col = "exclude"
 forward_growth_col = "growth_forward"
 backward_growth_col = "growth_backward"
+filtered_forward_col = "filtered_forward"
+filtered_backward_col = "filtered_backward"
+trimmed_forward_col = "trimmed_forward"
+trimmed_backward_col = "trimmed_backward"
 
 decimal_type = DecimalType(15, 6)
 
@@ -44,6 +48,10 @@ count_construction_type = LongType()
 exclude_type = StringType()
 forward_growth_type = decimal_type
 backward_growth_type = decimal_type
+filtered_forward_type = BooleanType()
+filtered_backward_type = BooleanType()
+trimmed_forward_type = BooleanType()
+trimmed_backward_type = BooleanType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -64,6 +72,10 @@ dataframe_columns = (
     exclude_col,
     forward_growth_col,
     backward_growth_col,
+    filtered_forward_col,
+    filtered_backward_col,
+    trimmed_forward_col,
+    trimmed_backward_col,
 )
 
 dataframe_types = {
@@ -83,6 +95,10 @@ dataframe_types = {
     exclude_col: exclude_type,
     forward_growth_col: forward_growth_type,
     backward_growth_col: backward_growth_type,
+    filtered_forward_col: filtered_forward_type,
+    filtered_backward_col: filtered_backward_type,
+    trimmed_forward_col: trimmed_forward_type,
+    trimmed_backward_col: trimmed_backward_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()

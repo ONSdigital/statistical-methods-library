@@ -35,8 +35,8 @@ def mean_of_ratios(
     growth_backward_col: Optional[str] = "growth_backward",
     filtered_forward_col: Optional[str] = "filtered_forward",
     filtered_backward_col: Optional[str] = "filtered_backward",
-    trim_marker_forward_col: Optional[str] = "trim_marker_forward",
-    trim_marker_backward_col: Optional[str] = "trim_marker_backward",
+    trimmed_forward_col: Optional[str] = "trimmed_forward",
+    trimmed_backward_col: Optional[str] = "trimmed_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
     df = df.select(
@@ -177,7 +177,7 @@ def mean_of_ratios(
                 ),
             )
             .withColumn(
-                "trim_marker_forward",
+                "trimmed_forward",
                 ~(
                     col("num_forward").between(
                         col("lower_forward"), col("upper_forward")
@@ -187,7 +187,7 @@ def mean_of_ratios(
                 ),
             )
             .withColumn(
-                "trim_marker_backward",
+                "trimmed_backward",
                 ~(
                     col("num_backward").between(
                         col("lower_backward"), col("upper_backward")
@@ -199,24 +199,24 @@ def mean_of_ratios(
         )
 
     else:
-        df = df.withColumn("trim_marker_forward", lit(False)).withColumn(
-            "trim_marker_backward", lit(False)
+        df = df.withColumn("trimmed_forward", lit(False)).withColumn(
+            "trimmed_backward", lit(False)
         )
 
     ratio_df = df.groupBy("period", "grouping").agg(
         expr(
             """mean(
-                CASE WHEN NOT trim_marker_forward THEN growth_forward END
+                CASE WHEN NOT trimmed_forward THEN growth_forward END
             ) AS forward"""
         ),
         expr(
             """mean(
-                CASE WHEN NOT trim_marker_backward THEN growth_backward END
+                CASE WHEN NOT trimmed_backward THEN growth_backward END
             ) AS backward"""
         ),
         expr("sum(current_output)/sum(aux) AS construction"),
-        expr("sum(cast(NOT trim_marker_forward AND growth_forward IS NOT NULL AS integer)) AS count_forward"),
-        expr("sum(cast(NOT trim_marker_backward AND growth_backward IS NOT NULL AS integer)) AS count_backward"),
+        expr("sum(cast(NOT trimmed_forward AND growth_forward IS NOT NULL AS integer)) AS count_forward"),
+        expr("sum(cast(NOT trimmed_backward AND growth_backward IS NOT NULL AS integer)) AS count_backward"),
         expr("count(aux) AS count_construction"),
     )
 
@@ -228,8 +228,8 @@ def mean_of_ratios(
         "growth_backward",
         "filtered_forward",
         "filtered_backward",
-        "trim_marker_forward",
-        "trim_marker_backward",
+        "trimmed_forward",
+        "trimmed_backward",
     )
 
     return [
@@ -241,8 +241,8 @@ def mean_of_ratios(
                 "growth_backward": growth_backward_col,
                 "filtered_forward": filtered_forward_col,
                 "filtered_backward": filtered_backward_col,
-                "trim_marker_forward": "trim_marker_forward_col",
-                "trim_marker_backward": "trim_marker_backward_col",
+                "trimmed_forward": trimmed_forward_col,
+                "trimmed_backward": trimmed_backward_col,
             },
         ),
         RatioCalculationResult(
