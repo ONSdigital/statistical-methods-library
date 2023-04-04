@@ -5,7 +5,6 @@ from numbers import Number
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from pyspark.sql import Column, DataFrame
-
 # Avoid shadowing builtin floor and ceil functions
 from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
