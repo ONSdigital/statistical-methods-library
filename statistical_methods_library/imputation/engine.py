@@ -314,10 +314,16 @@ def impute(
         if weight is not None:
 
             def calculate_weighted_link(link_name):
+                prev_link = col(f"prev.{link_name}")
+                curr_link = col(f"curr.{link_name}")
                 return (
-                    weight * col(f"curr.{link_name}")
-                    + (lit(Decimal(1)) - weight) * col(f"prev.{link_name}")
-                ).alias(link_name)
+                    when(
+                        prev_link.isNotNull(),
+                        weight * cur_link + (lit(Decimal(1)) - weight) * prev_link,
+                    )
+                    .otherwise(prev_link)
+                    .alias(link_name)
+                )
 
             weighting_df = df.select(
                 "period", "ref", "forward", "backward", "construction"
