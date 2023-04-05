@@ -5,6 +5,7 @@ For Copyright information, please see LICENCE.
 """
 
 from enum import Enum
+from numbers import Number
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
@@ -58,6 +59,8 @@ def impute(
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
+    weight: Optional[Number] = None,
+    weight_periodicity: Optional[int] = None,
     **ratio_calculator_params,
 ) -> DataFrame:
     additional_outputs = {}
@@ -65,6 +68,9 @@ def impute(
     link_cols = [forward_link_col, backward_link_col, construction_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
+
+    if weight is not None:
+        weight = lit(Decimal(weight))
 
     input_params = {
         "ref": reference_col,
@@ -304,6 +310,40 @@ def impute(
 
         if all_fill_cols:
             df = df.fillna(1.0, all_fill_cols)
+
+        if weight is not None:
+
+            def calculate_weighted_link(link_name):
+                return (
+                    weight * col(f"curr.{link_name}")
+                    + (lit(Decimal(1)) - weight) * col(f"prev.{link_name}")
+                ).alias(link_name)
+
+            weighting_df = df.select(
+                "period", "ref", "forward", "backward", "construction"
+            )
+            curr_df = weighting_df.alias("curr")
+            prev_df = weighting_df.alias("prev")
+            df = (
+                curr_df.join(
+                    prev_df,
+                    (
+                        col("curr.ref")
+                        == col("prev.ref") & col("prev.period")
+                        == calculate_previous_period(
+                            col("curr.period"), weight_periodicity
+                        )
+                    ),
+                )
+                .select(
+                    expr("curr.period AS period"),
+                    expr("curr.ref AS ref"),
+                    calculate_weighted_link("forward"),
+                    calculate_weighted_link("backward"),
+                    calculate_weighted_link("construction"),
+                )
+                .join(df.drop("forward", "backward", "construction"), ["period", "ref"])
+            )
 
         return df
 
