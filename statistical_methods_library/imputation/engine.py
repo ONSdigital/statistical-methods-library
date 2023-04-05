@@ -3,7 +3,7 @@ Perform imputation on a data frame.
 
 For Copyright information, please see LICENCE.
 """
-
+from decimal import Decimal
 from enum import Enum
 from numbers import Number
 from typing import Optional, Union
@@ -319,7 +319,7 @@ def impute(
                 return (
                     when(
                         prev_link.isNotNull(),
-                        weight * cur_link + (lit(Decimal(1)) - weight) * prev_link,
+                        weight * curr_link + (lit(Decimal(1)) - weight) * prev_link,
                     )
                     .otherwise(prev_link)
                     .alias(link_name)
