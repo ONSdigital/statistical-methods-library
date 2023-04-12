@@ -10,7 +10,7 @@ from enum import Enum
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
-from pyspark.sql.types import DecimalType, StringType
+from pyspark.sql.types import DecimalType
 
 from statistical_methods_library.utilities import validation
 
@@ -115,7 +115,6 @@ def outlier(
     input_params.update({k: v for k, v in optional_params.items() if v is not None})
 
     type_mapping = {
-        "period": StringType,
         "target": DecimalType,
         "design": DecimalType,
         "l_value": DecimalType,
