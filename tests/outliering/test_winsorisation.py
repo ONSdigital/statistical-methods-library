@@ -50,7 +50,7 @@ dataframe_types = {
 }
 
 bad_dataframe_types = dataframe_types.copy()
-bad_dataframe_types[period_col] = decimal_type
+bad_dataframe_types[target_col] = StringType()
 
 params = (
     reference_col,
