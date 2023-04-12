@@ -10,7 +10,7 @@ from enum import Enum
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, expr, lit, when
-from pyspark.sql.types import DecimalType, StringType
+from pyspark.sql.types import DecimalType
 
 from statistical_methods_library.utilities import validation
 
