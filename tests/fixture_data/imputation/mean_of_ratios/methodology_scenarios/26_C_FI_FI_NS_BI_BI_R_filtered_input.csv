@@ -1,4 +1,4 @@
-reference,period,imputationClass,targetColumn,auxiliaryColumn
+identifier,date,group,question,other
 140001,202001,100,3582,27
 140001,202002,100,4533,27
 140001,202003,100,4471,27
