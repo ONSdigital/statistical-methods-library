@@ -1,4 +1,4 @@
-identifier,date,group,other,forward_growth,backward_growth,forward,backward,construction,output,marker,count_forward,count_backward,count_construction
+identifier,date,group,other,growth_forward,growth_backward,forward,backward,construction,output,marker,count_forward,count_backward,count_construction
 190001,202001,100,95,,1.853682946,,0.9214,96.16299559,9261,R,,,4
 190001,202002,100,95,0.53946658,3.375675676,0.8521,1.5274,76.92045455,4996,R,,,3
 190001,202003,100,95,0.29623699,0.340229885,0.9685,1.8795,95.83333333,1480,R,,,4

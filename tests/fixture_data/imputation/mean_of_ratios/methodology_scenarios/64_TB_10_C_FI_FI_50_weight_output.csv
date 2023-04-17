@@ -1,4 +1,4 @@
-identifier,date,group,other,previous_forward,previous_backward,previous_construction,forward_growth,backward_growth,forward,backward,construction,weighted_forward,weighted_backward,weighted_construction,output,marker,count_forward,count_backward,count_construction,forward_growth_trimmed_marker,backward_growth_trimmed_marker
+identifier,date,group,other,previous_forward,previous_backward,previous_construction,growth_forward,growth_backward,forward,backward,construction,weighted_forward,weighted_backward,weighted_construction,output,marker,count_forward,count_backward,count_construction,growth_forward_trimmed_marker,growth_backward_trimmed_marker
 30001,202001,100,51,,2.09204015,76.03985875,,1.129481006,,1.772802559,142.3186593,,1.932421355,109.179259,8444,R,,9,11,,
 30001,202002,100,51,0.8701751,1.505585865,123.1676833,0.885362387,3.732401398,4.293520165,2.995081605,99.70786109,2.581847633,2.250333735,111.4377722,7476,R,9,9,11,,
 30001,202003,100,51,2.040615327,,84.81873182,0.267924024,,1.172391173,,76.13443331,1.60650325,,80.47658257,2003,R,9,,11,,

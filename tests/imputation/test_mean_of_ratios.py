@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import pathlib
 
@@ -181,9 +182,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         if "dev" in scenario_type:
             imputation_kwargs["link_filter"] = "(" + exclude_col + ' == "N")'
         else:
-            imputation_kwargs["link_filter"] = (
-                "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
-            )
+            with open('tests/conf.json') as f:
+                d = json.load(f)
+            imputation_kwargs["link_filter"] = d["mean_of_ratios"][scenario[0:2]]
 
     if scenario_type.startswith("back_data"):
         min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
@@ -192,7 +193,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
 
-        if scenario.endswith("filtered"):
+        if "filtered" in scenario:
             if "dev" in scenario_type:
                 back_data_df = back_data_df.join(
                     scenario_input.select(reference_col, period_col, exclude_col),

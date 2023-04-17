@@ -1,4 +1,4 @@
-identifier,date,group,other,forward_growth,backward_growth,forward,backward,construction,output,marker,count_forward,count_backward,count_construction,forward_growth_trimmed_marker,backward_growth_trimmed_marker,filtered_marker
+identifier,date,group,other,growth_forward,growth_backward,forward,backward,construction,output,marker,count_forward,count_backward,count_construction,growth_forward_trimmed_marker,growth_backward_trimmed_marker,filtered_marker
 30001,202001,100,51,,,,1,61.12436116,8444,R,,0,9,,,TRUE
 30001,202002,100,51,,,1,1,48.04940375,7476,R,0,0,9,,,TRUE
 30001,202003,100,51,,,1,,85.37820513,2003,R,0,,10,,,TRUE
