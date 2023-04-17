@@ -1,0 +1,17 @@
+{
+    "mean_of_ratios" : {
+        "26" : "identifier != '140005'",
+        "27" : "identifier NOT IN ('150005', '150006')",
+        "28" : "identifier != '190007'",
+        "29" : "identifier NOT IN ('200013', '200014')",
+        "30" : "identifier NOT IN ('230006', '230008')",
+        "41" : "NOT(identifier = '30004' AND date = '202002')",
+        "46" : "NOT(identifier = '90003' AND date = '202001')",
+        "48" : "identifier NOT IN ('30001', '30002', '30010')",
+        "49" : "identifier NOT IN ('30001', '30002', '30010')",
+        "61" : "identifier NOT IN ('110009', '110009')",
+        "65" : "NOT(identifier = '90003' AND date = '202001')",
+        "66" : "identifier NOT IN ('30001', '30002', '30010')",
+        "67" : "identifier NOT IN ('30001', '30002', '30010')"
+    }
+}
