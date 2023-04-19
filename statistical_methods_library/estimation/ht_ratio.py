@@ -29,7 +29,7 @@ def estimate(
 ) -> DataFrame:
     """
     Perform Horvitz-Thompson estimation.
-    
+
     Design weights and calibration factors are estimated using Expansion and
     Ratio estimation.
 
