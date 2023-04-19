@@ -1,5 +1,5 @@
 """
-Estimates design weights and calibration factors based on Expansion and Ratio estimation.
+Estimate design weights and calibration factors based on Expansion and Ratio estimation.
 For Copyright information, please see LICENCE.
 """
 
@@ -28,86 +28,57 @@ def estimate(
     calibration_factor_col: typing.Optional[str] = "calibration_factor",
 ) -> DataFrame:
     """
-    Perform Horvitz-Thompson estimation of design weights and calibration factors
-    using Expansion and Ratio estimation.
+    Perform Horvitz-Thompson estimation.
+    
+    Design weights and calibration factors are estimated using Expansion and
+    Ratio estimation.
 
-    ###Arguments
-    * `input_df`: The input data frame.
-    * `unique_identifier_col`: The name of the column containing the unique identifier
-      for the contributors.
-    * `period_col`: The name of the column containing the period information for
-      the contributor.
-    * `strata_col`: The name of the column containing the strata of the contributor.
-    * `sample_marker_col`: The name of the column containing a marker
-      for whether to include the contributor in the sample or only in the
-      population. This column must be boolean where false means
-      to exclude the contributor from the sample and true means the contributor
-      will be included in the sample count.
-    * `adjustment_marker_col`: The name of the column containing a marker for whether
-      the contributor is in scope (I), out of scope (O) or dead (D).
-    * `h_value_col`: The name of the column containing the boolean h value for the strata.
-    * out_of_scope_full: A parameter that specifies what type of out of scope
-      to run when an `out_of_scope_marker_col` is provided. True specifies
-      that the out of scope is used on both sides of the adjustment fraction.
-      False specifies that the out of scope is used only on the denominator of
-      the adjustment fraction.
-    * auxiliary_col: The name of the column containing the auxiliary value for
-      the contributor.
-    * calibration_group_col: The name of the column containing the calibration
-      group for the contributor.
-    * unadjusted_design_weight_col: The name of the column which will contain
-      the unadjusted design weight for the contributor. The column isn't
-      output unless a name is provided.
-    * design_weight_col: The name of the column which will contain the
-      design weight for the contributor. Defaults to `design_weight`.
-    * calibration_factor_col: The name of the column which will contain the
-      calibration factor for the contributor. Defaults to `calibration_factor`.
+    Args:
+        input_df: The input data frame.
+        unique_identifier_col: The name of the column containing the unique
+          identifier for a contributor.
+        period_col: The name of the column containing the period.
+        strata_col: The name of the column containing the stratum.
+        sample_marker_col: The name of the column containing a boolean marker
+          where True means to include the contributor in the sample otherwise
+          the contributor is just included in the population.
+        adjustment_marker_col: The name of the column marking a contributor as
+          in scope ("I"), out of scope ("O") or dead ("D").
+        h_value_col: The name of the column containing the boolean h value for
+          the stratum. The value must be the same per stratum and period.
+        out_of_scope_full: The type of out of scope adjustment to use when an
+          `out_of_scope_marker_col` is provided. True causes the out of
+          scope adjustment to be used on both sides of the adjustment
+          fraction whereas False causes the out of scopeadjustment only on
+          the denominator of the adjustment fraction.
+        auxiliary_col: The name of the column containing the auxiliary value.
+          Providing this column causes Ratio Estimation to be performed,
+          otherwise only Expansion Estimation takes place.
+        calibration_group_col: The name of the column containing the calibration
+          group. This column can only be provided when `auxiliary_col` is also
+          provided and it causes Combined Ratio Estimation to be performed,
+          otherwise Separate Ratio Estimation takes place.
+        unadjusted_design_weight_col: The name of the column which will contain
+          the unadjusted design weight. The column isn't output unless this
+          column is specified.
+        design_weight_col: The name of the column which will contain the
+          design weight. If birth-death adjustment is being performed this
+          will contain the adjusted value.
+        calibration_factor_col: The name of the column which will contain the
+          calibration factor.
 
-    ###Returns
-
+    Returns:
     A data frame containing the estimated weights. The exact columns depend on
-    the type of estimation performed as specified below.
-
-    ####Common Columns
-
-    In all cases the data frame will contain:
-
-    * `period_col`
-    * `strata_col`
-    * `design_weight_col`
-
-    ####Ratio Estimation
-
-    In the case of either Separate or Combined Ratio Estimation, the data frame
-    will also contain the column specified by `calibration_factor_col`.
-
-    ####Combined Ratio Estimation
-
-    When Combined Ratio Estimation is performed, the data frame will also
-    contain the column specified by `calibration_factor_col`.
-
-    ###Notes
+    the type of estimation performed as specified by the provided arguments.
 
     Either both or neither of `adjustment_marker_col` and `h_value_col` must be specified.
     If they are then the design weight is adjusted using birth-death
-    adjustment, otherwise it is not. In addition, since birth-death adjustment
-    is per-stratum, the `h_value_col` must not change within a given period and
-    stratum.
-
+    adjustment, otherwise it is not.
     If `out_of_scope_full` is also specified, out of scope adjustment
     is performed during birth-death adjustment.
 
-    If `auxiliary_col` is specified then one of Separate Ratio or Combined Ratio
-    estimation is performed. This depends on whether `calibration_group_col`
-    is specified. If so then Combined Ratio estimation is performed, otherwise
-    Separate Ratio estimation is performed. If `auxiliary_col` is not
-    specified then only Expansion estimation is performed and specifying
-    `calibration_group_col` raises an error.
-
-    `unadjusted_design_weight_col` is only in the output if a column name is specified.
-
-    All specified input columns must be fully populated. If not an error is
-    raised. Since `design_weight_col` and `calibration_factor_col` are both
+    All specified input columns must be fully populated.
+    Since `design_weight_col` and `calibration_factor_col` are both
     output columns this does not apply to them, and any values they contain prior
     to calling the method will be ignored.
     """
