@@ -56,14 +56,14 @@ def outlier(
         design_col: The name of the column containing the design weight.
         l_value_col: The name of the column containing the l value.
         outlier_col: The name of the column which will contain the calculated
-          outlier weight. Defaults to `outlier_weight`.
+          outlier weight.
         calibration_col: The name of the column containing the calibration factor
           if Ratio Winsorisation is to be performed.
         auxiliary_col: The name of the column containing the auxiliary values if
           Ratio Winsorisation is to be performed.
         marker_col: The name of the column which will contain the
           marker for winsorisation (one of the values defined by the `Marker`
-          class). Defaults to `winsorisation_marker`. 
+          class).
 
     Returns:
     A new data frame containing the columns as described by the arguments
