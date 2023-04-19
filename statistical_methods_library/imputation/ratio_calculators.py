@@ -103,7 +103,7 @@ def mean_of_ratios(
         def lower_bound(c):
             return sql_ceil(c * lower_trim / 100)
 
-        def upper_bound(c, f):
+        def upper_bound(c):
             return 1 + sql_floor(c * (100 - upper_trim) / 100)
 
         df = (
@@ -134,13 +134,15 @@ def mean_of_ratios(
                         expr(
                             """
                             sum(cast(filtered_backward AS integer))
-                            AS count_filtered_forward
+                            AS count_filtered_backward
                         """
                         ),
                     )
                     .select(
                         col("period"),
                         col("grouping"),
+                        col("count_filtered_forward"),
+                        col("count_filtered_backward"),
                         lower_bound(
                             col("count_forward"),
                         ).alias("lower_forward"),

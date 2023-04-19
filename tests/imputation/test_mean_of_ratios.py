@@ -166,25 +166,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
     imputation_kwargs = params.copy()
-    if forward_col in scenario_input.columns:
-        imputation_kwargs.update(
-            {
-                "forward_link_col": forward_col,
-                "backward_link_col": backward_col,
-                "construction_link_col": construction_col,
-            }
-        )
 
-    if "zeros_included" in scenario:
-        imputation_kwargs.update({"include_zeros": True})
-
-    if scenario.endswith("filtered"):
-        if "dev" in scenario_type:
-            imputation_kwargs["link_filter"] = "(" + exclude_col + ' == "N")'
-        else:
-            with open('tests/conf.json') as f:
-                d = json.load(f)
-            imputation_kwargs["link_filter"] = d["mean_of_ratios"][scenario[0:2]]
+    with open('tests/conf.json') as f:
+        d = json.load(f)
+    if scenario[0:2] in d["mean_of_ratios"].keys():
+        imputation_kwargs.update(d["mean_of_ratios"][scenario[0:2]])
 
     if scenario_type.startswith("back_data"):
         min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
@@ -194,13 +180,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         )
 
         if "filtered" in scenario:
-            if "dev" in scenario_type:
-                back_data_df = back_data_df.join(
-                    scenario_input.select(reference_col, period_col, exclude_col),
-                    [reference_col, period_col],
-                )
-            else:
-                back_data_df = back_data_df.withColumn(target_col, col(output_col))
+            back_data_df = back_data_df.withColumn(target_col, col(output_col))
 
         imputation_kwargs["back_data_df"] = back_data_df
 
