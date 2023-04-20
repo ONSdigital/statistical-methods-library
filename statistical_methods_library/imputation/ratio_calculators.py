@@ -161,13 +161,16 @@ def mean_of_ratios(
                 ),
                 ["period", "grouping"],
             )
+            # When calculating row numbers we put the null values last to avoid
+            # them impacting the trimmed mean. This works because the upper
+            # bound is calculated based on the count of non-null growth ratios.
             .withColumn(
                 "num_forward",
                 expr(
                     """
                     row_number() OVER (
                         PARTITION BY period, grouping
-                        ORDER BY growth_forward ASC
+                        ORDER BY growth_forward ASC NULLS LAST
                     )
                 """
                 ),
@@ -178,7 +181,7 @@ def mean_of_ratios(
                     """
                     row_number() OVER (
                         PARTITION BY period, grouping
-                        ORDER BY growth_backward ASC
+                        ORDER BY growth_backward ASC NULLS LAST
                     )
                 """
                 ),
