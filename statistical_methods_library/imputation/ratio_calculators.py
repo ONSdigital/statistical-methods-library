@@ -143,6 +143,8 @@ def mean_of_ratios(
                         col("grouping"),
                         col("count_filtered_forward"),
                         col("count_filtered_backward"),
+                        col("count_forward"),
+                        col("count_backward"),
                         lower_bound(
                             col("count_forward"),
                         ).alias("lower_forward"),
@@ -187,8 +189,8 @@ def mean_of_ratios(
                     col("num_forward").between(
                         col("lower_forward"), col("upper_forward")
                     )
-                    | trim_threshold - col("count_filtered_forward")
-                    >= col("count_forward")
+                    | ((trim_threshold - col("count_filtered_forward"))
+                    >= col("count_forward"))
                 ),
             )
             .withColumn(
@@ -197,8 +199,8 @@ def mean_of_ratios(
                     col("num_backward").between(
                         col("lower_backward"), col("upper_backward")
                     )
-                    | trim_threshold - col("count_filtered_backward")
-                    >= col("count_backward")
+                    | ((trim_threshold - col("count_filtered_backward"))
+                    >= col("count_backward"))
                 ),
             )
         )
