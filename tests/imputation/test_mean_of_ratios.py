@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import pathlib
+import toml
 
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
@@ -167,10 +168,12 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     )
     imputation_kwargs = params.copy()
 
-    with open('tests/conf.json') as f:
-        d = json.load(f)
-    if scenario[0:2] in d["mean_of_ratios"].keys():
-        imputation_kwargs.update(d["mean_of_ratios"][scenario[0:2]])
+    with open('tests/imputation/mean_of_ratios.toml', 'r') as f:
+        new_toml_string = toml.load(f)
+        print(new_toml_string)
+    if scenario in new_toml_string.keys():
+        imputation_kwargs.update(new_toml_string[scenario])
+        print(imputation_kwargs)
 
     if scenario_type.startswith("back_data"):
         min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
