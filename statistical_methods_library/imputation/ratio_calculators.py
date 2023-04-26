@@ -248,6 +248,8 @@ def mean_of_ratios(
         "filtered_backward",
         "trimmed_forward",
         "trimmed_backward",
+        "num_forward",
+        "num_backward",
     )
 
     return [
@@ -261,6 +263,8 @@ def mean_of_ratios(
                 "filtered_backward": filtered_backward_col,
                 "trimmed_forward": trimmed_forward_col,
                 "trimmed_backward": trimmed_backward_col,
+                "num_forward": "num_forward",
+                "num_backward": "num_backward",
             },
         ),
         RatioCalculationResult(

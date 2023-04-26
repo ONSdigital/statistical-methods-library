@@ -170,10 +170,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     with open('tests/imputation/mean_of_ratios.toml', 'r') as f:
         new_toml_string = toml.load(f)
-        print(new_toml_string)
     if scenario in new_toml_string.keys():
         imputation_kwargs.update(new_toml_string[scenario])
-        print(imputation_kwargs)
 
     if scenario_type.startswith("back_data"):
         min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")

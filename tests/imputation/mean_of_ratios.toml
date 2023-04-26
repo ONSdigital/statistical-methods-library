@@ -63,8 +63,6 @@ upper_trim = 10
 trim_threshold = 10
 
 [43_TB_10_BI_BI_R_boundary]
-forward_link_col = "forward"
-backward_link_col = "backward"
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
@@ -107,6 +105,10 @@ link_filter = "identifier NOT IN ('110009', '110009')"
 lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
+
+[50_R_R_FI_50_weight]
+weight = 0.5
+weight_periodicity = 12
 
 [65_TB_10_BI_BI_R_50_weight_filtered]
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
