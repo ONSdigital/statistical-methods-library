@@ -244,7 +244,7 @@ def test_params_missing_link_column(fxt_load_test_csv):
     )
     with pytest.raises(TypeError):
         impute(
-            input_df=test_dataframe, **params, construction_link_col=construction_col
+            input_df=test_dataframe, **params, forward_link_col=construction_col
         )
 
 
