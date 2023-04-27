@@ -100,9 +100,8 @@ weight_periodicity = 12
 
 [61_R_R_FI-BI_R_R_50_weight_filtered]
 link_filter = "identifier NOT IN ('110009', '110009')"
-lower_trim = 50
-upper_trim = 50
-trim_threshold = 10
+
+[62_mixed_data_50_weight]
 
 [65_TB_10_BI_BI_R_50_weight_filtered]
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
