@@ -88,27 +88,21 @@ lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[48_TB_50_filtered_partial_default]
-link_filter = "identifier NOT IN ('30001', '30002', '30010')"
-lower_trim = 50
-upper_trim = 50
-trim_threshold = 10
+[48_BI_BI_R-R_R_FI_filtered_partial_default]
+link_filter = "identifier NOT IN ('110005', '110006', '110007')"
 
-[49_TB_50_filtered_full_default]
-link_filter = "identifier NOT IN ('30001', '30002', '30010')"
-lower_trim = 50
-upper_trim = 50
-trim_threshold = 10
+[49_C_FI_FI_filtered_full_default]
+link_filter = "identifier NOT IN ('110005', '110006')"
+
+[50_R_R_FI_50_weight]
+weight = 0.5
+weight_periodicity = 12
 
 [61_R_R_FI-BI_R_R_50_weight_filtered]
 link_filter = "identifier NOT IN ('110009', '110009')"
 lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
-
-[50_R_R_FI_50_weight]
-weight = 0.5
-weight_periodicity = 12
 
 [65_TB_10_BI_BI_R_50_weight_filtered]
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
@@ -130,3 +124,6 @@ trim_threshold = 10
 
 [68_BI_BI_R_NS_C_FI_FI_zeros_included]
 include_zeros = true
+
+[70_BI_BI_R_FI_FI_R_FI_alternating_filtered]
+link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
