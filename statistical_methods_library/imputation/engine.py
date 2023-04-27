@@ -14,7 +14,7 @@ from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
-from .ratio_calculators import construction, RatioCalculator
+from .ratio_calculators import RatioCalculator, construction
 
 # --- Marker constants ---
 
