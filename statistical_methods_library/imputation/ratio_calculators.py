@@ -228,7 +228,6 @@ def mean_of_ratios(
                 CASE WHEN NOT trimmed_backward THEN growth_backward END
             ) AS backward"""
         ),
-        expr("sum(current_output)/sum(aux) AS construction"),
         expr(
             """sum(cast(
                 NOT trimmed_forward AND growth_forward IS NOT NULL AS integer
@@ -239,7 +238,6 @@ def mean_of_ratios(
                 NOT trimmed_backward AND growth_backward IS NOT NULL AS integer
             )) AS count_backward"""
         ),
-        expr("count(aux) AS count_construction"),
     )
 
     growth_df = df.select(
@@ -270,7 +268,7 @@ def mean_of_ratios(
         RatioCalculationResult(
             data=ratio_df,
             join_columns=["period", "grouping"],
-            fill_columns=["forward", "backward", "construction"],
+            fill_columns=["forward", "backward"],
         ),
     ]
 
@@ -300,7 +298,6 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                     )/sum(next.output) AS backward
                 """
             ),
-            expr("sum(current.output)/sum(aux) AS construction"),
             expr(
                 """
                     CASE
@@ -321,21 +318,29 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                     END AS count_backward
                 """
             ),
-            expr(
-                """
-                    CASE
-                        WHEN sum(aux) = 0
-                        THEN 0
-                        ELSE count(current.output)
-                    END AS count_construction
-                """
-            ),
         )
     )
     return [
         RatioCalculationResult(
             data=df,
             join_columns=["period", "grouping"],
-            fill_columns=["forward", "backward", "construction"],
+            fill_columns=["forward", "backward"],
+        )
+    ]
+
+
+def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
+    return [
+        RatioCalculationResult(
+            data=(
+                df.filter(col("current.match"))
+                .groupBy("period", "grouping")
+                .agg(
+                    expr("sum(current.output)/sum(aux) AS construction"),
+                    expr("count(aux) AS count_construction"),
+                )
+            ),
+            join_columns=["period", "grouping"],
+            fill_columns=["construction"],
         )
     ]

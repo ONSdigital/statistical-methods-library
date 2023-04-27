@@ -14,7 +14,7 @@ from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities import validation
 
-from .ratio_calculators import RatioCalculator
+from .ratio_calculators import construction, RatioCalculator
 
 # --- Marker constants ---
 
@@ -65,7 +65,7 @@ def impute(
 ) -> DataFrame:
     additional_outputs = {}
     # --- Validate params ---
-    link_cols = [forward_link_col, backward_link_col, construction_link_col]
+    link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
 
@@ -94,9 +94,11 @@ def impute(
             {
                 "forward": forward_link_col,
                 "backward": backward_link_col,
-                "construction": construction_link_col,
             }
         )
+
+    if construction_link_col is not None:
+        input_params["construction"] = construction_link_col
 
     full_col_mapping.update(input_params)
 
@@ -105,9 +107,11 @@ def impute(
             {
                 "forward": "forward",
                 "backward": "backward",
-                "construction": "construction",
             }
         )
+
+    if construction_link_col is None:
+        full_col_mapping["construction"] = "construction"
 
     back_expected_columns = {
         "ref": reference_col,
@@ -233,13 +237,26 @@ def impute(
     # --- Calculate Ratios ---
 
     def calculate_ratios(df: DataFrame) -> DataFrame:
+        ratio_calculators = []
         if "forward" in df.columns:
             df = (
-                df.fillna(1.0, ["forward", "backward", "construction"])
+                df.fillna(1.0, ["forward", "backward"])
                 .withColumn("count_forward", lit(None).cast("long"))
                 .withColumn("count_backward", lit(None).cast("long"))
-                .withColumn("count_construction", lit(None).cast("long"))
             )
+
+        else:
+            ratio_calculators.append(ratio_calculator)
+
+        if "construction" in df.columns:
+            df = df.fillna(1.0, ["construction"]).withColumn(
+                "count_construction", lit(None).cast("long")
+            )
+
+        else:
+            ratio_calculators.append(construction)
+
+        if not ratio_calculators:
             return df
 
         # Since we're going to join on to the main df at the end filtering here
@@ -303,7 +320,13 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         all_fill_cols = []
-        for result in ratio_calculator(df=working_df, **ratio_calculator_params):
+        for result in sum(
+            (
+                calculator(df=working_df, **ratio_calculator_params)
+                for calculator in ratio_calculators
+            ),
+            [],
+        ):
             df = df.join(result.data, result.join_columns, "left")
             all_fill_cols += result.fill_columns
             additional_outputs.update(result.additional_outputs)
