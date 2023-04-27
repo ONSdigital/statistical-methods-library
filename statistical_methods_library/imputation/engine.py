@@ -80,14 +80,8 @@ def impute(
         "aux": auxiliary_col,
     }
 
-    optional_params = {
-        "forward": forward_link_col,
-        "backward": backward_link_col,
-        "construction": construction_link_col,
-    }
-
     # Mapping of column aliases to parameters
-    created_col_mapping = {
+    full_col_mapping = {
         "output": output_col,
         "marker": marker_col,
         "count_construction": count_construction_col,
@@ -95,19 +89,25 @@ def impute(
         "count_backward": count_backward_col,
     }
 
-    new_link_map = {
-        "forward": "forward",
-        "backward": "backward",
-        "construction": "construction",
-    }
-
     if forward_link_col is not None:
-        input_params.update(optional_params)
+        input_params.update(
+            {
+                "forward": forward_link_col,
+                "backward": backward_link_col,
+                "construction": construction_link_col,
+            }
+        )
 
-    full_col_mapping = {**input_params, **created_col_mapping}
+    full_col_mapping.update(input_params)
 
     if forward_link_col is None:
-        full_col_mapping = {**full_col_mapping, **new_link_map}
+        full_col_mapping.update(
+            {
+                "forward": "forward",
+                "backward": "backward",
+                "construction": "construction",
+            }
+        )
 
     back_expected_columns = {
         "ref": reference_col,

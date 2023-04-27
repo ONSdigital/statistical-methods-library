@@ -192,8 +192,10 @@ def mean_of_ratios(
                     col("num_forward").between(
                         col("lower_forward"), col("upper_forward")
                     )
-                    | ((trim_threshold - col("count_filtered_forward"))
-                    >= col("count_forward"))
+                    | (
+                        (trim_threshold - col("count_filtered_forward"))
+                        >= col("count_forward")
+                    )
                 ),
             )
             .withColumn(
@@ -202,8 +204,10 @@ def mean_of_ratios(
                     col("num_backward").between(
                         col("lower_backward"), col("upper_backward")
                     )
-                    | ((trim_threshold - col("count_filtered_backward"))
-                    >= col("count_backward"))
+                    | (
+                        (trim_threshold - col("count_filtered_backward"))
+                        >= col("count_backward")
+                    )
                 ),
             )
         )
