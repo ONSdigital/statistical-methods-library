@@ -15,7 +15,6 @@ from pyspark.sql.functions import lit, when
 class RatioCalculationResult:
     data: DataFrame
     join_columns: List[str]
-    fill_columns: List[str] = field(default_factory=list)
     fill_values: Optional[Dict[str, str]] = field(default_factory=dict)
     additional_outputs: Optional[Dict[str, str]] = field(default_factory=dict)
 
@@ -218,27 +217,32 @@ def mean_of_ratios(
             "trimmed_backward", lit(False)
         )
 
-    ratio_df = df.groupBy("period", "grouping").agg(
-        expr(
-            """mean(
+    ratio_df = (
+        df.groupBy("period", "grouping")
+        .agg(
+            expr(
+                """mean(
                 CASE WHEN NOT trimmed_forward THEN growth_forward END
             ) AS forward"""
-        ),
-        expr(
-            """mean(
+            ),
+            expr(
+                """mean(
                 CASE WHEN NOT trimmed_backward THEN growth_backward END
             ) AS backward"""
-        ),
-        expr(
-            """sum(cast(
+            ),
+            expr(
+                """sum(cast(
                 NOT trimmed_forward AND growth_forward IS NOT NULL AS integer
             )) AS count_forward"""
-        ),
-        expr(
-            """sum(cast(
+            ),
+            expr(
+                """sum(cast(
                 NOT trimmed_backward AND growth_backward IS NOT NULL AS integer
             )) AS count_backward"""
-        ),
+            ),
+        )
+        .withColumn("default_forward", expr("forward IS NOT NULL"))
+        .withColumn("default_backward", expr("backward IS NOT NULL"))
     )
 
     growth_df = df.select(
@@ -269,7 +273,14 @@ def mean_of_ratios(
         RatioCalculationResult(
             data=ratio_df,
             join_columns=["period", "grouping"],
-            fill_columns=["forward", "backward"],
+            fill_values={
+                "forward": 1,
+                "backward": 1,
+                "count_forward": 0,
+                "count_backward": 0,
+                "default_forward": True,
+                "default_backward": True,
+            },
         ),
     ]
 
@@ -309,20 +320,14 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
         RatioCalculationResult(
             data=df,
             join_columns=["period", "grouping"],
-            fill_columns=[
-                "forward",
-                "backward",
-                "count_forward",
-                "count_backward",
-                "default_forward",
-                "default_backward"
-            ],
             fill_values={
+                "forward": 1,
+                "backward": 1,
                 "count_forward": 0,
                 "count_backward": 0,
                 "default_forward": True,
-                "default_backward": True
-            }
+                "default_backward": True,
+            },
         )
     ]
 
@@ -340,11 +345,10 @@ def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                 )
             ),
             join_columns=["period", "grouping"],
-            fill_columns=[
-                "construction",
-                "count_construction",
-                "default_construction"
-            ],
-            fill_values={"count_construction": 0, "default_construction": True},
+            fill_values={
+                "construction": 1,
+                "count_construction": 0,
+                "default_construction": True,
+            },
         )
     ]
