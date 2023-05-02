@@ -312,10 +312,17 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
             fill_columns=[
                 "forward",
                 "backward",
+                "count_forward",
+                "count_backward",
                 "default_forward",
                 "default_backward"
             ],
-        fill_values={"default_forward": True, "default_backward": True}
+            fill_values={
+                "count_forward": 0,
+                "count_backward": 0,
+                "default_forward": True,
+                "default_backward": True
+            }
         )
     ]
 
