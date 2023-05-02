@@ -241,8 +241,8 @@ def impute(
         if "forward" in df.columns:
             df = (
                 df.fillna(1.0, ["forward", "backward"])
-                .withColumn("count_forward", lit(None).cast("long"))
-                .withColumn("count_backward", lit(None).cast("long"))
+                .withColumn("count_forward", lit(0))
+                .withColumn("count_backward", lit(0))
             )
 
         else:
@@ -250,7 +250,7 @@ def impute(
 
         if "construction" in df.columns:
             df = df.fillna(1.0, ["construction"]).withColumn(
-                "count_construction", lit(None).cast("long")
+                "count_construction", lit(0)
             )
 
         else:
