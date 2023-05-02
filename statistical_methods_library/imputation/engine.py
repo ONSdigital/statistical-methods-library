@@ -240,17 +240,26 @@ def impute(
         ratio_calculators = []
         if "forward" in df.columns:
             df = (
-                df.fillna(1.0, ["forward", "backward"])
-                .withColumn("count_forward", lit(0))
-                .withColumn("count_backward", lit(0))
+                df.withColumn("default_forward", expr("forward IS NULL"))
+                .withColumn("default_backward", expr("backward IS NULL"))
+                .fillna(1.0, ["forward", "backward"])
+                .withColumn("count_forward", lit(0).cast("long"))
+                .withColumn("count_backward", lit(0).cast("long"))
             )
 
         else:
             ratio_calculators.append(ratio_calculator)
 
         if "construction" in df.columns:
-            df = df.fillna(1.0, ["construction"]).withColumn(
-                "count_construction", lit(0)
+            df = (
+                df.withColumn(
+                    "default_construction",
+                    expr("construction IS NULL")
+                )
+                .fillna(1.0, ["construction"])
+                .withColumn(
+                    "count_construction", lit(0).cast("long")
+                )
             )
 
         else:
