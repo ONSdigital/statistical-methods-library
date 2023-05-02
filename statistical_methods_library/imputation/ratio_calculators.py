@@ -301,13 +301,21 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
             ),
             expr("count(previous.output) AS count_forward"),
             expr("count(next.output) AS count_backward"),
+            expr(coalesce(sum(previous.output), 0) = 0 AS default_forward),
+            expr(coalesce(sum(next.output), 0) = 0 AS default_backward),
         )
     )
     return [
         RatioCalculationResult(
             data=df,
             join_columns=["period", "grouping"],
-            fill_columns=["forward", "backward"],
+            fill_columns=[
+                "forward",
+                "backward",
+                "default_forward",
+                "default_backward"
+            ],
+        fill_values={"default_forward": True, "default_backward": True}
         )
     ]
 
@@ -321,10 +329,15 @@ def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                 .agg(
                     expr("sum(current.output)/sum(aux) AS construction"),
                     expr("count(aux) AS count_construction"),
+                    expr(coalesce(sum(aux), 0) = 0 AS default_construction),
                 )
             ),
             join_columns=["period", "grouping"],
-            fill_columns=["construction", "count_construction"],
-            fill_values={"count_construction": 0},
+            fill_columns=[
+                "construction",
+                "count_construction",
+                "default_construction"
+            ],
+            fill_values={"count_construction": 0, "default_construction": True},
         )
     ]
