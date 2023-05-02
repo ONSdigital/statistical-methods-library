@@ -21,6 +21,10 @@ link_filter = "identifier NOT IN ('200013', '200014')"
 [30_class_change_C_C_FI_filtered]
 link_filter = "identifier NOT IN ('230006', '230008')"
 
+[33_partial_link_columns]
+forward_link_col = "forward"
+backward_link_col = "backward"
+
 [35_TB_10_R_R_FI]
 lower_trim = 10
 upper_trim = 10

@@ -75,7 +75,6 @@ dataframe_columns = (
     exclude_col,
     forward_growth_col,
     backward_growth_col,
-    filtered_marker_col,
     filtered_forward_col,
     filtered_backward_col,
     trimmed_forward_col,
