@@ -330,7 +330,7 @@ def impute(
         ):
             df = df.join(result.data, result.join_columns, "left")
             fill_columns += result.fill_columns
-            fill_values.update(result.all_fill_values)
+            fill_values.update(result.fill_values)
             additional_outputs.update(result.additional_outputs)
 
         for fill_column in fill_columns:
