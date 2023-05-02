@@ -26,6 +26,7 @@ count_construction_col = "count_construction"
 exclude_col = "exclude"
 forward_growth_col = "growth_forward"
 backward_growth_col = "growth_backward"
+filtered_marker_col = "filtered_marker"
 filtered_forward_col = "filtered_forward"
 filtered_backward_col = "filtered_backward"
 trimmed_forward_col = "trimmed_forward"
@@ -49,6 +50,7 @@ count_construction_type = LongType()
 exclude_type = StringType()
 forward_growth_type = decimal_type
 backward_growth_type = decimal_type
+filtered_marker_type = BooleanType()
 filtered_forward_type = BooleanType()
 filtered_backward_type = BooleanType()
 trimmed_forward_type = BooleanType()
@@ -73,6 +75,7 @@ dataframe_columns = (
     exclude_col,
     forward_growth_col,
     backward_growth_col,
+    filtered_marker_col,
     filtered_forward_col,
     filtered_backward_col,
     trimmed_forward_col,
@@ -96,6 +99,7 @@ dataframe_types = {
     exclude_col: exclude_type,
     forward_growth_col: forward_growth_type,
     backward_growth_col: backward_growth_type,
+    filtered_marker_col: filtered_marker_type,
     filtered_forward_col: filtered_forward_type,
     filtered_backward_col: filtered_backward_type,
     trimmed_forward_col: trimmed_forward_type,
