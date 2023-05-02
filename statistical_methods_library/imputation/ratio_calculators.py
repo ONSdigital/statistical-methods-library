@@ -301,8 +301,8 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
             ),
             expr("count(previous.output) AS count_forward"),
             expr("count(next.output) AS count_backward"),
-            expr(coalesce(sum(previous.output), 0) = 0 AS default_forward),
-            expr(coalesce(sum(next.output), 0) = 0 AS default_backward),
+            expr("coalesce(sum(previous.output), 0) = 0 AS default_forward"),
+            expr("coalesce(sum(next.output), 0) = 0 AS default_backward"),
         )
     )
     return [
@@ -336,7 +336,7 @@ def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                 .agg(
                     expr("sum(current.output)/sum(aux) AS construction"),
                     expr("count(aux) AS count_construction"),
-                    expr(coalesce(sum(aux), 0) = 0 AS default_construction),
+                    expr("coalesce(sum(aux), 0) = 0 AS default_construction"),
                 )
             ),
             join_columns=["period", "grouping"],
