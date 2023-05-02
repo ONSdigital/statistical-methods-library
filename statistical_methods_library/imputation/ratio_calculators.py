@@ -299,26 +299,8 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                     )/sum(next.output) AS backward
                 """
             ),
-            expr(
-                """
-                    CASE
-                        WHEN sum(previous.output) = 0
-                        THEN 0
-                        WHEN sum(previous.output) IS NOT NULL
-                        THEN sum(cast(previous.output IS NOT NULL AS integer))
-                    END AS count_forward
-                """
-            ),
-            expr(
-                """
-                    CASE
-                        WHEN sum(next.output) = 0
-                        THEN 0
-                        WHEN sum(next.output) IS NOT NULL
-                        THEN sum(cast(next.output IS NOT NULL AS integer))
-                    END AS count_backward
-                """
-            ),
+            expr("count(previous.output) AS count_forward"),
+            expr("count(next.output) AS count_backward"),
         )
     )
     return [
