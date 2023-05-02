@@ -14,8 +14,9 @@ from pyspark.sql.functions import lit, when
 @dataclass
 class RatioCalculationResult:
     data: DataFrame
-    join_columns: List[Union[str, Column]]
-    fill_columns: List[Union[str, Column]] = field(default_factory=list)
+    join_columns: List[str]
+    fill_columns: List[str] = field(default_factory=list)
+    fill_values: Optional[Dict[str, str]] = field(default_factory=dict)
     additional_outputs: Optional[Dict[str, str]] = field(default_factory=dict)
 
 
@@ -341,6 +342,7 @@ def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                 )
             ),
             join_columns=["period", "grouping"],
-            fill_columns=["construction"],
+            fill_columns=["construction", "count_construction"],
+            fill_values={"count_construction": 0},
         )
     ]

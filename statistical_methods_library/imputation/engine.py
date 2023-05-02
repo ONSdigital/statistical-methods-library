@@ -319,7 +319,8 @@ def impute(
 
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
-        all_fill_cols = []
+        fill_columns = []
+        fill_values = {}
         for result in sum(
             (
                 calculator(df=working_df, **ratio_calculator_params)
@@ -328,11 +329,12 @@ def impute(
             [],
         ):
             df = df.join(result.data, result.join_columns, "left")
-            all_fill_cols += result.fill_columns
+            fill_columns += result.fill_columns
+            fill_values.update(result.all_fill_values)
             additional_outputs.update(result.additional_outputs)
 
-        if all_fill_cols:
-            df = df.fillna(1.0, all_fill_cols)
+        for fill_column in fill_columns:
+            df = df.fillna(fill_values.get(fill_column, 1.0), fill_column)
 
         if weight is not None:
 
