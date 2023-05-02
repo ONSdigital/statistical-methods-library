@@ -56,6 +56,9 @@ def impute(
     count_construction_col: Optional[str] = "count_construction",
     count_forward_col: Optional[str] = "count_forward",
     count_backward_col: Optional[str] = "count_backward",
+    default_construction_col: Optional[str] = "default_construction",
+    default_forward_col: Optional[str] = "default_forward",
+    default_backward_col: Optional[str] = "default_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
@@ -87,6 +90,9 @@ def impute(
         "count_construction": count_construction_col,
         "count_forward": count_forward_col,
         "count_backward": count_backward_col,
+        "default_construction": default_construction_col,
+        "default_forward": default_forward_col,
+        "default_backward": default_backward_col,
     }
 
     if forward_link_col is not None:
