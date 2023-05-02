@@ -66,7 +66,6 @@ def impute(
     weight_periodicity: Optional[int] = None,
     **ratio_calculator_params,
 ) -> DataFrame:
-    additional_outputs = {}
     # --- Validate params ---
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
@@ -84,7 +83,7 @@ def impute(
     }
 
     # Mapping of column aliases to parameters
-    full_col_mapping = {
+    output_col_mapping = {
         "output": output_col,
         "marker": marker_col,
         "count_construction": count_construction_col,
@@ -93,9 +92,16 @@ def impute(
         "default_construction": default_construction_col,
         "default_forward": default_forward_col,
         "default_backward": default_backward_col,
+        "forward": forward_link_col,
+        "backward": backward_link_col,
+        "construction": construction_link_col,
+        "ref": reference_col,
+        "period": period_col,
+        "grouping": grouping_col,
+        "target": target_col,
     }
 
-    if forward_link_col is not None:
+    if forward_link_col in df.columns or backward_link_col in df.columns:
         input_params.update(
             {
                 "forward": forward_link_col,
@@ -103,21 +109,8 @@ def impute(
             }
         )
 
-    if construction_link_col is not None:
+    if construction_link_col in df.columns:
         input_params["construction"] = construction_link_col
-
-    full_col_mapping.update(input_params)
-
-    if forward_link_col is None:
-        full_col_mapping.update(
-            {
-                "forward": "forward",
-                "backward": "backward",
-            }
-        )
-
-    if construction_link_col is None:
-        full_col_mapping["construction"] = "construction"
 
     back_expected_columns = {
         "ref": reference_col,
@@ -258,14 +251,9 @@ def impute(
 
         if "construction" in df.columns:
             df = (
-                df.withColumn(
-                    "default_construction",
-                    expr("construction IS NULL")
-                )
+                df.withColumn("default_construction", expr("construction IS NULL"))
                 .fillna(1.0, ["construction"])
-                .withColumn(
-                    "count_construction", lit(0).cast("long")
-                )
+                .withColumn("count_construction", lit(0).cast("long"))
             )
 
         else:
@@ -344,7 +332,7 @@ def impute(
         ):
             df = df.join(result.data, result.join_columns, "left")
             fill_values.update(result.fill_values)
-            additional_outputs.update(result.additional_outputs)
+            output_col_mapping.update(result.additional_outputs)
 
         for fill_column, fill_value in fill_values.items():
             df = df.fillna(fill_value, fill_column)
@@ -573,26 +561,10 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
-        del full_col_mapping["aux"]
-        del full_col_mapping["grouping"]
-        full_col_mapping.update(additional_outputs)
-        return select_cols(
-            df.filter(col("period") != lit(prior_period)), reversed=False
-        ).withColumnRenamed("output", output_col)
-
-    def select_cols(
-        df: DataFrame,
-        reversed: bool = True,
-        drop_unmapped: bool = True,
-        mapping: dict = full_col_mapping,
-    ) -> DataFrame:
-        col_mapping = {v: k for k, v in mapping.items()} if reversed else mapping
-        col_set = set(df.columns)
-
-        return df.select(
+        return df.filter(col("period") > lit(prior_period)).select(
             [
-                col(k).alias(col_mapping.get(k, k))
-                for k in ((col_mapping.keys() & col_set) if drop_unmapped else col_set)
+                col(k).alias(output_col_mapping[k])
+                for k in sorted(output_col_mapping.keys() & set(df.columns))
             ]
         )
 
