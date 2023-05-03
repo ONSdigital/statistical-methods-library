@@ -50,9 +50,9 @@ def impute(
     ratio_calculator: RatioCalculator,
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
-    forward_link_col: Optional[str] = None,
-    backward_link_col: Optional[str] = None,
-    construction_link_col: Optional[str] = None,
+    forward_link_col: Optional[str] = "forward",
+    backward_link_col: Optional[str] = "backward",
+    construction_link_col: Optional[str] = "construction",
     count_construction_col: Optional[str] = "count_construction",
     count_forward_col: Optional[str] = "count_forward",
     count_backward_col: Optional[str] = "count_backward",
@@ -163,7 +163,7 @@ def impute(
 
     # Store the value for the period prior to the start of imputation.
     # Stored as a value to avoid a join in output creation.
-    prior_period = None
+    prior_period_df = None
 
     # --- Run ---
     def run() -> DataFrame:
@@ -204,17 +204,20 @@ def impute(
             .withColumn("next_period", calculate_next_period(col("period")))
         )
 
-        nonlocal prior_period
-        # We know this will be a single value so use collect as then we
-        # can filter directly.
-        prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
+        nonlocal prior_period_df
+
+        prior_period_df = prepared_df.selectExpr("min(previous_period) AS prior_period")
 
         if prepared_back_data_df:
             prepared_back_data_df = (
-                prepared_back_data_df.filter(
+                prepared_back_data_df.join(
+                    prior_period_df,
+                    [col("period") == col("prior_period")]
+                )
+                .drop("prior_period")
+                .filter(
                     (
-                        (col(period_col) == lit(prior_period))
-                        & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
+                        (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
                     )
                 )
                 .withColumn("previous_period", calculate_previous_period(col("period")))
@@ -568,11 +571,17 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
-        return df.filter(col("period") > lit(prior_period)).select(
-            [
-                col(k).alias(output_col_mapping[k])
-                for k in sorted(output_col_mapping.keys() & set(df.columns))
-            ]
+        return (
+            df.join(
+                prior_period_df,
+                [col("prior_period") < col("period")]
+            )
+            .select(
+                [
+                    col(k).alias(output_col_mapping[k])
+                    for k in sorted(output_col_mapping.keys() & set(df.columns))
+                ]
+            )
         )
 
     def calculate_previous_period(period: Column) -> Column:
