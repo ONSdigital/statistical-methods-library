@@ -111,7 +111,7 @@ def impute(
             }
         )
 
-    if construction_link_col in df.columns:
+    if construction_link_col in input_df.columns:
         input_params["construction"] = construction_link_col
 
     back_expected_columns = {
