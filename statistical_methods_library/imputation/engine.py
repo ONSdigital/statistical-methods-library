@@ -59,6 +59,7 @@ def impute(
     default_construction_col: Optional[str] = "default_construction",
     default_forward_col: Optional[str] = "default_forward",
     default_backward_col: Optional[str] = "default_backward",
+    filter_marker_col: Optional[str] = "default_backward",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
@@ -92,6 +93,7 @@ def impute(
         "default_construction": default_construction_col,
         "default_forward": default_forward_col,
         "default_backward": default_backward_col,
+        "filter_marker": filter_marker_col,
         "forward": forward_link_col,
         "backward": backward_link_col,
         "construction": construction_link_col,
@@ -336,6 +338,11 @@ def impute(
 
         for fill_column, fill_value in fill_values.items():
             df = df.fillna(fill_value, fill_column)
+
+        df = df.join(
+            filtered_df.select("ref", "period", expr("NOT match AS filter_marker")),
+            ["ref", "period"],
+        ).fillna(False, "filter_marker")
 
         if weight is not None:
 
