@@ -93,7 +93,6 @@ def impute(
         "default_construction": default_construction_col,
         "default_forward": default_forward_col,
         "default_backward": default_backward_col,
-        "filter_marker": filter_marker_col,
         "forward": forward_link_col,
         "backward": backward_link_col,
         "construction": construction_link_col,
@@ -350,7 +349,7 @@ def impute(
             ["ref", "period"],
             "left"
         ).fillna(False, "filter_marker")
-
+        output_col_mapping["filter_marker"] = filter_marker_col
         if weight is not None:
 
             def calculate_weighted_link(link_name):
