@@ -348,7 +348,7 @@ def impute(
             filtered_df.select("ref", "period", expr("NOT match AS filter_marker")),
             ["ref", "period"],
             "left"
-        ).fillna(False, "filter_marker")
+        )
         output_col_mapping["filter_marker"] = filter_marker_col
         if weight is not None:
 
