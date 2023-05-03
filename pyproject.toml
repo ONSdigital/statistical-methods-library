@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "statistical_methods_library"
-version = "11.0.2"
+version = "12.0.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -19,12 +19,11 @@ pytest-cov = "^4.0.0"
 chispa = "*"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.3"
-toml = "^0.10.0"
 [tool.isort]
 profile = "black"
 
 [tool.pytest.ini_options]
-junit_test_suite_name = "statistical_methods_library"
+junit_suite_name = "statistical_methods_library"
 addopts = "--exitfirst --cov=statistical_methods_library --cov-fail-under=95"
 
 [build-system]
