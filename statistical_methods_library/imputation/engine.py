@@ -103,7 +103,7 @@ def impute(
         "target": target_col,
     }
 
-    if forward_link_col in df.columns or backward_link_col in df.columns:
+    if forward_link_col in input_df.columns or backward_link_col in input_df.columns:
         input_params.update(
             {
                 "forward": forward_link_col,
