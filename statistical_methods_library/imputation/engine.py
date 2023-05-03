@@ -348,6 +348,7 @@ def impute(
         df = df.join(
             filtered_df.select("ref", "period", expr("NOT match AS filter_marker")),
             ["ref", "period"],
+            "left"
         ).fillna(False, "filter_marker")
 
         if weight is not None:
