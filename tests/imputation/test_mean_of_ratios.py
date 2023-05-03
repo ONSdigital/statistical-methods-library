@@ -23,7 +23,6 @@ construction_col = "construction"
 count_forward_col = "count_forward"
 count_backward_col = "count_backward"
 count_construction_col = "count_construction"
-exclude_col = "exclude"
 forward_growth_col = "growth_forward"
 backward_growth_col = "growth_backward"
 filtered_marker_col = "filtered_marker"
@@ -47,7 +46,6 @@ construction_type = decimal_type
 count_forward_type = LongType()
 count_backward_type = LongType()
 count_construction_type = LongType()
-exclude_type = StringType()
 forward_growth_type = decimal_type
 backward_growth_type = decimal_type
 filtered_marker_type = BooleanType()
@@ -72,7 +70,6 @@ dataframe_columns = (
     count_forward_col,
     count_backward_col,
     count_construction_col,
-    exclude_col,
     forward_growth_col,
     backward_growth_col,
     filtered_forward_col,
@@ -95,7 +92,6 @@ dataframe_types = {
     count_forward_col: count_forward_type,
     count_backward_col: count_backward_type,
     count_construction_col: count_construction_type,
-    exclude_col: exclude_type,
     forward_growth_col: forward_growth_type,
     backward_growth_col: backward_growth_type,
     filtered_marker_col: filtered_marker_type,
@@ -207,16 +203,14 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         auxiliary_col,
     )
     scenario_actual_output = impute(input_df=scenario_input, **imputation_kwargs)
+
     scenario_actual_output = scenario_actual_output.withColumn(
         output_col, bround(col(output_col), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         forward_col, bround(col(forward_col), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         backward_col, bround(col(backward_col).cast(decimal_type), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         construction_col, bround(col(construction_col).cast(decimal_type), 6)
     )
 
@@ -228,8 +222,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     else:
         scenario_actual_output = scenario_actual_output.withColumn(
             forward_growth_col, bround(col(forward_growth_col).cast(decimal_type), 6)
-        )
-        scenario_actual_output = scenario_actual_output.withColumn(
+        ).withColumn(
             backward_growth_col, bround(col(backward_growth_col).cast(decimal_type), 6)
         )
 

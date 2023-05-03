@@ -3,6 +3,7 @@ import os
 import pathlib
 
 import pytest
+import toml
 from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col
 from pyspark.sql.types import BooleanType, DecimalType, LongType, StringType
@@ -22,7 +23,6 @@ construction_col = "construction"
 count_forward_col = "count_forward"
 count_backward_col = "count_backward"
 count_construction_col = "count_construction"
-exclude_col = "exclude"
 default_forward_col = "default_forward"
 default_backward_col = "default_backward"
 default_construction_col = "default_construction"
@@ -43,7 +43,6 @@ construction_type = decimal_type
 count_forward_type = LongType()
 count_backward_type = LongType()
 count_construction_type = LongType()
-exclude_type = StringType()
 default_forward_type = BooleanType()
 default_backward_type = BooleanType()
 default_construction_type = BooleanType()
@@ -65,7 +64,6 @@ dataframe_columns = (
     count_forward_col,
     count_backward_col,
     count_construction_col,
-    exclude_col,
     default_forward_col,
     default_backward_col,
     default_construction_col,
@@ -86,7 +84,6 @@ dataframe_types = {
     count_forward_col: count_forward_type,
     count_backward_col: count_backward_type,
     count_construction_col: count_construction_type,
-    exclude_col: exclude_type,
     default_forward_col: default_forward_type,
     default_backward_col: default_backward_type,
     default_construction_col: default_construction_type,
@@ -156,22 +153,11 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         f"{scenario}_output",
     )
     imputation_kwargs = params.copy()
-    if forward_col in scenario_input.columns:
-        imputation_kwargs.update(
-            {
-                "forward_link_col": forward_col,
-                "backward_link_col": backward_col,
-                "construction_link_col": construction_col,
-            }
-        )
 
-    if scenario.endswith("filtered"):
-        if "dev" in scenario_type:
-            imputation_kwargs["link_filter"] = "(" + exclude_col + ' == "N")'
-        else:
-            imputation_kwargs["link_filter"] = (
-                "(" + auxiliary_col + " != 71) and (" + target_col + " < 100000)"
-            )
+    with open("tests/imputation/mean_of_ratios.toml", "r") as f:
+        new_toml_string = toml.load(f)
+    if scenario in new_toml_string.keys():
+        imputation_kwargs.update(new_toml_string[scenario])
 
     if scenario_type.startswith("back_data"):
         min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
@@ -180,14 +166,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             min_period_df, [col(period_col) == col("min(" + period_col + ")")]
         )
 
-        if scenario.endswith("filtered"):
-            if "dev" in scenario_type:
-                back_data_df = back_data_df.join(
-                    scenario_input.select(reference_col, period_col, exclude_col),
-                    [reference_col, period_col],
-                )
-            else:
-                back_data_df = back_data_df.withColumn(target_col, col(output_col))
+        if "filtered" in scenario:
+            back_data_df = back_data_df.withColumn(target_col, col(output_col))
 
         imputation_kwargs["back_data_df"] = back_data_df
 
@@ -211,18 +191,17 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         auxiliary_col,
     )
     scenario_actual_output = impute(input_df=scenario_input, **imputation_kwargs)
+
     scenario_actual_output = scenario_actual_output.withColumn(
         output_col, bround(col(output_col), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         forward_col, bround(col(forward_col), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         backward_col, bround(col(backward_col).cast(decimal_type), 6)
-    )
-    scenario_actual_output = scenario_actual_output.withColumn(
+    ).withColumn(
         construction_col, bround(col(construction_col).cast(decimal_type), 6)
     )
+
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert isinstance(scenario_actual_output, type(scenario_input))
     sort_col_list = [reference_col, period_col]

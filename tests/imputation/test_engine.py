@@ -18,7 +18,6 @@ construction_col = "construction"
 count_forward_col = "count_forward"
 count_backward_col = "count_backward"
 count_construction_col = "count_construction"
-exclude_col = "exclude"
 
 decimal_type = DecimalType(15, 6)
 
@@ -35,7 +34,6 @@ construction_type = decimal_type
 count_forward_type = LongType()
 count_backward_type = LongType()
 count_construction_type = LongType()
-exclude_type = StringType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -53,7 +51,6 @@ dataframe_columns = (
     count_forward_col,
     count_backward_col,
     count_construction_col,
-    exclude_col,
 )
 
 dataframe_types = {
@@ -70,7 +67,6 @@ dataframe_types = {
     count_forward_col: count_forward_type,
     count_backward_col: count_backward_type,
     count_construction_col: count_construction_type,
-    exclude_col: exclude_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
