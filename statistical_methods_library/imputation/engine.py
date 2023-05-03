@@ -206,7 +206,10 @@ def impute(
 
         nonlocal prior_period_df
 
-        prior_period_df = prepared_df.selectExpr("min(previous_period) AS prior_period")
+        prior_period_df = (
+            prepared_df.selectExpr("min(previous_period) AS prior_period")
+            .localCheckpoint(eager=True)
+        )
 
         if prepared_back_data_df:
             prepared_back_data_df = (
