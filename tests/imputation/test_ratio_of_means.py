@@ -5,7 +5,7 @@ import pathlib
 import pytest
 from chispa.dataframe_comparer import assert_df_equality
 from pyspark.sql.functions import bround, col
-from pyspark.sql.types import DecimalType, LongType, StringType
+from pyspark.sql.types import BooleanType, DecimalType, LongType, StringType
 
 from statistical_methods_library.imputation import impute, ratio_of_means
 
@@ -23,6 +23,10 @@ count_forward_col = "count_forward"
 count_backward_col = "count_backward"
 count_construction_col = "count_construction"
 exclude_col = "exclude"
+default_forward_col = "default_forward"
+default_backward_col = "default_backward"
+default_construction_col = "default_construction"
+filter_marker_col = "filter_marker"
 
 decimal_type = DecimalType(15, 6)
 
@@ -40,6 +44,10 @@ count_forward_type = LongType()
 count_backward_type = LongType()
 count_construction_type = LongType()
 exclude_type = StringType()
+default_forward_type = BooleanType()
+default_backward_type = BooleanType()
+default_construction_type = BooleanType()
+filter_marker_type = BooleanType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -58,6 +66,10 @@ dataframe_columns = (
     count_backward_col,
     count_construction_col,
     exclude_col,
+    default_forward_col,
+    default_backward_col,
+    default_construction_col,
+    filter_marker_col,
 )
 
 dataframe_types = {
@@ -75,6 +87,10 @@ dataframe_types = {
     count_backward_col: count_backward_type,
     count_construction_col: count_construction_type,
     exclude_col: exclude_type,
+    default_forward_col: default_forward_type,
+    default_backward_col: default_backward_type,
+    default_construction_col: default_construction_type,
+    filter_marker_col: filter_marker_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
