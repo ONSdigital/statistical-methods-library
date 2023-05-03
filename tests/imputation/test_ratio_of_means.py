@@ -154,7 +154,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     )
     imputation_kwargs = params.copy()
 
-    with open("tests/imputation/mean_of_ratios.toml", "r") as f:
+    with open("tests/imputation/ratio_of_means.toml", "r") as f:
         new_toml_string = toml.load(f)
     if scenario in new_toml_string.keys():
         imputation_kwargs.update(new_toml_string[scenario])
