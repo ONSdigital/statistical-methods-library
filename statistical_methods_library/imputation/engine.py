@@ -59,7 +59,7 @@ def impute(
     default_construction_col: Optional[str] = "default_construction",
     default_forward_col: Optional[str] = "default_forward",
     default_backward_col: Optional[str] = "default_backward",
-    filter_marker_col: Optional[str] = "default_backward",
+    filter_marker_col: Optional[str] = "filter_marker",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
