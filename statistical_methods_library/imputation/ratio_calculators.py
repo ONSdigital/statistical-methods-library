@@ -262,10 +262,12 @@ def mean_of_ratios(
     }
 
     if lower_trim is not None:
-        growth_additional_outputs.update({
-            "trim_inclusion_forward": trim_inclusion_forward_col,
-            "trim_inclusion_backward": trim_inclusion_backward_col,
-        })
+        growth_additional_outputs.update(
+            {
+                "trim_inclusion_forward": trim_inclusion_forward_col,
+                "trim_inclusion_backward": trim_inclusion_backward_col,
+            }
+        )
         growth_select_cols += [
             "trim_inclusion_forward",
             "trim_inclusion_backward",

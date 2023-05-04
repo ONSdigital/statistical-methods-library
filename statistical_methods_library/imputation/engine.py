@@ -205,23 +205,17 @@ def impute(
 
         nonlocal prior_period_df
 
-        prior_period_df = (
-            prepared_df.selectExpr("min(previous_period) AS prior_period")
-            .localCheckpoint(eager=True)
-        )
+        prior_period_df = prepared_df.selectExpr(
+            "min(previous_period) AS prior_period"
+        ).localCheckpoint(eager=True)
 
         if prepared_back_data_df:
             prepared_back_data_df = (
                 prepared_back_data_df.join(
-                    prior_period_df,
-                    [col("period") == col("prior_period")]
+                    prior_period_df, [col("period") == col("prior_period")]
                 )
                 .drop("prior_period")
-                .filter(
-                    (
-                        (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-                    )
-                )
+                .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
                 .withColumn("previous_period", calculate_previous_period(col("period")))
                 .withColumn("next_period", calculate_next_period(col("period")))
             )
@@ -347,7 +341,7 @@ def impute(
         df = df.join(
             filtered_df.select("ref", "period", expr("match AS link_inclusion_marker")),
             ["ref", "period"],
-            "left"
+            "left",
         )
         output_col_mapping["link_inclusion_marker"] = link_inclusion_marker_col
         if weight is not None:
@@ -574,17 +568,11 @@ def impute(
 
     # --- Utility functions ---
     def create_output(df: DataFrame) -> DataFrame:
-        return (
-            df.join(
-                prior_period_df,
-                [col("prior_period") < col("period")]
-            )
-            .select(
-                [
-                    col(k).alias(output_col_mapping[k])
-                    for k in sorted(output_col_mapping.keys() & set(df.columns))
-                ]
-            )
+        return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
+            [
+                col(k).alias(output_col_mapping[k])
+                for k in sorted(output_col_mapping.keys() & set(df.columns))
+            ]
         )
 
     def calculate_previous_period(period: Column) -> Column:
