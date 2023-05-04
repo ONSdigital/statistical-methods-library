@@ -26,7 +26,7 @@ count_construction_col = "count_construction"
 default_forward_col = "default_forward"
 default_backward_col = "default_backward"
 default_construction_col = "default_construction"
-filter_marker_col = "filter_marker"
+filtered_marker_col = "filtered_marker"
 
 decimal_type = DecimalType(15, 6)
 
@@ -46,7 +46,7 @@ count_construction_type = LongType()
 default_forward_type = BooleanType()
 default_backward_type = BooleanType()
 default_construction_type = BooleanType()
-filter_marker_type = BooleanType()
+filtered_marker_type = BooleanType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -67,7 +67,7 @@ dataframe_columns = (
     default_forward_col,
     default_backward_col,
     default_construction_col,
-    filter_marker_col,
+    filtered_marker_col,
 )
 
 dataframe_types = {
@@ -87,7 +87,7 @@ dataframe_types = {
     default_forward_col: default_forward_type,
     default_backward_col: default_backward_type,
     default_construction_col: default_construction_type,
-    filter_marker_col: filter_marker_type,
+    filtered_marker_col: filtered_marker_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()

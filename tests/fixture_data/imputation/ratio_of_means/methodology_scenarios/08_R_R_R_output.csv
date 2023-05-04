@@ -1,4 +1,4 @@
-identifier,date,group,other,output,marker,forward,backward,construction,count_forward,count_backward,count_construction,default_forward,default_backward,default_construction,filter_marker
+identifier,date,group,other,output,marker,forward,backward,construction,count_forward,count_backward,count_construction,default_forward,default_backward,default_construction,filtered_marker
 80001,202001,100,91,4042,R,1,1.646151294,69.14982578,0,4,4,true,false,false,false
 80001,202002,100,91,2805,R,0.607477577,0.584165132,42.00696864,4,4,4,false,false,false,false
 80001,202003,100,91,644,R,1.711844725,1,71.90940767,4,0,4,false,true,false,false

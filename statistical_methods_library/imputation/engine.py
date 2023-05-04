@@ -59,7 +59,7 @@ def impute(
     default_construction_col: Optional[str] = "default_construction",
     default_forward_col: Optional[str] = "default_forward",
     default_backward_col: Optional[str] = "default_backward",
-    filter_marker_col: Optional[str] = "filter_marker",
+    filtered_marker_col: Optional[str] = "filtered_marker",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
@@ -345,11 +345,11 @@ def impute(
             df = df.fillna(fill_value, fill_column)
 
         df = df.join(
-            filtered_df.select("ref", "period", expr("NOT match AS filter_marker")),
+            filtered_df.select("ref", "period", expr("NOT match AS filtered_marker")),
             ["ref", "period"],
             "left"
         )
-        output_col_mapping["filter_marker"] = filter_marker_col
+        output_col_mapping["filtered_marker"] = filtered_marker_col
         if weight is not None:
 
             def calculate_weighted_link(link_name):
