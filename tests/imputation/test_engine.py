@@ -205,9 +205,7 @@ def test_params_missing_link_column(fxt_load_test_csv):
         "basic_functionality",
     )
     with pytest.raises(TypeError):
-        impute(
-            input_df=test_dataframe, **params, forward_link_col=forward_col
-        )
+        impute(input_df=test_dataframe, **params, forward_link_col=forward_col)
 
 
 def test_params_not_string(fxt_load_test_csv):

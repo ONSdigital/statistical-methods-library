@@ -192,14 +192,13 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     )
     scenario_actual_output = impute(input_df=scenario_input, **imputation_kwargs)
 
-    scenario_actual_output = scenario_actual_output.withColumn(
-        output_col, bround(col(output_col), 6)
-    ).withColumn(
-        forward_col, bround(col(forward_col), 6)
-    ).withColumn(
-        backward_col, bround(col(backward_col).cast(decimal_type), 6)
-    ).withColumn(
-        construction_col, bround(col(construction_col).cast(decimal_type), 6)
+    scenario_actual_output = (
+        scenario_actual_output.withColumn(output_col, bround(col(output_col), 6))
+        .withColumn(forward_col, bround(col(forward_col), 6))
+        .withColumn(backward_col, bround(col(backward_col).cast(decimal_type), 6))
+        .withColumn(
+            construction_col, bround(col(construction_col).cast(decimal_type), 6)
+        )
     )
 
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))

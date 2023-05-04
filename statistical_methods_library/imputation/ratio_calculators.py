@@ -2,9 +2,9 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 from numbers import Number
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from pyspark.sql import Column, DataFrame
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
 from pyspark.sql.functions import floor as sql_floor
