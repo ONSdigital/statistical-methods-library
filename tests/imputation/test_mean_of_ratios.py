@@ -28,9 +28,9 @@ backward_growth_col = "growth_backward"
 default_forward_col = "default_forward"
 default_backward_col = "default_backward"
 default_construction_col = "default_construction"
-filtered_marker_col = "filtered_marker"
-filtered_forward_col = "filtered_forward"
-filtered_backward_col = "filtered_backward"
+link_inclusion_marker_col = "link_inclusion_marker"
+link_inclusion_forward_col = "link_inclusion_forward"
+link_inclusion_backward_col = "link_inclusion_backward"
 trimmed_forward_col = "trimmed_forward"
 trimmed_backward_col = "trimmed_backward"
 
@@ -54,9 +54,9 @@ backward_growth_type = decimal_type
 default_forward_type = BooleanType()
 default_backward_type = BooleanType()
 default_construction_type = BooleanType()
-filtered_marker_type = BooleanType()
-filtered_forward_type = BooleanType()
-filtered_backward_type = BooleanType()
+link_inclusion_marker_type = BooleanType()
+link_inclusion_forward_type = BooleanType()
+link_inclusion_backward_type = BooleanType()
 trimmed_forward_type = BooleanType()
 trimmed_backward_type = BooleanType()
 
@@ -78,14 +78,14 @@ dataframe_columns = (
     count_construction_col,
     forward_growth_col,
     backward_growth_col,
-    filtered_forward_col,
-    filtered_backward_col,
+    link_inclusion_forward_col,
+    link_inclusion_backward_col,
     trimmed_forward_col,
     trimmed_backward_col,
     default_forward_col,
     default_backward_col,
     default_construction_col,
-    filtered_marker_col,
+    link_inclusion_marker_col,
 )
 
 dataframe_types = {
@@ -107,9 +107,9 @@ dataframe_types = {
     default_forward_col: default_forward_type,
     default_backward_col: default_backward_type,
     default_construction_col: default_construction_type,
-    filtered_marker_col: filtered_marker_type,
-    filtered_forward_col: filtered_forward_type,
-    filtered_backward_col: filtered_backward_type,
+    link_inclusion_marker_col: link_inclusion_marker_type,
+    link_inclusion_forward_col: link_inclusion_forward_type,
+    link_inclusion_backward_col: link_inclusion_backward_type,
     trimmed_forward_col: trimmed_forward_type,
     trimmed_backward_col: trimmed_backward_type,
 }

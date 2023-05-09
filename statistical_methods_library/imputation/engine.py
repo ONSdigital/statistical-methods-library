@@ -68,6 +68,9 @@ def impute(
     **ratio_calculator_params,
 ) -> DataFrame:
     # --- Validate params ---
+    if not isinstance(input_df, DataFrame):
+        raise TypeError("Input is not a DataFrame")
+
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
