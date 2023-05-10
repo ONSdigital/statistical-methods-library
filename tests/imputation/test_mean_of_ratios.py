@@ -29,10 +29,10 @@ default_forward_col = "default_forward"
 default_backward_col = "default_backward"
 default_construction_col = "default_construction"
 link_inclusion_marker_col = "link_inclusion_marker"
-link_inclusion_forward_col = "link_inclusion_forward"
-link_inclusion_backward_col = "link_inclusion_backward"
-trimmed_forward_col = "trimmed_forward"
-trimmed_backward_col = "trimmed_backward"
+link_inclusion_previous_col = "link_inclusion_previous"
+link_inclusion_next_col = "link_inclusion_next"
+trimmed_forward_col = "trim_inclusion_forward"
+trimmed_backward_col = "trim_inclusion_backward"
 
 decimal_type = DecimalType(15, 6)
 
@@ -55,8 +55,8 @@ default_forward_type = BooleanType()
 default_backward_type = BooleanType()
 default_construction_type = BooleanType()
 link_inclusion_marker_type = BooleanType()
-link_inclusion_forward_type = BooleanType()
-link_inclusion_backward_type = BooleanType()
+link_inclusion_previous_type = BooleanType()
+link_inclusion_next_type = BooleanType()
 trimmed_forward_type = BooleanType()
 trimmed_backward_type = BooleanType()
 
@@ -78,8 +78,8 @@ dataframe_columns = (
     count_construction_col,
     forward_growth_col,
     backward_growth_col,
-    link_inclusion_forward_col,
-    link_inclusion_backward_col,
+    link_inclusion_previous_col,
+    link_inclusion_next_col,
     trimmed_forward_col,
     trimmed_backward_col,
     default_forward_col,
@@ -108,8 +108,8 @@ dataframe_types = {
     default_backward_col: default_backward_type,
     default_construction_col: default_construction_type,
     link_inclusion_marker_col: link_inclusion_marker_type,
-    link_inclusion_forward_col: link_inclusion_forward_type,
-    link_inclusion_backward_col: link_inclusion_backward_type,
+    link_inclusion_previous_col: link_inclusion_previous_type,
+    link_inclusion_next_col: link_inclusion_next_type,
     trimmed_forward_col: trimmed_forward_type,
     trimmed_backward_col: trimmed_backward_type,
 }

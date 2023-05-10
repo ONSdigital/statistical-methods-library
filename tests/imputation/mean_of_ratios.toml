@@ -92,7 +92,7 @@ lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[48_BI_BI_R-R_R_FI_filtered_partial_default]
+[48_BI_BI_R-R_R_FI_filtered_default]
 link_filter = "identifier NOT IN ('110005', '110006', '110007')"
 
 [49_R_R_FI-BI_R_R_50_weight_previous_month]

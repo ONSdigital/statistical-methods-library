@@ -31,8 +31,8 @@ def mean_of_ratios(
     include_zeros: Optional[bool] = False,
     growth_forward_col: Optional[str] = "growth_forward",
     growth_backward_col: Optional[str] = "growth_backward",
-    link_inclusion_forward_col: Optional[str] = "link_inclusion_forward",
-    link_inclusion_backward_col: Optional[str] = "link_inclusion_backward",
+    link_inclusion_previous_col: Optional[str] = "link_inclusion_previous",
+    link_inclusion_next_col: Optional[str] = "link_inclusion_next",
     trim_inclusion_forward_col: Optional[str] = "trim_inclusion_forward",
     trim_inclusion_backward_col: Optional[str] = "trim_inclusion_backward",
     **_kwargs,
@@ -66,14 +66,14 @@ def mean_of_ratios(
                    WHEN previous.match IS NULL THEN NULL
                    ELSE previous.match
                 END
-            AS link_inclusion_forward"""
+            AS link_inclusion_previous"""
         ),
         expr(
             """CASE
                    WHEN next.match IS NULL THEN NULL
                    ELSE next.match
                 END
-            AS link_inclusion_backward"""
+            AS link_inclusion_next"""
         ),
     ).selectExpr(
         "period",
@@ -81,10 +81,10 @@ def mean_of_ratios(
         "ref",
         "aux",
         "current_output",
-        "link_inclusion_forward",
-        "link_inclusion_backward",
+        "link_inclusion_previous",
+        "link_inclusion_next",
         """CASE
-                WHEN link_inclusion_forward THEN CASE
+                WHEN link_inclusion_previous THEN CASE
                     WHEN previous_output = 0 OR
                     (current_output = 0 AND previous_output IS NOT NULL)
                     THEN 1
@@ -92,7 +92,7 @@ def mean_of_ratios(
                 END
             END AS growth_forward""",
         """CASE
-                WHEN link_inclusion_backward
+                WHEN link_inclusion_next
                 THEN CASE
                     WHEN
                         next_output = 0
@@ -132,13 +132,13 @@ def mean_of_ratios(
                         ),
                         expr(
                             """
-                            sum(cast(not link_inclusion_forward AS integer))
+                            sum(cast(not link_inclusion_previous AS integer))
                             AS count_exclusion_forward
                             """
                         ),
                         expr(
                             """
-                            sum(cast(not link_inclusion_backward AS integer))
+                            sum(cast(not link_inclusion_next AS integer))
                             AS count_exclusion_backward
                             """
                         ),
@@ -256,14 +256,14 @@ def mean_of_ratios(
         "grouping",
         "growth_forward",
         "growth_backward",
-        "link_inclusion_forward",
-        "link_inclusion_backward",
+        "link_inclusion_previous",
+        "link_inclusion_next",
     ]
     growth_additional_outputs = {
         "growth_forward": growth_forward_col,
         "growth_backward": growth_backward_col,
-        "link_inclusion_forward": link_inclusion_forward_col,
-        "link_inclusion_backward": link_inclusion_backward_col,
+        "link_inclusion_previous": link_inclusion_previous_col,
+        "link_inclusion_next": link_inclusion_next_col,
     }
 
     if lower_trim is not None:

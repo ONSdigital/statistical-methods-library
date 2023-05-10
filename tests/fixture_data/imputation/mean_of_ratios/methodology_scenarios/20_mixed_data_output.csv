@@ -1,4 +1,4 @@
-identifier,date,group,other,output,marker,growth_forward,growth_backward,forward,backward,construction,count_forward,count_backward,count_construction,link_inclusion_marker,link_inclusion_forward,link_inclusion_backward,default_forward,default_backward,default_construction
+identifier,date,group,other,output,marker,growth_forward,growth_backward,forward,backward,construction,count_forward,count_backward,count_construction,link_inclusion_marker,link_inclusion_previous,link_inclusion_next,default_forward,default_backward,default_construction
 200001,202001,100,56,7788,R,,1.262441238,1,0.597514698,71.63436123,0,4,4,true,,true,true,false,false
 200001,202002,100,56,6169,R,0.792116076,1.002111761,23.53745347,0.984013482,111.5638767,4,3,4,true,true,true,false,false,false
 200001,202003,100,56,6156,R,0.997892689,3.903614458,1.161413175,4.785815599,163.0494505,3,4,4,true,true,true,false,false,false
@@ -16,7 +16,7 @@ identifier,date,group,other,output,marker,growth_forward,growth_backward,forward
 200004,202003,100,86,7055.585041,FIR,,,1.161413175,4.785815599,163.0494505,3,4,4,,,,false,false,false
 200004,202004,100,86,1947.413826,FIR,,,0.276010255,1,42.68681319,4,0,4,,,,false,true,false
 200005,202001,100,6,429.8061674,C,,,1,0.597514698,71.63436123,0,4,4,,,,true,false,false
-200005,202002,100,6,10116.542669,FIC,,,23.53745347,0.984013482,111.5638767,4,3,4,,,,false,false,false
+200005,202002,100,6,10116.542659,FIC,,,23.53745347,0.984013482,111.5638767,4,3,4,,,,false,false,false
 200005,202003,100,6,11749.485934,FIC,,,1.161413175,4.785815599,163.0494505,3,4,4,,,,false,false,false
 200005,202004,100,6,3242.978608,FIC,,,0.276010255,1,42.68681319,4,0,4,,,,false,true,false
 200006,202001,100,41,5222.283092,BI,,,1,0.597514698,71.63436123,0,4,4,,,,true,false,false
