@@ -132,13 +132,28 @@ def mean_of_ratios(
                         ),
                         expr(
                             """
-                            sum(cast(not link_inclusion_previous AS integer))
+                            sum(
+                                cast(
+                                    not (
+                                        link_inclusion_previous
+                                        AND link_inclusion_current
+                                    )
+                                AS integer)
+                            )
                             AS count_exclusion_forward
                             """
                         ),
                         expr(
                             """
-                            sum(cast(not link_inclusion_next AS integer))
+                            sum(
+                                cast(
+                                    not (
+                                        link_inclusion_next
+                                        AND link_exclusion_current
+                                    )
+                                    AS integer
+                                )
+                            )
                             AS count_exclusion_backward
                             """
                         ),
