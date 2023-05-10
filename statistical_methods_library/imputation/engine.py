@@ -140,7 +140,7 @@ def impute(
         input_df,
         input_params,
         type_mapping,
-        ["ref", "period"],
+        ["ref", "period", "grouping"],
         ["target", "forward", "backward", "construction"],
     )
 
