@@ -74,21 +74,23 @@ def mean_of_ratios(
         "link_inclusion_next",
         "link_inclusion_current",
         """CASE
-                WHEN link_inclusion_previous THEN CASE
-                    WHEN previous_output = 0 OR
-                    (current_output = 0 AND previous_output IS NOT NULL)
-                    THEN 1
-                    ELSE current_output/previous_output
+                WHEN link_inclusion_current THEN CASE
+                    WHEN link_inclusion_previous AND link_inclusion_previous IS NOT NULL
+                    THEN CASE
+                        WHEN previous_output = 0 OR current_output = 0
+                        THEN 1
+                        ELSE current_output/previous_output
+                    END
                 END
             END AS growth_forward""",
         """CASE
-                WHEN link_inclusion_next
-                THEN CASE
-                    WHEN
-                        next_output = 0
-                        OR (current_output = 0 AND next_output IS NOT NULL)
-                    THEN 1
-                    ELSE current_output/next_output
+                WHEN link_inclusion_current THEN CASE
+                    WHEN link_inclusion_next AND link_inclusion_next IS NOT NULL
+                    THEN CASE
+                        WHEN next_output = 0 OR current_output = 0
+                        THEN 1
+                        ELSE current_output/next_output
+                    END
                 END
             END AS growth_backward""",
     )
@@ -125,7 +127,7 @@ def mean_of_ratios(
                             sum(
                                 cast(
                                     not (
-                                        link_inclusion_previous
+                                        (link_inclusion_previous OR link_inclusion_previous IS NULL)
                                         AND link_inclusion_current
                                     )
                                 AS integer)
@@ -138,8 +140,8 @@ def mean_of_ratios(
                             sum(
                                 cast(
                                     not (
-                                        link_inclusion_next
-                                        AND link_exclusion_current
+                                        (link_inclusion_next OR link_inclusion_next IS NULL)
+                                        AND link_inclusion_current
                                     )
                                     AS integer
                                 )
