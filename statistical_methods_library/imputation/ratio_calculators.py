@@ -61,20 +61,9 @@ def mean_of_ratios(
             col("next.match") & (lit(include_zeros) | (col("next.output") != lit(0))),
             col("next.output"),
         ).alias("next_output"),
-        expr(
-            """CASE
-                   WHEN previous.match IS NULL THEN NULL
-                   ELSE previous.match
-                END
-            AS link_inclusion_previous"""
-        ),
-        expr(
-            """CASE
-                   WHEN next.match IS NULL THEN NULL
-                   ELSE next.match
-                END
-            AS link_inclusion_next"""
-        ),
+        expr("previous.match AS link_inclusion_previous"),
+        expr("current.match AS link_inclusion_current"),
+        expr("next.match AS link_inclusion_next"),
     ).selectExpr(
         "period",
         "grouping",
@@ -83,6 +72,7 @@ def mean_of_ratios(
         "current_output",
         "link_inclusion_previous",
         "link_inclusion_next",
+        "link_inclusion_current",
         """CASE
                 WHEN link_inclusion_previous THEN CASE
                     WHEN previous_output = 0 OR
