@@ -62,12 +62,17 @@ def mean_of_ratios(
             col("next.output"),
         ).alias("next_output"),
         expr(
-            """
-            previous.match IS NOT NULL AND previous.match AND current.match
+            """CASE
+                   WHEN previous.match IS NULL THEN NULL
+                   ELSE previous.match
+                END
             AS link_inclusion_forward"""
         ),
         expr(
-            """next.match IS NOT NULL AND next.match AND current.match
+            """CASE
+                   WHEN next.match IS NULL THEN NULL
+                   ELSE next.match
+                END
             AS link_inclusion_backward"""
         ),
     ).selectExpr(
@@ -213,8 +218,8 @@ def mean_of_ratios(
         )
 
     else:
-        df = df.withColumn("trim_inclusion_forward", lit(False)).withColumn(
-            "trim_inclusion_backward", lit(False)
+        df = df.withColumn("trim_inclusion_forward", lit(True)).withColumn(
+            "trim_inclusion_backward", lit(True)
         )
 
     ratio_df = (
@@ -241,8 +246,8 @@ def mean_of_ratios(
             )) AS count_backward"""
             ),
         )
-        .withColumn("default_forward", expr("forward IS NOT NULL"))
-        .withColumn("default_backward", expr("backward IS NOT NULL"))
+        .withColumn("default_forward", expr("forward IS NULL"))
+        .withColumn("default_backward", expr("backward IS NULL"))
     )
 
     growth_select_cols = [
