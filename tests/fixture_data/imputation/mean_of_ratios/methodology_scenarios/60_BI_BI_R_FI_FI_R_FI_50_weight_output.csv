@@ -1,4 +1,4 @@
-identifier,date,group,other,growth_forward,growth_backward,unweighted_forward,unweighted_backward,unweighted_construction,forward,backward,construction,output,marker,count_forward,count_backward,count_construction,link_inclusion_marker,link_inclusion_next,link_inclusion_previous,default_forward,default_backward,default_construction
+identifier,date,group,other,growth_forward,growth_backward,unweighted_forward,unweighted_backward,unweighted_construction,forward,backward,construction,output,marker,count_forward,count_backward,count_construction,link_inclusion_current,link_inclusion_next,link_inclusion_previous,default_forward,default_backward,default_construction
 70001,202001,100,39,,3.280595369,1,47.92201545,107.48,1,24.71653259,104.5951588,5951,R,0,3,3,1,1,1,1,0,0
 70001,202002,100,39,0.304822719,2.471389646,0.521730457,1.30250443,54.70285714,0.521730457,1.30250443,54.70285714,1814,R,3,3,3,1,1,1,0,0,0
 70001,202003,100,39,0.40463065,7.645833333,37.59760599,2.994350985,98.26519337,19.34023514,1.497175493,84.26327851,734,R,3,3,4,1,1,1,0,0,0

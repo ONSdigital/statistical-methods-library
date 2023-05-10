@@ -1,4 +1,4 @@
-identifier,date,group,other,output,marker,growth_forward,growth_backward,forward,backward,construction,count_forward,count_backward,count_construction,link_inclusion_marker,link_inclusion_previous,link_inclusion_next,default_forward,default_backward,default_construction
+identifier,date,group,other,output,marker,growth_forward,growth_backward,forward,backward,construction,count_forward,count_backward,count_construction,link_inclusion_current,link_inclusion_previous,link_inclusion_next,default_forward,default_backward,default_construction
 80001,202001,100,91,4042,R,,1.440998217,1,1.856581839,69.14982578,0,4,4,true,,true,true,false,false
 80001,202002,100,91,2805,R,0.693963384,4.355590062,0.714685042,1.479985125,42.00696864,4,4,4,true,true,true,false,false,false
 80001,202003,100,91,644,R,0.229590018,,1.59233398,1,71.90940767,4,0,4,true,true,,false,true,false

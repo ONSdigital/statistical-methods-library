@@ -59,7 +59,7 @@ def impute(
     default_construction_col: Optional[str] = "default_construction",
     default_forward_col: Optional[str] = "default_forward",
     default_backward_col: Optional[str] = "default_backward",
-    link_inclusion_marker_col: Optional[str] = "link_inclusion_marker",
+    link_inclusion_current_col: Optional[str] = "link_inclusion_current",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
@@ -342,11 +342,11 @@ def impute(
             df = df.fillna(fill_value, fill_column)
 
         df = df.join(
-            filtered_df.select("ref", "period", expr("match AS link_inclusion_marker")),
+            filtered_df.select("ref", "period", expr("match AS link_inclusion_current")),
             ["ref", "period"],
             "left",
         )
-        output_col_mapping["link_inclusion_marker"] = link_inclusion_marker_col
+        output_col_mapping["link_inclusion_current"] = link_inclusion_current_col
         if weight is not None:
 
             def calculate_weighted_link(link_name):
