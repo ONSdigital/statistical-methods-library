@@ -127,7 +127,8 @@ def mean_of_ratios(
                             sum(
                                 cast(
                                     not (
-                                        (link_inclusion_previous OR link_inclusion_previous IS NULL)
+                                        (link_inclusion_previous OR
+                                        link_inclusion_previous IS NULL)
                                         AND link_inclusion_current
                                     )
                                 AS integer)
@@ -140,7 +141,8 @@ def mean_of_ratios(
                             sum(
                                 cast(
                                     not (
-                                        (link_inclusion_next OR link_inclusion_next IS NULL)
+                                        (link_inclusion_next OR
+                                        link_inclusion_next IS NULL)
                                         AND link_inclusion_current
                                     )
                                     AS integer
@@ -200,26 +202,30 @@ def mean_of_ratios(
             )
             .withColumn(
                 "trim_inclusion_forward",
-                (when(col("growth_forward").isNull(), None).otherwise(
-                    col("num_forward").between(
-                        col("lower_forward"), col("upper_forward")
+                (
+                    when(col("growth_forward").isNull(), None).otherwise(
+                        col("num_forward").between(
+                            col("lower_forward"), col("upper_forward")
+                        )
+                        | (
+                            (trim_threshold - col("count_exclusion_forward"))
+                            >= col("count_forward")
+                        )
                     )
-                    | (
-                        (trim_threshold - col("count_exclusion_forward"))
-                        >= col("count_forward")
-                    ))
                 ),
             )
             .withColumn(
                 "trim_inclusion_backward",
-                (when(col("growth_backward").isNull(), None).otherwise(
-                    col("num_backward").between(
-                        col("lower_backward"), col("upper_backward")
+                (
+                    when(col("growth_backward").isNull(), None).otherwise(
+                        col("num_backward").between(
+                            col("lower_backward"), col("upper_backward")
+                        )
+                        | (
+                            (trim_threshold - col("count_exclusion_backward"))
+                            >= col("count_backward")
+                        )
                     )
-                    | (
-                        (trim_threshold - col("count_exclusion_backward"))
-                        >= col("count_backward")
-                    ))
                 ),
             )
         )
