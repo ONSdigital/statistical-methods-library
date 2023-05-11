@@ -375,11 +375,11 @@ def impute(
                 curr_df.join(
                     prev_df,
                     (
-                        col("curr.ref")
-                        == col("prev.ref") & col("prev.period")
+                        (col("curr.ref")
+                        == col("prev.ref")) & (col("prev.period")
                         == calculate_previous_period(
                             col("curr.period"), weight_periodicity
-                        )
+                        ))
                     ),
                 )
                 .select(
