@@ -150,7 +150,10 @@ def impute(
 
     if back_data_df:
         prepared_back_data_df = validation.validate_dataframe(
-            back_data_df, back_expected_columns, type_mapping, ["ref", "period"]
+            back_data_df,
+            back_expected_columns,
+            type_mapping,
+            ["ref", "period", "grouping"],
         )
         input_df = input_df.unionByName(back_data_df, allowMissingColumns=True)
 
@@ -342,7 +345,9 @@ def impute(
             df = df.fillna(fill_value, fill_column)
 
         df = df.join(
-            filtered_df.select("ref", "period", expr("match AS link_inclusion_current")),
+            filtered_df.select(
+                "ref", "period", expr("match AS link_inclusion_current")
+            ),
             ["ref", "period"],
             "left",
         )
