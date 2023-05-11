@@ -200,26 +200,26 @@ def mean_of_ratios(
             )
             .withColumn(
                 "trim_inclusion_forward",
-                (
+                (when(col("growth_forward").isNull(), None).otherwise(
                     col("num_forward").between(
                         col("lower_forward"), col("upper_forward")
                     )
                     | (
                         (trim_threshold - col("count_exclusion_forward"))
-                        < col("count_forward")
-                    )
+                        >= col("count_forward")
+                    ))
                 ),
             )
             .withColumn(
                 "trim_inclusion_backward",
-                (
+                (when(col("growth_backward").isNull(), None).otherwise(
                     col("num_backward").between(
                         col("lower_backward"), col("upper_backward")
                     )
                     | (
                         (trim_threshold - col("count_exclusion_backward"))
-                        < col("count_backward")
-                    )
+                        >= col("count_backward")
+                    ))
                 ),
             )
         )
