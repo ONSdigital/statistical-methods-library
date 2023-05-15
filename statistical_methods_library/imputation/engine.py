@@ -64,7 +64,7 @@ def impute(
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
     weight: Optional[Number] = None,
-    weight_periodicity: Optional[int] = None,
+    weight_periodicity_multiplier: Optional[int] = None,
     **ratio_calculator_params,
 ) -> DataFrame:
     # --- Validate params ---
@@ -77,6 +77,7 @@ def impute(
 
     if weight is not None:
         weight = lit(Decimal(weight))
+        weight_periodicity = weight_periodicity_multiplier * periodicity
 
     input_params = {
         "ref": reference_col,
@@ -103,9 +104,6 @@ def impute(
         "period": period_col,
         "grouping": grouping_col,
         "target": target_col,
-        "unweighted_forward": "unweighted_forward",
-        "unweighted_backward": "unweighted_backward",
-        "unweighted_construction": "unweighted_construction",
     }
 
     if forward_link_col in input_df.columns or backward_link_col in input_df.columns:
@@ -208,8 +206,8 @@ def impute(
             df.withColumn("output", col("target"))
             .drop("target")
             .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
-            .withColumn("previous_period", calculate_previous_period(col("period")))
-            .withColumn("next_period", calculate_next_period(col("period")))
+            .withColumn("previous_period", calculate_previous_period(col("period"), periodicity))
+            .withColumn("next_period", calculate_next_period(col("period"), periodicity))
         )
 
         nonlocal prior_period_df
@@ -225,8 +223,8 @@ def impute(
                 )
                 .drop("prior_period")
                 .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
-                .withColumn("previous_period", calculate_previous_period(col("period")))
-                .withColumn("next_period", calculate_next_period(col("period")))
+                .withColumn("previous_period", calculate_previous_period(col("period"), periodicity))
+                .withColumn("next_period", calculate_next_period(col("period"), periodicity))
             )
 
         else:
@@ -356,6 +354,11 @@ def impute(
         )
         output_col_mapping["link_inclusion_current"] = link_inclusion_current_col
         if weight is not None:
+            output_col_mapping.update({
+                "unweighted_forward": "unweighted_forward",
+                "unweighted_backward": "unweighted_backward",
+                "unweighted_construction": "unweighted_construction",
+            })
 
             def calculate_weighted_link(link_name):
                 prev_link = col(f"prev.{link_name}")
@@ -382,7 +385,8 @@ def impute(
                         & (
                             col("prev.period")
                             == calculate_previous_period(
-                                col("curr.period"), True
+                                col("curr.period"),
+                                weight_periodicity
                             )
                         )
                     ), "left"
@@ -591,28 +595,24 @@ def impute(
             ]
         )
 
-    def calculate_previous_period(period: Column, weighted: Optional[bool] = False) -> Column:
+    def calculate_previous_period(period: Column, relative: int):
         period = period.cast("integer")
-        if weighted:
-            total_periodicity = periodicity * weight_periodicity
-        else:
-            total_periodicity = periodicity
         return (
             period
-            - total_periodicity
+            - relative
             - 88
-            * (total_periodicity // 12 + (period % 100 <= total_periodicity % 12).cast("integer"))
+            * (relative // 12 + (period % 100 <= relative % 12).cast("integer"))
         ).cast("string")
 
-    def calculate_next_period(period: Column) -> Column:
+    def calculate_next_period(period: Column, relative: int) -> Column:
         period = period.cast("integer")
         return (
             period
-            + periodicity
+            + relative
             + 88
             * (
-                periodicity // 12
-                + ((period % 100) + (periodicity % 12) > 12).cast("integer")
+                relative // 12
+                + ((period % 100) + (relative % 12) > 12).cast("integer")
             )
         ).cast("string")
 
