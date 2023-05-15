@@ -358,7 +358,7 @@ def impute(
             df = df.fillna(fill_value, fill_column)
         if link_filter:
             df = df.join(
-                filtered_df.select(
+                working_df.select(
                     "ref", "period", "grouping", "link_inclusion_previous", "link_inclusion_current", "link_inclusion_next"
                 ),
                 ["ref", "period", "grouping"],
