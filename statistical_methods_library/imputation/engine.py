@@ -330,11 +330,11 @@ def impute(
                 col("current.period").alias("period"),
                 col("current.aux").alias("aux"),
                 col("current.output"),
-                col("current.match"),
+                col("current.match").alias("link_inclusion_current"),
                 col("next.output"),
-                col("next.match"),
+                col("next.match").alias("link_inclusion_next"),
                 col("previous.output"),
-                col("previous.match"),
+                col("previous.match").alias("link_inclusion_previous"),
             )
         )
 
@@ -354,15 +354,20 @@ def impute(
 
         for fill_column, fill_value in fill_values.items():
             df = df.fillna(fill_value, fill_column)
+        if link_filter:
+            df = df.join(
+                filtered_df.select(
+                    "ref", "period", "grouping", "link_inclusion_previous", "link_inclusion_current", "link_inclusion_next"
+                ),
+                ["ref", "period", "grouping"],
+                "left",
+            )
+            output_col_mapping.update({
+                "link_inclusion_current": link_inclusion_current_col,
+                "link_inclusion_previous": link_inclusion_previous_col,
+                "link_inclusion_next": link_inclusion_next_col,
+            })
 
-        df = df.join(
-            filtered_df.select(
-                "ref", "period", "grouping", expr("match AS link_inclusion_current")
-            ),
-            ["ref", "period", "grouping"],
-            "left",
-        )
-        output_col_mapping["link_inclusion_current"] = link_inclusion_current_col
         if weight is not None:
             output_col_mapping.update(
                 {
