@@ -33,6 +33,9 @@ link_inclusion_previous_col = "link_inclusion_previous"
 link_inclusion_next_col = "link_inclusion_next"
 trimmed_forward_col = "trim_inclusion_forward"
 trimmed_backward_col = "trim_inclusion_backward"
+un_construction_col = "unweighted_construction"
+un_backward_col = "unweighted_backward"
+un_forward_col = "unweighted_forward"
 
 decimal_type = DecimalType(15, 6)
 
@@ -59,6 +62,9 @@ link_inclusion_previous_type = BooleanType()
 link_inclusion_next_type = BooleanType()
 trimmed_forward_type = BooleanType()
 trimmed_backward_type = BooleanType()
+un_construction_type = decimal_type
+un_backward_type = decimal_type
+un_forward_type = decimal_type
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -86,6 +92,9 @@ dataframe_columns = (
     default_backward_col,
     default_construction_col,
     link_inclusion_current_col,
+    un_construction_col,
+    un_backward_col,
+    un_forward_col,
 )
 
 dataframe_types = {
@@ -112,6 +121,9 @@ dataframe_types = {
     link_inclusion_next_col: link_inclusion_next_type,
     trimmed_forward_col: trimmed_forward_type,
     trimmed_backward_col: trimmed_backward_type,
+    un_construction_col: un_construction_type,
+    un_backward_col: un_backward_type,
+    un_forward_col: un_forward_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()

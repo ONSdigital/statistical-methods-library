@@ -103,6 +103,9 @@ def impute(
         "period": period_col,
         "grouping": grouping_col,
         "target": target_col,
+        "unweighted_forward": "unweighted_forward",
+        "unweighted_backward": "unweighted_backward",
+        "unweighted_construction": "unweighted_construction",
     }
 
     if forward_link_col in input_df.columns or backward_link_col in input_df.columns:
@@ -362,7 +365,7 @@ def impute(
                         prev_link.isNotNull(),
                         weight * curr_link + (lit(Decimal(1)) - weight) * prev_link,
                     )
-                    .otherwise(prev_link)
+                    .otherwise(curr_link)
                     .alias(link_name)
                 )
 
@@ -379,10 +382,10 @@ def impute(
                         & (
                             col("prev.period")
                             == calculate_previous_period(
-                                col("curr.period"), weight_periodicity
+                                col("curr.period"), True
                             )
                         )
-                    ),
+                    ), "left"
                 )
                 .select(
                     expr("curr.period AS period"),
@@ -391,7 +394,10 @@ def impute(
                     calculate_weighted_link("backward"),
                     calculate_weighted_link("construction"),
                 )
-                .join(df.drop("forward", "backward", "construction"), ["period", "ref"])
+                .join(
+                df.withColumnRenamed("forward", "unweighted_forward")
+                .withColumnRenamed("backward", "unweighted_backward")
+                .withColumnRenamed("construction", "unweighted_construction"), ["period", "ref"])
             )
 
         return df
@@ -585,13 +591,17 @@ def impute(
             ]
         )
 
-    def calculate_previous_period(period: Column) -> Column:
+    def calculate_previous_period(period: Column, weighted: Optional[bool] = False) -> Column:
         period = period.cast("integer")
+        if weighted:
+            total_periodicity = periodicity * weight_periodicity
+        else:
+            total_periodicity = periodicity
         return (
             period
-            - periodicity
+            - total_periodicity
             - 88
-            * (periodicity // 12 + (period % 100 <= periodicity % 12).cast("integer"))
+            * (total_periodicity // 12 + (period % 100 <= total_periodicity % 12).cast("integer"))
         ).cast("string")
 
     def calculate_next_period(period: Column) -> Column:
