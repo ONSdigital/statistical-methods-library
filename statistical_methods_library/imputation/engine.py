@@ -465,7 +465,7 @@ def impute(
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
-                .join(ref_df, ("ref", "grouping"))
+                .join(ref_df, ["ref", "grouping"])
                 .localCheckpoint(eager=True)
             )
 
