@@ -20,3 +20,6 @@ link_filter = "question < 100000"
 
 [30_class_change_C_C_FI_filtered]
 link_filter = "question < 100000"
+
+[34_multi_variable_C_BI_R_filtered]
+link_filter = "identifier != '10003'"
