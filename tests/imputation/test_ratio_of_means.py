@@ -103,6 +103,7 @@ params = {
     "output_col": output_col,
     "marker_col": marker_col,
     "ratio_calculator": ratio_of_means,
+    "starting_period": "202001",
 }
 
 test_scenarios = []
@@ -135,6 +136,11 @@ test_scenarios += [
     test_scenarios,
 )
 def test_calculations(fxt_load_test_csv, scenario_type, scenario):
+    imputation_kwargs = params.copy()
+
+    if "back_data_" in scenario_type:
+        imputation_kwargs["starting_period"] = "202002"
+
     scenario_file_type = scenario_type.replace("back_data_", "")
     scenario_input = fxt_load_test_csv(
         dataframe_columns,
@@ -152,36 +158,28 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         scenario_file_type,
         f"{scenario}_output",
     )
-    imputation_kwargs = params.copy()
 
     with open("tests/imputation/ratio_of_means.toml", "r") as f:
         new_toml_string = toml.load(f)
     if scenario in new_toml_string.keys():
         imputation_kwargs.update(new_toml_string[scenario])
 
-    if scenario_type.startswith("back_data"):
-        min_period_df = scenario_expected_output.selectExpr("min(" + period_col + ")")
+    back_data_df = scenario_expected_output.filter(
+        col(period_col) < imputation_kwargs["starting_period"]
+    )
 
-        back_data_df = scenario_expected_output.join(
-            min_period_df, [col(period_col) == col("min(" + period_col + ")")]
-        )
+    if "filtered" in scenario:
+        back_data_df = back_data_df.withColumn(target_col, col(output_col))
 
-        if "filtered" in scenario:
-            back_data_df = back_data_df.withColumn(target_col, col(output_col))
+    imputation_kwargs["back_data_df"] = back_data_df
 
-        imputation_kwargs["back_data_df"] = back_data_df
+    scenario_input = scenario_input.filter(
+        col(period_col) >= imputation_kwargs["starting_period"]
+    )
 
-        scenario_input = scenario_input.join(
-            min_period_df,
-            [col(period_col) == col("min(" + period_col + ")")],
-            "leftanti",
-        ).drop("min(" + period_col + ")")
-
-        scenario_expected_output = scenario_expected_output.join(
-            min_period_df,
-            [col(period_col) == col("min(" + period_col + ")")],
-            "leftanti",
-        ).drop("min(" + period_col + ")")
+    scenario_expected_output = scenario_expected_output.filter(
+        col(period_col) >= imputation_kwargs["starting_period"]
+    )
 
     # We need to drop our grouping and auxiliary columns from our output now
     # we've potentially set up our back data as these must not come out of

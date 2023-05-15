@@ -1,3 +1,6 @@
+[05_R_R_FI_FI_FI_year_span]
+starting_period = "202010"
+
 [19_link_columns]
 forward_link_col = "forward"
 backward_link_col = "backward"
