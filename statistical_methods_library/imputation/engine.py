@@ -206,8 +206,12 @@ def impute(
             df.withColumn("output", col("target"))
             .drop("target")
             .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
-            .withColumn("previous_period", calculate_previous_period(col("period"), periodicity))
-            .withColumn("next_period", calculate_next_period(col("period"), periodicity))
+            .withColumn(
+                "previous_period", calculate_previous_period(col("period"), periodicity)
+            )
+            .withColumn(
+                "next_period", calculate_next_period(col("period"), periodicity)
+            )
         )
 
         nonlocal prior_period_df
@@ -223,8 +227,13 @@ def impute(
                 )
                 .drop("prior_period")
                 .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
-                .withColumn("previous_period", calculate_previous_period(col("period"), periodicity))
-                .withColumn("next_period", calculate_next_period(col("period"), periodicity))
+                .withColumn(
+                    "previous_period",
+                    calculate_previous_period(col("period"), periodicity),
+                )
+                .withColumn(
+                    "next_period", calculate_next_period(col("period"), periodicity)
+                )
             )
 
         else:
@@ -274,7 +283,7 @@ def impute(
         # won't cause us to lose grouping as they'll just be filled with
         # default ratios.
         if link_filter:
-            filtered_df = df.join(filtered_refs, ["ref", "period"])
+            filtered_df = df.join(filtered_refs, ["ref", "period", "grouping"])
         else:
             filtered_df = df.withColumn("match", lit(True))
         filtered_df = filtered_df.filter(~filtered_df.output.isNull()).select(
@@ -347,18 +356,20 @@ def impute(
 
         df = df.join(
             filtered_df.select(
-                "ref", "period", expr("match AS link_inclusion_current")
+                "ref", "period", "grouping", expr("match AS link_inclusion_current")
             ),
-            ["ref", "period"],
+            ["ref", "period", "grouping"],
             "left",
         )
         output_col_mapping["link_inclusion_current"] = link_inclusion_current_col
         if weight is not None:
-            output_col_mapping.update({
-                "unweighted_forward": "unweighted_forward",
-                "unweighted_backward": "unweighted_backward",
-                "unweighted_construction": "unweighted_construction",
-            })
+            output_col_mapping.update(
+                {
+                    "unweighted_forward": "unweighted_forward",
+                    "unweighted_backward": "unweighted_backward",
+                    "unweighted_construction": "unweighted_construction",
+                }
+            )
 
             def calculate_weighted_link(link_name):
                 prev_link = col(f"prev.{link_name}")
@@ -373,7 +384,7 @@ def impute(
                 )
 
             weighting_df = df.select(
-                "period", "ref", "forward", "backward", "construction"
+                "period", "ref", "grouping", "forward", "backward", "construction"
             )
             curr_df = weighting_df.alias("curr")
             prev_df = weighting_df.alias("prev")
@@ -385,11 +396,12 @@ def impute(
                         & (
                             col("prev.period")
                             == calculate_previous_period(
-                                col("curr.period"),
-                                weight_periodicity
+                                col("curr.period"), weight_periodicity
                             )
                         )
-                    ), "left"
+                        & (col("curr.grouping") == col("prev.grouping"))
+                    ),
+                    "left",
                 )
                 .select(
                     expr("curr.period AS period"),
@@ -399,9 +411,11 @@ def impute(
                     calculate_weighted_link("construction"),
                 )
                 .join(
-                df.withColumnRenamed("forward", "unweighted_forward")
-                .withColumnRenamed("backward", "unweighted_backward")
-                .withColumnRenamed("construction", "unweighted_construction"), ["period", "ref"])
+                    df.withColumnRenamed("forward", "unweighted_forward")
+                    .withColumnRenamed("backward", "unweighted_backward")
+                    .withColumnRenamed("construction", "unweighted_construction"),
+                    ["period", "ref"],
+                )
             )
 
         return df
@@ -445,13 +459,13 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
-            # Any refs which have no values at all can't be imputed from so we
-            # don't care about them here.
-            ref_df = imputed_df.select("ref").distinct()
+            # Any ref and grouping combos which have no values at all can't be
+            # imputed from so we don't care about them here.
+            ref_df = imputed_df.select("ref", "grouping").distinct()
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
-                .join(ref_df, "ref")
+                .join(ref_df, ("ref", "grouping"))
                 .localCheckpoint(eager=True)
             )
 
@@ -494,15 +508,17 @@ def impute(
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
-                calculation_df.select("ref", "period"), ["ref", "period"], "leftanti"
+                calculation_df.select("ref", "period", "grouping"),
+                ["ref", "period", "grouping"],
+                "leftanti",
             ).localCheckpoint(eager=True)
 
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "output", "marker"),
-            ["ref", "period"],
+            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            ["ref", "period", "grouping"],
             "leftouter",
         )
 
@@ -551,6 +567,7 @@ def impute(
         ).select(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
+            col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         )
@@ -560,7 +577,7 @@ def impute(
             .withColumnRenamed("marker", "existing_marker")
             .join(
                 construction_df,
-                ["ref", "period"],
+                ["ref", "period", "grouping"],
                 "leftouter",
             )
             .select(
@@ -600,8 +617,7 @@ def impute(
         return (
             period
             - relative
-            - 88
-            * (relative // 12 + (period % 100 <= relative % 12).cast("integer"))
+            - 88 * (relative // 12 + (period % 100 <= relative % 12).cast("integer"))
         ).cast("string")
 
     def calculate_next_period(period: Column, relative: int) -> Column:
@@ -610,10 +626,7 @@ def impute(
             period
             + relative
             + 88
-            * (
-                relative // 12
-                + ((period % 100) + (relative % 12) > 12).cast("integer")
-            )
+            * (relative // 12 + ((period % 100) + (relative % 12) > 12).cast("integer"))
         ).cast("string")
 
     def filter_back_data(filter_col: Column) -> DataFrame:
