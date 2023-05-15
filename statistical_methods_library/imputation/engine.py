@@ -162,6 +162,7 @@ def impute(
         filtered_refs = input_df.select(
             col(reference_col).alias("ref"),
             col(period_col).alias("period"),
+            col("grouping_col").alias("grouping"),
             (expr(link_filter) if isinstance(link_filter, str) else link_filter).alias(
                 "match"
             ),
