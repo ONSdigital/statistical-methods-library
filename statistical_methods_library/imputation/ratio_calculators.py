@@ -31,8 +31,6 @@ def mean_of_ratios(
     include_zeros: Optional[bool] = False,
     growth_forward_col: Optional[str] = "growth_forward",
     growth_backward_col: Optional[str] = "growth_backward",
-    link_inclusion_previous_col: Optional[str] = "link_inclusion_previous",
-    link_inclusion_next_col: Optional[str] = "link_inclusion_next",
     trim_inclusion_forward_col: Optional[str] = "trim_inclusion_forward",
     trim_inclusion_backward_col: Optional[str] = "trim_inclusion_backward",
     **_kwargs,
@@ -46,24 +44,22 @@ def mean_of_ratios(
         "period",
         "grouping",
         "ref",
-        when(col("current.match"), col("aux")).alias("aux"),
+        when(col("link_inclusion_current"), col("aux")).alias("aux"),
         when(
-            col("previous.match")
+            col("link_inclusion_previous")
             & (lit(include_zeros) | (col("previous.output") != lit(0))),
             col("previous.output"),
         ).alias("previous_output"),
         when(
-            col("current.match")
+            col("link_inclusion_current")
             & (lit(include_zeros) | (col("current.output") != lit(0))),
             col("current.output"),
         ).alias("current_output"),
         when(
-            col("next.match") & (lit(include_zeros) | (col("next.output") != lit(0))),
+            col("link_inclusion_next")
+            & (lit(include_zeros) | (col("next.output") != lit(0))),
             col("next.output"),
         ).alias("next_output"),
-        expr("previous.match AS link_inclusion_previous"),
-        expr("current.match AS link_inclusion_current"),
-        expr("next.match AS link_inclusion_next"),
     ).selectExpr(
         "period",
         "grouping",
@@ -316,7 +312,7 @@ def mean_of_ratios(
 
 def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
     df = (
-        df.filter(col("current.match"))
+        df.filter(col("link_inclusion_current"))
         .groupBy("period", "grouping")
         .agg(
             expr(
@@ -365,7 +361,7 @@ def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
     return [
         RatioCalculationResult(
             data=(
-                df.filter(col("current.match"))
+                df.filter(col("link_inclusion_current"))
                 .groupBy("period", "grouping")
                 .agg(
                     expr("sum(current.output)/sum(aux) AS construction"),

@@ -60,6 +60,8 @@ def impute(
     default_forward_col: Optional[str] = "default_forward",
     default_backward_col: Optional[str] = "default_backward",
     link_inclusion_current_col: Optional[str] = "link_inclusion_current",
+    link_inclusion_previous_col: Optional[str] = "link_inclusion_previous",
+    link_inclusion_next_col: Optional[str] = "link_inclusion_next",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
