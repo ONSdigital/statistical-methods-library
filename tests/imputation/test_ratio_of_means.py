@@ -203,7 +203,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))
     assert isinstance(scenario_actual_output, type(scenario_input))
-    sort_col_list = [reference_col, period_col]
+    sort_col_list = [reference_col, period_col, grouping_col]
     assert_df_equality(
         scenario_actual_output.sort(sort_col_list).select(select_cols),
         scenario_expected_output.sort(sort_col_list).select(select_cols),
