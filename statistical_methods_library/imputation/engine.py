@@ -169,6 +169,18 @@ def impute(
         "construction_unweighted": DecimalType,
     }
 
+    if link_filter:
+        filtered_refs = (
+            input_df.unionByName(back_data_df, allowMissingColumns=True).select(
+                col(reference_col).alias("ref"),
+                col(period_col).alias("period"),
+                col(grouping_col).alias("grouping"),
+                (
+                    expr(link_filter) if isinstance(link_filter, str) else link_filter
+                ).alias("match"),
+            )
+        ).localCheckpoint(eager=False)
+
     prepared_df = (
         validate_dataframe(
             input_df,
@@ -211,21 +223,6 @@ def impute(
             )
             .localCheckpoint(eager=False)
         )
-
-    if link_filter:
-        filtered_refs = (
-            input_df.unionByName(back_data_df, allowMissingColumns=True).select(
-                col(reference_col).alias("ref"),
-                col(period_col).alias("period"),
-                col(grouping_col).alias("grouping"),
-                (
-                    expr(link_filter) if isinstance(link_filter, str) else link_filter
-                ).alias("match"),
-            )
-        ).localCheckpoint(eager=False)
-
-    if back_data_df:
-        # Ratio calculation needs all the responses from the back data
         prepared_df = prepared_df.unionByName(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
