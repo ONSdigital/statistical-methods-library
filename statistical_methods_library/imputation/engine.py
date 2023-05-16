@@ -12,8 +12,8 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
-from statistical_methods_library.utilities import validation
-
+from statistical_methods_library.utilities.validation import validate_dataframe
+from statistical_methods_library.utilities.periods import calculate_previous_period, calculate_next_period
 from .ratio_calculators import RatioCalculator, construction
 
 # --- Marker constants ---
@@ -167,7 +167,7 @@ def impute(
     }
 
     prepared_df = (
-        validation.validate_dataframe(
+        validate_dataframe(
             input_df,
             input_params,
             type_mapping,
@@ -186,7 +186,7 @@ def impute(
     ).localCheckpoint(eager=True)
 
     if back_data_df:
-        validated_back_data_df = validation.validate_dataframe(
+        validated_back_data_df = validate_dataframe(
             back_data_df,
             back_input_params,
             type_mapping,
@@ -206,7 +206,7 @@ def impute(
             .withColumn(
                 "next_period", calculate_next_period(col("period"), periodicity)
             )
-            .localCheckpoint(eager=false)
+            .localCheckpoint(eager=False)
         )
 
     if link_filter:
@@ -221,7 +221,7 @@ def impute(
             )
         ).localCheckpoint(eager=False)
 
-    if prepared_back_data_df:
+    if back_data_df:
         # Ratio calculation needs all the responses from the back data
         prepared_df = prepared_df.unionByName(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
@@ -590,28 +590,7 @@ def impute(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
 
-    # --- Utility functions ---
 
-    def calculate_previous_period(period: Column, relative: int):
-        period = period.cast("integer")
-        return (
-            period
-            - relative
-            - 88 * (relative // 12 + (period % 100 <= relative % 12).cast("integer"))
-        ).cast("string")
-
-    def calculate_next_period(period: Column, relative: int) -> Column:
-        period = period.cast("integer")
-        return (
-            period
-            + relative
-            + 88
-            * (relative // 12 + ((period % 100) + (relative % 12) > 12).cast("integer"))
-        ).cast("string")
-
-    # ----------
-
-    stages = []
     df = prepared_df
     for stage in (
         calculate_ratios,
