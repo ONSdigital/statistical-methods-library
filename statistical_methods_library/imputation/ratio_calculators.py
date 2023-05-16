@@ -44,6 +44,9 @@ def mean_of_ratios(
         "period",
         "grouping",
         "ref",
+        "link_inclusion_previous",
+        "link_inclusion_current",
+        "link_inclusion_next",
         when(col("link_inclusion_current"), col("aux")).alias("aux"),
         "link_inclusion_previous",
         "link_inclusion_next",
@@ -262,15 +265,6 @@ def mean_of_ratios(
         .withColumn("default_backward", expr("backward IS NULL"))
     )
 
-    growth_select_cols = [
-        "ref",
-        "period",
-        "grouping",
-        "growth_forward",
-        "growth_backward",
-        "link_inclusion_previous",
-        "link_inclusion_next",
-    ]
     growth_additional_outputs = {
         "growth_forward": growth_forward_col,
         "growth_backward": growth_backward_col,
@@ -283,12 +277,10 @@ def mean_of_ratios(
                 "trim_inclusion_backward": trim_inclusion_backward_col,
             }
         )
-        growth_select_cols += [
-            "trim_inclusion_forward",
-            "trim_inclusion_backward",
-        ]
 
-    growth_df = df.select(growth_select_cols)
+    growth_df = df.select(
+        "ref", "period", "grouping", *growth_additional_outputs.keys()
+    )
 
     return [
         RatioCalculationResult(
