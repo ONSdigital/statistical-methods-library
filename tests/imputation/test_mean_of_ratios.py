@@ -217,7 +217,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     scenario_expected_output = scenario_expected_output.filter(
         col(period_col) >= imputation_kwargs["starting_period"]
     )
-
+    scenario_input.show(100)
+    back_data_df.show(100)
     # We need to drop our grouping and auxiliary columns from our output now
     # we've potentially set up our back data as these must not come out of
     # imputation.
