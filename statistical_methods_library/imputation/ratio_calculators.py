@@ -45,6 +45,9 @@ def mean_of_ratios(
         "grouping",
         "ref",
         when(col("link_inclusion_current"), col("aux")).alias("aux"),
+        "link_inclusion_previous",
+        "link_inclusion_next",
+        "link_inclusion_current",
         when(
             col("link_inclusion_previous")
             & (lit(include_zeros) | (col("previous.output") != lit(0))),
@@ -271,8 +274,6 @@ def mean_of_ratios(
     growth_additional_outputs = {
         "growth_forward": growth_forward_col,
         "growth_backward": growth_backward_col,
-        "link_inclusion_previous": link_inclusion_previous_col,
-        "link_inclusion_next": link_inclusion_next_col,
     }
 
     if lower_trim is not None:

@@ -236,16 +236,25 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
         )
     )
 
-    if "link_columns" in scenario:
-        scenario_expected_output = scenario_expected_output.drop(
-            forward_growth_col,
-            backward_growth_col,
-        )
-    else:
+    if "link_columns" not in scenario:
         scenario_actual_output = scenario_actual_output.withColumn(
             forward_growth_col, bround(col(forward_growth_col).cast(decimal_type), 6)
         ).withColumn(
             backward_growth_col, bround(col(backward_growth_col).cast(decimal_type), 6)
+        )
+
+    if "weight" in scenario:
+        scenario_actual_output = (
+            scenario_actual_output.withColumn(
+                un_forward_col, bround(col(un_forward_col).cast(decimal_type), 6)
+            )
+            .withColumn(
+                un_backward_col, bround(col(un_backward_col).cast(decimal_type), 6)
+            )
+            .withColumn(
+                un_construction_col,
+                bround(col(un_construction_col).cast(decimal_type), 6),
+            )
         )
 
     select_cols = list(set(dataframe_columns) & set(scenario_expected_output.columns))

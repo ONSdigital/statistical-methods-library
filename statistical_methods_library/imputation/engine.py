@@ -127,6 +127,13 @@ def impute(
         "output": output_col,
         "marker": marker_col,
     }
+    if weight is not None:
+        weighted_expected_columns = {
+            "forward": "unweighted_forward",
+            "backward": "unweighted_backward",
+            "construction": "unweighted_construction",
+        }
+        weighted_expected_columns.update(back_expected_columns)
 
     type_mapping = {
         "period": StringType,
@@ -168,6 +175,14 @@ def impute(
             (expr(link_filter) if isinstance(link_filter, str) else link_filter).alias(
                 "match"
             ),
+        )
+    prepared_weight_data_df = None
+    if weight is not None:
+        prepared_weight_data_df = validation.validate_dataframe(
+            back_data_df,
+            weighted_expected_columns,
+            type_mapping,
+            ["ref", "period", "grouping"],
         )
 
     # Store the value for the period prior to the start of imputation.
@@ -359,18 +374,26 @@ def impute(
         if link_filter:
             df = df.join(
                 working_df.select(
-                    "ref", "period", "grouping", "link_inclusion_previous", "link_inclusion_current", "link_inclusion_next"
+                    "ref",
+                    "period",
+                    "grouping",
+                    "link_inclusion_previous",
+                    "link_inclusion_current",
+                    "link_inclusion_next",
                 ),
                 ["ref", "period", "grouping"],
                 "left",
             )
-            output_col_mapping.update({
-                "link_inclusion_current": link_inclusion_current_col,
-                "link_inclusion_previous": link_inclusion_previous_col,
-                "link_inclusion_next": link_inclusion_next_col,
-            })
+            output_col_mapping.update(
+                {
+                    "link_inclusion_current": link_inclusion_current_col,
+                    "link_inclusion_previous": link_inclusion_previous_col,
+                    "link_inclusion_next": link_inclusion_next_col,
+                }
+            )
 
         if weight is not None:
+            nonlocal prepared_weight_data_df
             output_col_mapping.update(
                 {
                     "unweighted_forward": "unweighted_forward",
@@ -391,17 +414,19 @@ def impute(
                     .alias(link_name)
                 )
 
-            weighting_df = df.select(
-                "period", "ref", "grouping", "forward", "backward", "construction"
+            weighting_df = (
+                df.unionByName(prepared_weight_data_df, True)
+                .select("period", "grouping", "forward", "backward", "construction")
+                .distinct()
             )
+
             curr_df = weighting_df.alias("curr")
             prev_df = weighting_df.alias("prev")
             df = (
                 curr_df.join(
                     prev_df,
                     (
-                        (col("curr.ref") == col("prev.ref"))
-                        & (
+                        (
                             col("prev.period")
                             == calculate_previous_period(
                                 col("curr.period"), weight_periodicity
@@ -413,7 +438,7 @@ def impute(
                 )
                 .select(
                     expr("curr.period AS period"),
-                    expr("curr.ref AS ref"),
+                    expr("curr.grouping AS grouping"),
                     calculate_weighted_link("forward"),
                     calculate_weighted_link("backward"),
                     calculate_weighted_link("construction"),
@@ -422,7 +447,7 @@ def impute(
                     df.withColumnRenamed("forward", "unweighted_forward")
                     .withColumnRenamed("backward", "unweighted_backward")
                     .withColumnRenamed("construction", "unweighted_construction"),
-                    ["period", "ref"],
+                    ["period", "grouping"],
                 )
             )
 
