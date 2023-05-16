@@ -13,7 +13,10 @@ from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.validation import validate_dataframe
-from statistical_methods_library.utilities.periods import calculate_previous_period, calculate_next_period
+from statistical_methods_library.utilities.periods import (
+    calculate_previous_period,
+    calculate_next_period,
+)
 from .ratio_calculators import RatioCalculator, construction
 
 # --- Marker constants ---
@@ -352,6 +355,8 @@ def impute(
                 }
             )
 
+        if weight is not None:
+
             def calculate_weighted_link(link_name):
                 prev_link = col(f"prev.{link_name}")
                 curr_link = col(f"curr.{link_name}")
@@ -365,12 +370,27 @@ def impute(
                 )
 
             weighting_df = (
-                df.select("period", "grouping", "forward", "backward", "construction")
+                df.select(
+                    "period",
+                    "grouping",
+                    expr("forward AS forward_unweighted"),
+                    expr("backward AS backward_unweighted"),
+                    expr("construction AS construction_unweighted"),
+                )
+                .unionByName(
+                    validated_back_data_df.select(
+                        "period",
+                        "grouping",
+                        "forward_unweighted",
+                        "backward_unweighted",
+                        "construction_unweighted",
+                    )
+                )
                 .groupBy("period", "grouping")
                 .agg(
-                    expr("first(forward) AS forward"),
-                    expr("first(backward) AS backward"),
-                    expr("first(construction) AS construction"),
+                    expr("first(forward_unweighted) AS forward"),
+                    expr("first(backward_unweighted) AS backward"),
+                    expr("first(construction_unweighted) AS construction"),
                 )
             )
 
@@ -590,7 +610,6 @@ def impute(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
 
-
     df = prepared_df
     for stage in (
         calculate_ratios,
@@ -599,12 +618,9 @@ def impute(
         construct_values,
         forward_impute_from_construction,
     ):
-        df = stage(df)
-        if df:
-            df = df.localCheckpoint(eager=False)
-
-            if df.filter(col("output").isNull()).count() == 0:
-                break
+        df = stage(df).localCheckpoint(eager=False)
+        if df.filter(col("output").isNull()).count() == 0:
+            break
 
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
