@@ -450,7 +450,7 @@ def impute(
                     ["period", "grouping"],
                 )
             )
-
+        
         return df
 
     # Caching for both imputed and unimputed data.

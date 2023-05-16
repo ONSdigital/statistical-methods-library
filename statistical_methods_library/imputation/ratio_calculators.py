@@ -276,8 +276,7 @@ def mean_of_ratios(
         )
 
     growth_df = df.select(
-        "ref", "period", "grouping", "link_inclusion_previous", "link_inclusion_next",
-        "link_inclusion_current", *growth_additional_outputs.keys()
+        "ref", "period", "grouping", *growth_additional_outputs.keys()
     )
 
     return [
