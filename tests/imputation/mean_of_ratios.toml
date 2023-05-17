@@ -1,10 +1,64 @@
+starting_period = "202001"
+back_data_starting_period = "202002"
+
+[field_names]
+auxiliary_col = "other"
+backward_col = "backward"
+forward_col = "forward"
+marker_col = "marker"
+output_col = "output"
+period_col = "date"
+reference_col = "identifier"
+grouping_col = "group"
+target_col = "question"
+construction_col = "construction"
+count_forward_col = "count_forward"
+count_backward_col = "count_backward"
+count_construction_col = "count_construction"
+forward_growth_col = "growth_forward"
+backward_growth_col = "growth_backward"
+default_forward_col = "default_forward"
+default_backward_col = "default_backward"
+default_construction_col = "default_construction"
+link_inclusion_current_col = "link_inclusion_current"
+link_inclusion_previous_col = "link_inclusion_previous"
+link_inclusion_next_col = "link_inclusion_next"
+trimmed_forward_col = "trim_inclusion_forward"
+trimmed_backward_col = "trim_inclusion_backward"
+unweighted_construction_link_col = "unweighted_construction"
+unweighted_backward_link_col = "unweighted_backward"
+unweighted_forward_link_col = "unweighted_forward"
+
+[field_types]
+reference_col = "string"
+period_col = "string"
+grouping_col = "string"
+target_col = "decimal(15,6)"
+auxiliary_col = "decimal(15,6)"
+output_col = "decimal(15,6)"
+marker_col = "string"
+backward_col = "decimal(15,6)"
+forward_col = "decimal(15,6)"
+construction_col = "decimal(15,6)"
+count_forward_col = "long"
+count_backward_col = "long"
+count_construction_col = "long"
+forward_growth_col = "decimal(15,6)"
+backward_growth_col = "decimal(15,6)"
+default_forward_col = "boolean"
+default_backward_col = "boolean"
+default_construction_col = "boolean"
+link_inclusion_current_col = "boolean"
+link_inclusion_previous_col = "boolean"
+link_inclusion_next_col = "boolean"
+trimmed_forward_col = "boolean"
+trimmed_backward_col = "boolean"
+unweighted_construction_link_col = "decimal(15,6)"
+unweighted_backward_link_col = "decimal(15,6)"
+unweighted_forward_link_col = "decimal(15,6)"
+
 [05_R_R_FI_FI_FI_year_span]
 starting_period = "202010"
-
-[19_link_columns]
-forward_link_col = "forward"
-backward_link_col = "backward"
-construction_link_col = "construction"
 
 [26_C_FI_FI_NS_BI_BI_R_filtered]
 link_filter = "identifier != '140005'"
@@ -13,9 +67,6 @@ link_filter = "identifier != '140005'"
 link_filter = "identifier NOT IN ('150005', '150006')"
 
 [28_link_columns_filtered]
-forward_link_col = "forward"
-backward_link_col = "backward"
-construction_link_col = "construction"
 link_filter = "identifier != '190007'"
 
 [29_mixed_data_filtered]
@@ -23,10 +74,6 @@ link_filter = "identifier NOT IN ('200013', '200014')"
 
 [30_class_change_C_C_FI_filtered]
 link_filter = "identifier NOT IN ('230006', '230008')"
-
-[33_partial_link_columns]
-forward_link_col = "forward"
-backward_link_col = "backward"
 
 [35_TB_10_R_R_FI]
 lower_trim = 10
@@ -98,6 +145,8 @@ trim_threshold = 10
 [48_BI_BI_R-R_R_FI_filtered_default]
 link_filter = "identifier NOT IN ('110005', '110006', '110007')"
 
+# Provide weights as strings here as they'll be converted in the test code
+# to Decimal to avoid floating point to Decimal issues
 [49_R_R_FI-BI_R_R_50_weight_previous_month]
 weight = "0.5"
 weight_periodicity_multiplier = 1
