@@ -1,11 +1,6 @@
 [05_R_R_FI_FI_FI_year_span]
 starting_period = "202010"
 
-[19_link_columns]
-forward_link_col = "forward"
-backward_link_col = "backward"
-construction_link_col = "construction"
-
 [26_C_FI_FI_NS_BI_BI_R_filtered]
 link_filter = "question < 100000"
 
@@ -14,9 +9,6 @@ link_filter = "question < 100000"
 
 [28_link_columns_filtered]
 link_filter = "question < 100000"
-forward_link_col = "forward"
-backward_link_col = "backward"
-construction_link_col = "construction"
 
 [29_mixed_data_filtered]
 link_filter = "question < 100000"
