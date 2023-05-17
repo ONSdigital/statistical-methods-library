@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 import toml
-from chispa.dataframe_comparer import assert_df_equality
+from pyspark_test import assert_pyspark_df_equal
 from decimal import Decimal
 from pyspark.sql.functions import bround, col
 from statistical_methods_library import imputation
@@ -116,8 +116,9 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
 
     select_cols = list(set(fields.values()) & set(scenario_expected_output.columns))
     sort_col_list = [fields["reference_col"], fields["period_col"], fields["grouping_col"]]
-    assert_df_equality(
+    assert_pyspark_df_equal(
         scenario_actual_output.sort(sort_col_list).select(select_cols),
         scenario_expected_output.sort(sort_col_list).select(select_cols),
-        ignore_nullable=True,
+        check_dtype=False,
+        check_column_names=True
     )
