@@ -99,72 +99,72 @@ trim_threshold = 10
 link_filter = "identifier NOT IN ('110005', '110006', '110007')"
 
 [49_R_R_FI-BI_R_R_50_weight_previous_month]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 1
 
 [50_R_R_FI_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [51_R_R_FI_80_weight]
-weight = 0.8
+weight = "0.8"
 weight_periodicity_multiplier = 12
 
 [52_BI_BI_R_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [53_C_FI_FI_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [54_R_R_FI-BI_R_R_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[55_R_R_FI_50_weight]
-weight = 0.5
+[55_R_R_FI_50_weight_default]
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[56_BI_BI_R_50_weight]
-weight = 0.5
+[56_BI_BI_R_50_weight_default]
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[57_C_FI_FI_50_weight]
-weight = 0.5
+[57_C_FI_FI_50_weight_default]
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[58_R_R_FI-BI_R_R_50_weight]
-weight = 0.5
+[58_R_R_FI-BI_R_R_50_weight_partial_default]
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [59_class_change_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [60_BI_BI_R_FI_FI_R_FI_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [61_R_R_FI-BI_R_R_50_weight_filtered]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('110009', '110009')"
 
 [62_mixed_data_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [63_TB_10_R_R_FI-BI_R_R_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [64_TB_10_C_FI_FI_50_weight]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 
 [65_TB_10_BI_BI_R_50_weight_filtered]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
 lower_trim = 50
@@ -172,7 +172,7 @@ upper_trim = 50
 trim_threshold = 10
 
 [66_TB_50_50_weight_filtered_partial_default]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('30001', '30002', '30010')"
 lower_trim = 50
@@ -180,7 +180,7 @@ upper_trim = 50
 trim_threshold = 10
 
 [67_TB_50_50_weight_filtered_full_default]
-weight = 0.5
+weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('30001', '30002', '30010')"
 lower_trim = 50
