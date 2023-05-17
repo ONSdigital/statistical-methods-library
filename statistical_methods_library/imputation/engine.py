@@ -222,196 +222,208 @@ def impute(
             allowMissingColumns=True,
         )
 
-    # --- Calculate Ratios ---
+    def calculate_ratios():
+        # This allows us to return early if we have nothing to do
+        nonlocal prepared_df
+        ratio_calculators = []
+        if "forward" in prepared_df.columns:
+            prepared_df = (
+                prepared_df.withColumn("default_forward", expr("forward IS NULL"))
+                .withColumn("default_backward", expr("backward IS NULL"))
+                .fillna(1.0, ["forward", "backward"])
+                .withColumn("count_forward", lit(0).cast("long"))
+                .withColumn("count_backward", lit(0).cast("long"))
+            )
 
-    ratio_calculators = []
-    if "forward" in prepared_df.columns:
-        prepared_df = (
-            prepared_df.withColumn("default_forward", expr("forward IS NULL"))
-            .withColumn("default_backward", expr("backward IS NULL"))
-            .fillna(1.0, ["forward", "backward"])
-            .withColumn("count_forward", lit(0).cast("long"))
-            .withColumn("count_backward", lit(0).cast("long"))
-        )
+        else:
+            ratio_calculators.append(ratio_calculator)
 
-    else:
-        ratio_calculators.append(ratio_calculator)
-
-    if "construction" in prepared_df.columns:
-        prepared_df = (
-            prepared_df.withColumn("default_construction", expr("construction IS NULL"))
-            .fillna(1.0, ["construction"])
-            .withColumn("count_construction", lit(0).cast("long"))
-        )
-
-    else:
-        ratio_calculators.append(construction)
-
-    # Since we're going to join on to the main df filtering here
-    # won't cause us to lose grouping as they'll just be filled with
-    # default ratios.
-    if link_filter:
-        ratio_filter_df = prepared_df.join(filtered_refs, ["ref", "period", "grouping"])
-    else:
-        ratio_filter_df = prepared_df.withColumn("match", lit(True))
-    ratio_filter_df = ratio_filter_df.filter(~ratio_filter_df.output.isNull()).select(
-        "ref",
-        "period",
-        "grouping",
-        "output",
-        "aux",
-        "previous_period",
-        "next_period",
-        "match",
-    )
-
-    # Put the values from the current and previous periods for a
-    # contributor on the same row.
-    ratio_calculation_df = ratio_filter_df.alias("current")
-    ratio_calculation_df = (
-        ratio_calculation_df.join(
-            ratio_filter_df.select(
-                "ref", "period", "output", "grouping", "match"
-            ).alias("previous"),
-            [
-                col("current.ref") == col("previous.ref"),
-                col("current.previous_period") == col("previous.period"),
-                col("current.grouping") == col("previous.grouping"),
-            ],
-            "leftouter",
-        )
-        .join(
-            ratio_filter_df.select(
-                "ref", "period", "output", "grouping", "match"
-            ).alias("next"),
-            [
-                col("current.ref") == col("next.ref"),
-                col("current.next_period") == col("next.period"),
-                col("current.grouping") == col("next.grouping"),
-            ],
-            "leftouter",
-        )
-        .select(
-            col("current.ref").alias("ref"),
-            col("current.grouping").alias("grouping"),
-            col("current.period").alias("period"),
-            col("current.aux").alias("aux"),
-            col("current.output"),
-            col("current.match").alias("link_inclusion_current"),
-            col("next.output"),
-            col("next.match").alias("link_inclusion_next"),
-            col("previous.output"),
-            col("previous.match").alias("link_inclusion_previous"),
-        )
-    )
-
-    # Join the grouping ratios onto the input such that each contributor has
-    # a set of ratios.
-    fill_values = {}
-    for result in sum(
-        (
-            calculator(df=ratio_calculation_df, **ratio_calculator_params)
-            for calculator in ratio_calculators
-        ),
-        [],
-    ):
-        prepared_df = prepared_df.join(result.data, result.join_columns, "left")
-        fill_values.update(result.fill_values)
-        output_col_mapping.update(result.additional_outputs)
-
-    for fill_column, fill_value in fill_values.items():
-        prepared_df = prepared_df.fillna(fill_value, fill_column)
-
-    if link_filter:
-        prepared_df = prepared_df.join(
-            ratio_calculation_df.select(
-                "ref",
-                "period",
-                "grouping",
-                "link_inclusion_previous",
-                "link_inclusion_current",
-                "link_inclusion_next",
-            ),
-            ["ref", "period", "grouping"],
-            "left",
-        )
-        output_col_mapping.update(
-            {
-                "link_inclusion_current": link_inclusion_current_col,
-                "link_inclusion_previous": link_inclusion_previous_col,
-                "link_inclusion_next": link_inclusion_next_col,
-            }
-        )
-
-    if weight is not None:
-
-        def calculate_weighted_link(link_name):
-            prev_link = col(f"prev.{link_name}")
-            curr_link = col(f"curr.{link_name}")
-            return (
-                when(
-                    prev_link.isNotNull(),
-                    weight * curr_link + (lit(Decimal(1)) - weight) * prev_link,
+        if "construction" in prepared_df.columns:
+            prepared_df = (
+                prepared_df.withColumn(
+                    "default_construction", expr("construction IS NULL")
                 )
-                .otherwise(curr_link)
-                .alias(link_name)
+                .fillna(1.0, ["construction"])
+                .withColumn("count_construction", lit(0).cast("long"))
             )
 
-        weighting_df = (
-            prepared_df.select(
-                "period",
-                "grouping",
-                expr("forward AS forward_unweighted"),
-                expr("backward AS backward_unweighted"),
-                expr("construction AS construction_unweighted"),
+        else:
+            ratio_calculators.append(construction)
+
+        if not ratio_calculators:
+            return
+
+        # Since we're going to join on to the main df filtering here
+        # won't cause us to lose grouping as they'll just be filled with
+        # default ratios.
+        if link_filter:
+            ratio_filter_df = prepared_df.join(
+                filtered_refs, ["ref", "period", "grouping"]
             )
-            .unionByName(
-                validated_back_data_df.select(
-                    "period",
-                    "grouping",
-                    "forward_unweighted",
-                    "backward_unweighted",
-                    "construction_unweighted",
-                )
-            )
-            .groupBy("period", "grouping")
-            .agg(
-                expr("first(forward_unweighted) AS forward"),
-                expr("first(backward_unweighted) AS backward"),
-                expr("first(construction_unweighted) AS construction"),
-            )
+        else:
+            ratio_filter_df = prepared_df.withColumn("match", lit(True))
+        ratio_filter_df = ratio_filter_df.filter(
+            ~ratio_filter_df.output.isNull()
+        ).select(
+            "ref",
+            "period",
+            "grouping",
+            "output",
+            "aux",
+            "previous_period",
+            "next_period",
+            "match",
         )
 
-        curr_df = weighting_df.alias("curr")
-        prev_df = weighting_df.alias("prev")
-        prepared_df = (
-            curr_df.join(
-                prev_df,
-                (
-                    (
-                        col("prev.period")
-                        == calculate_previous_period(
-                            col("curr.period"), weight_periodicity
-                        )
-                    )
-                    & (col("curr.grouping") == col("prev.grouping"))
-                ),
-                "left",
-            )
-            .select(
-                expr("curr.period AS period"),
-                expr("curr.grouping AS grouping"),
-                calculate_weighted_link("forward"),
-                calculate_weighted_link("backward"),
-                calculate_weighted_link("construction"),
+        # Put the values from the current and previous periods for a
+        # contributor on the same row.
+        ratio_calculation_df = ratio_filter_df.alias("current")
+        ratio_calculation_df = (
+            ratio_calculation_df.join(
+                ratio_filter_df.select(
+                    "ref", "period", "output", "grouping", "match"
+                ).alias("previous"),
+                [
+                    col("current.ref") == col("previous.ref"),
+                    col("current.previous_period") == col("previous.period"),
+                    col("current.grouping") == col("previous.grouping"),
+                ],
+                "leftouter",
             )
             .join(
-                prepared_df.withColumnRenamed("forward", "forward_unweighted")
-                .withColumnRenamed("backward", "backward_unweighted")
-                .withColumnRenamed("construction", "construction_unweighted"),
-                ["period", "grouping"],
+                ratio_filter_df.select(
+                    "ref", "period", "output", "grouping", "match"
+                ).alias("next"),
+                [
+                    col("current.ref") == col("next.ref"),
+                    col("current.next_period") == col("next.period"),
+                    col("current.grouping") == col("next.grouping"),
+                ],
+                "leftouter",
+            )
+            .select(
+                col("current.ref").alias("ref"),
+                col("current.grouping").alias("grouping"),
+                col("current.period").alias("period"),
+                col("current.aux").alias("aux"),
+                col("current.output"),
+                col("current.match").alias("link_inclusion_current"),
+                col("next.output"),
+                col("next.match").alias("link_inclusion_next"),
+                col("previous.output"),
+                col("previous.match").alias("link_inclusion_previous"),
             )
         )
+
+        # Join the grouping ratios onto the input such that each contributor has
+        # a set of ratios.
+        fill_values = {}
+        for result in sum(
+            (
+                calculator(df=ratio_calculation_df, **ratio_calculator_params)
+                for calculator in ratio_calculators
+            ),
+            [],
+        ):
+            prepared_df = prepared_df.join(result.data, result.join_columns, "left")
+            fill_values.update(result.fill_values)
+            output_col_mapping.update(result.additional_outputs)
+
+        for fill_column, fill_value in fill_values.items():
+            prepared_df = prepared_df.fillna(fill_value, fill_column)
+
+        if link_filter:
+            prepared_df = prepared_df.join(
+                ratio_calculation_df.select(
+                    "ref",
+                    "period",
+                    "grouping",
+                    "link_inclusion_previous",
+                    "link_inclusion_current",
+                    "link_inclusion_next",
+                ),
+                ["ref", "period", "grouping"],
+                "left",
+            )
+            output_col_mapping.update(
+                {
+                    "link_inclusion_current": link_inclusion_current_col,
+                    "link_inclusion_previous": link_inclusion_previous_col,
+                    "link_inclusion_next": link_inclusion_next_col,
+                }
+            )
+
+        if weight is not None:
+
+            def calculate_weighted_link(link_name):
+                prev_link = col(f"prev.{link_name}")
+                curr_link = col(f"curr.{link_name}")
+                return (
+                    when(
+                        prev_link.isNotNull(),
+                        weight * curr_link + (lit(Decimal(1)) - weight) * prev_link,
+                    )
+                    .otherwise(curr_link)
+                    .alias(link_name)
+                )
+
+            weighting_df = (
+                prepared_df.select(
+                    "period",
+                    "grouping",
+                    expr("forward AS forward_unweighted"),
+                    expr("backward AS backward_unweighted"),
+                    expr("construction AS construction_unweighted"),
+                )
+                .unionByName(
+                    validated_back_data_df.select(
+                        "period",
+                        "grouping",
+                        "forward_unweighted",
+                        "backward_unweighted",
+                        "construction_unweighted",
+                    )
+                )
+                .groupBy("period", "grouping")
+                .agg(
+                    expr("first(forward_unweighted) AS forward"),
+                    expr("first(backward_unweighted) AS backward"),
+                    expr("first(construction_unweighted) AS construction"),
+                )
+            )
+
+            curr_df = weighting_df.alias("curr")
+            prev_df = weighting_df.alias("prev")
+            prepared_df = (
+                curr_df.join(
+                    prev_df,
+                    (
+                        (
+                            col("prev.period")
+                            == calculate_previous_period(
+                                col("curr.period"), weight_periodicity
+                            )
+                        )
+                        & (col("curr.grouping") == col("prev.grouping"))
+                    ),
+                    "left",
+                )
+                .select(
+                    expr("curr.period AS period"),
+                    expr("curr.grouping AS grouping"),
+                    calculate_weighted_link("forward"),
+                    calculate_weighted_link("backward"),
+                    calculate_weighted_link("construction"),
+                )
+                .join(
+                    prepared_df.withColumnRenamed("forward", "forward_unweighted")
+                    .withColumnRenamed("backward", "backward_unweighted")
+                    .withColumnRenamed("construction", "construction_unweighted"),
+                    ["period", "grouping"],
+                )
+            )
+
+    calculate_ratios()
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
