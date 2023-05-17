@@ -106,43 +106,43 @@ weight_periodicity_multiplier = 1
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[51]
+[51_R_R_FI_80_weight]
 weight = 0.8
 weight_periodicity_multiplier = 12
 
-[52]
+[52_BI_BI_R_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[53]
+[53_C_FI_FI_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[54]
+[54_R_R_FI-BI_R_R_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[55]
+[55_R_R_FI_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[56]
+[56_BI_BI_R_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[57]
+[57_C_FI_FI_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[58]
+[58_R_R_FI-BI_R_R_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[59]
+[59_class_change_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[60]
+[60_BI_BI_R_FI_FI_R_FI_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
@@ -155,11 +155,11 @@ link_filter = "identifier NOT IN ('110009', '110009')"
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[63]
+[63_TB_10_R_R_FI-BI_R_R_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
-[64]
+[64_TB_10_C_FI_FI_50_weight]
 weight = 0.5
 weight_periodicity_multiplier = 12
 
