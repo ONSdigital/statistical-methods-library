@@ -171,22 +171,6 @@ weight_periodicity_multiplier = 12
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[55_R_R_FI_50_weight_default]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-
-[56_BI_BI_R_50_weight_default]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-
-[57_C_FI_FI_50_weight_default]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-
-[58_R_R_FI-BI_R_R_50_weight_partial_default]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-
 [59_class_change_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
@@ -198,7 +182,7 @@ weight_periodicity_multiplier = 12
 [61_R_R_FI-BI_R_R_50_weight_filtered]
 weight = "0.5"
 weight_periodicity_multiplier = 12
-link_filter = "identifier NOT IN ('110009', '110009')"
+link_filter = "identifier NOT IN ('110009', '110011')"
 
 [62_mixed_data_50_weight]
 weight = "0.5"
@@ -207,10 +191,16 @@ weight_periodicity_multiplier = 12
 [63_TB_10_R_R_FI-BI_R_R_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
 
 [64_TB_10_C_FI_FI_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
 
 [65_TB_10_BI_BI_R_50_weight_filtered]
 weight = "0.5"
