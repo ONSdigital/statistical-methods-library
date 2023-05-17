@@ -1,149 +1,161 @@
-[05_R_R_FI_FI_FI_year_span]
+[field_names]
+forward_growth_col = "growth_forward"
+backward_growth_col = "growth_backward"
+trimmed_forward_col = "trim_inclusion_forward"
+trimmed_backward_col = "trim_inclusion_backward"
+
+[field_types]
+forward_growth_col = "decimal(15,6)"
+backward_growth_col = "decimal(15,6)"
+trimmed_forward_col = "boolean"
+trimmed_backward_col = "boolean"
+
+[scenarios.05_R_R_FI_FI_FI_year_span]
 starting_period = "202010"
 
-[26_C_FI_FI_NS_BI_BI_R_filtered]
+[scenarios.26_C_FI_FI_NS_BI_BI_R_filtered]
 link_filter = "identifier != '140005'"
 
-[27_BI_BI_R_NS_R_FI_FI_filtered]
+[scenarios.27_BI_BI_R_NS_R_FI_FI_filtered]
 link_filter = "identifier NOT IN ('150005', '150006')"
 
-[28_link_columns_filtered]
+[scenarios.28_link_columns_filtered]
 link_filter = "identifier != '190007'"
 
-[29_mixed_data_filtered]
+[scenarios.29_mixed_data_filtered]
 link_filter = "identifier NOT IN ('200013', '200014')"
 
-[30_class_change_C_C_FI_filtered]
+[scenarios.30_class_change_C_C_FI_filtered]
 link_filter = "identifier NOT IN ('230006', '230008')"
 
-[35_TB_10_R_R_FI]
+[scenarios.35_TB_10_R_R_FI]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[36_TB_10_BI_BI_R]
+[scenarios.36_TB_10_BI_BI_R]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[37_TB_10_C_FI_FI]
+[scenarios.37_TB_10_C_FI_FI]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[38_T_10_R_R_FI]
+[scenarios.38_T_10_R_R_FI]
 lower_trim = 0
 upper_trim = 10
 trim_threshold = 10
 
-[39_B_10_R_R_FI]
+[scenarios.39_B_10_R_R_FI]
 lower_trim = 10
 upper_trim = 0
 trim_threshold = 10
 
-[40_TB_10_R_R_FI_no_trim]
+[scenarios.40_TB_10_R_R_FI_no_trim]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[41_TB_10_R_R_FI_filtered]
+[scenarios.41_TB_10_R_R_FI_filtered]
 link_filter = "NOT(identifier = '30004' AND date = '202002')"
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[42_TB_10_R_R_FI-BI_R_R]
+[scenarios.42_TB_10_R_R_FI-BI_R_R]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[43_TB_10_BI_BI_R_boundary]
+[scenarios.43_TB_10_BI_BI_R_boundary]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[44_TB_5_BI_BI_R_boundary]
+[scenarios.44_TB_5_BI_BI_R_boundary]
 lower_trim = 5
 upper_trim = 5
 trim_threshold = 10
 
-[45_TB_10_R_R_FI_partial_no_trim]
+[scenarios.45_TB_10_R_R_FI_partial_no_trim]
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[46_TB_10_BI_BI_R_filtered]
+[scenarios.46_TB_10_BI_BI_R_filtered]
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[47_TB_50]
+[scenarios.47_TB_50]
 lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[48_BI_BI_R-R_R_FI_filtered_default]
+[scenarios.48_BI_BI_R-R_R_FI_filtered_default]
 link_filter = "identifier NOT IN ('110005', '110006', '110007')"
 
 # Provide weights as strings here as they'll be converted in the test code
 # to Decimal to avoid floating point to Decimal issues
-[49_R_R_FI-BI_R_R_50_weight_previous_month]
+[scenarios.49_R_R_FI-BI_R_R_50_weight_previous_month]
 weight = "0.5"
 weight_periodicity_multiplier = 1
 
-[50_R_R_FI_50_weight]
+[scenarios.50_R_R_FI_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[51_R_R_FI_80_weight]
+[scenarios.51_R_R_FI_80_weight]
 weight = "0.8"
 weight_periodicity_multiplier = 12
 
-[52_BI_BI_R_50_weight]
+[scenarios.52_BI_BI_R_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[53_C_FI_FI_50_weight]
+[scenarios.53_C_FI_FI_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[54_R_R_FI-BI_R_R_50_weight]
+[scenarios.54_R_R_FI-BI_R_R_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[59_class_change_50_weight]
+[scenarios.59_class_change_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[60_BI_BI_R_FI_FI_R_FI_50_weight]
+[scenarios.60_BI_BI_R_FI_FI_R_FI_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[61_R_R_FI-BI_R_R_50_weight_filtered]
+[scenarios.61_R_R_FI-BI_R_R_50_weight_filtered]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('110009', '110011')"
 
-[62_mixed_data_50_weight]
+[scenarios.62_mixed_data_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[63_TB_10_R_R_FI-BI_R_R_50_weight]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-lower_trim = 10
-upper_trim = 10
-trim_threshold = 10
-
-[64_TB_10_C_FI_FI_50_weight]
+[scenarios.63_TB_10_R_R_FI-BI_R_R_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[65_TB_10_BI_BI_R_50_weight_filtered]
+[scenarios.64_TB_10_C_FI_FI_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.65_TB_10_BI_BI_R_50_weight_filtered]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
@@ -151,7 +163,7 @@ lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[66_TB_50_50_weight_filtered_partial_default]
+[scenarios.66_TB_50_50_weight_filtered_partial_default]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('30001', '30002', '30010')"
@@ -159,7 +171,7 @@ lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[67_TB_50_50_weight_filtered_full_default]
+[scenarios.67_TB_50_50_weight_filtered_full_default]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "identifier NOT IN ('30001', '30002', '30010')"
@@ -167,8 +179,8 @@ lower_trim = 50
 upper_trim = 50
 trim_threshold = 10
 
-[68_BI_BI_R_NS_C_FI_FI_zeros_included]
+[scenarios.68_BI_BI_R_NS_C_FI_FI_zeros_included]
 include_zeros = true
 
-[70_BI_BI_R_FI_FI_R_FI_alternating_filtered]
+[scenarios.70_BI_BI_R_FI_FI_R_FI_alternating_filtered]
 link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"

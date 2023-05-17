@@ -12,57 +12,66 @@ from statistical_methods_library import imputation
 scenario_path_prefix = pathlib.Path(
     "tests", "fixture_data", "imputation"
 )
+ratio_calculators = ("mean_of_ratios", "ratio_of_means")
 test_scenarios = []
-for ratio_calculator in ("mean_of_ratios", "ratio_of_means"):
+for ratio_calculator in ratio_calculators:
     scenario_type = "methodology_scenarios"
     test_files = glob.glob(str(scenario_path_prefix / ratio_calculator / scenario_type / "*_input.csv"))
-    test_scenarios += sorted(
+    test_list = sorted(
         (
             (ratio_calculator, scenario_type, os.path.basename(f).replace("_input.csv", ""))
             for f in test_files
         ),
         key=lambda t: t[2],
     )
+    test_scenarios += test_list
+    test_scenarios += [
+        (ratio_calculator, f"back_data_{scenario_type}", scenario_file)
+        for ratio_calculator, scenario_type, scenario_file in test_list
+    ]
 
-test_scenarios += [
-    (ratio_calculator, f"back_data_{scenario_type}", scenario_file)
-    for ratio_calculator, scenario_type, scenario_file in test_scenarios
-]
 toml_path_prefix = pathlib.Path("tests", "imputation")
-with open(toml_path_prefix / "default.toml", "r") as f:
-    default_params = toml.load(f)
 
 @pytest.mark.parametrize(
     "ratio_calculator, scenario_type, scenario",
     test_scenarios,
 )
 def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenario):
-    test_params = default_params.copy()
-    with open(toml_path_prefix / f"{ratio_calculator}.toml", "r") as f:
-        test_params.update(toml.load(f))
+    with open(toml_path_prefix / "default.toml", "r") as f:
+        default_config = toml.load(f)
 
-    imputation_kwargs = test_params["field_names"].copy()
+    with open(toml_path_prefix / f"{ratio_calculator}.toml", "r") as f:
+        test_config = (toml.load(f))
+
+    scenarios = test_config.pop("scenarios", {})
+    scenario_config = scenarios.get(scenario, {})
+    fields = default_config["field_names"]
+    fields.update(test_config.get("field_names", {}))
+    fields.update(scenario_config.get("field_names", {}))
+    imputation_kwargs = fields.copy()
     imputation_kwargs["ratio_calculator"] = getattr(imputation, ratio_calculator)
     if "back_data_" in scenario_type:
-        starting_period = test_params["back_data_starting_period"]
+        starting_period_key = "back_data_starting_period"
     else:
-        starting_period = test_params["starting_period"]
-
-    scenario_params = test_params.get(scenario, {}).copy()
-    starting_period = scenario_params.pop("starting_period", starting_period)
-    imputation_kwargs.update(scenario_params)
-
-    fields = test_params["field_names"]
+        starting_period_key = "starting_period"
+    starting_period = scenario_config.get(starting_period_key,
+        test_config.get(starting_period_key,
+            default_config[starting_period_key]
+        )
+    )
+    field_types = default_config["field_types"]
+    field_types.update(test_config.get("field_types", {}))
+    field_types.update(scenario_config.get("field_types", {}))
     types = {
-        test_params["field_names"][k]: v
-        for k,v in test_params["field_types"].items()
+        fields[k]: v
+        for k,v in field_types.items()
     }
     scenario_file_type = scenario_type.replace("back_data_", "")
     scenario_input = fxt_load_test_csv(
         fields.values(),
         types,
         "imputation",
-        "mean_of_ratios",
+        ratio_calculator,
         scenario_file_type,
         f"{scenario}_input",
     )
@@ -70,7 +79,7 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
         fields.values(),
         types,
         "imputation",
-        "mean_of_ratios",
+        ratio_calculator,
         scenario_file_type,
         f"{scenario}_output",
     )
@@ -101,6 +110,7 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     scenario_actual_output = imputation.impute(input_df=scenario_input, **imputation_kwargs)
 
     for field_name, field_type in scenario_actual_output.dtypes:
+
         if field_type.startswith("decimal"):
             scenario_actual_output = scenario_actual_output.withColumn(field_name, bround(field_name, 6))
 
