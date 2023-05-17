@@ -523,13 +523,14 @@ def impute(
 
     # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
-        # Add the forward imputes from responses from the back data
-        df = df.unionByName(
-            back_data_period_df.filter(
-                col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
-            ),
-            allowMissingColumns=True,
-        )
+        if back_data_df:
+            # Add the forward imputes from responses from the back data
+            df = df.unionByName(
+                back_data_period_df.filter(
+                    col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
+                ),
+                allowMissingColumns=True,
+            )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
@@ -537,19 +538,21 @@ def impute(
 
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
-        # Add in the constructions and forward imputes from construction in the back data
-        df = df.unionByName(
-            back_data_period_df.filter(
-                (
-                    (col("marker") == lit(Marker.CONSTRUCTED.value))
-                    | (
-                        col("marker")
-                        == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+        if back_data_df:
+            # Add in the constructions and forward imputes from construction in the back data
+            df = df.unionByName(
+                back_data_period_df.filter(
+                    (
+                        (col("marker") == lit(Marker.CONSTRUCTED.value))
+                        | (
+                            col("marker")
+                            == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+                        )
                     )
-                )
-            ),
-            allowMissingColumns=True,
-        )
+                ),
+                allowMissingColumns=True,
+            )
+
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
