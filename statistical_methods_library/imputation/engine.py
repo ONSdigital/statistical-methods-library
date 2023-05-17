@@ -5,7 +5,6 @@ For Copyright information, please see LICENCE.
 """
 from decimal import Decimal
 from enum import Enum
-from numbers import Number
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
@@ -68,7 +67,7 @@ def impute(
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
     periodicity: Optional[int] = 1,
-    weight: Optional[Number] = None,
+    weight: Optional[Decimal] = None,
     weight_periodicity_multiplier: Optional[int] = None,
     unweighted_forward_link_col: Optional[str] = "forward_unweighted",
     unweighted_backward_link_col: Optional[str] = "backward_unweighted",
@@ -131,7 +130,10 @@ def impute(
     }
 
     if weight is not None:
-        weight = lit(Decimal(weight))
+        if not isinstance(weight, Decimal):
+            raise TypeError("weight must be of type Decimal")
+
+        weight = lit(weight)
         weight_periodicity = weight_periodicity_multiplier * periodicity
         back_input_params.update(
             {
