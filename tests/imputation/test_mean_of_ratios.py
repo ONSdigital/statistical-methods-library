@@ -33,9 +33,9 @@ link_inclusion_previous_col = "link_inclusion_previous"
 link_inclusion_next_col = "link_inclusion_next"
 trimmed_forward_col = "trim_inclusion_forward"
 trimmed_backward_col = "trim_inclusion_backward"
-un_construction_col = "unweighted_construction"
-un_backward_col = "unweighted_backward"
-un_forward_col = "unweighted_forward"
+unweighted_construction_link_col = "unweighted_construction"
+unweighted_backward_link_col = "unweighted_backward"
+unweighted_forward_link_col = "unweighted_forward"
 
 decimal_type = DecimalType(15, 6)
 
@@ -62,9 +62,9 @@ link_inclusion_previous_type = BooleanType()
 link_inclusion_next_type = BooleanType()
 trimmed_forward_type = BooleanType()
 trimmed_backward_type = BooleanType()
-un_construction_type = decimal_type
-un_backward_type = decimal_type
-un_forward_type = decimal_type
+unweighted_construction_link_type = decimal_type
+unweighted_backward_link_type = decimal_type
+unweighted_forward_link_type = decimal_type
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -92,9 +92,9 @@ dataframe_columns = (
     default_backward_col,
     default_construction_col,
     link_inclusion_current_col,
-    un_construction_col,
-    un_backward_col,
-    un_forward_col,
+    unweighted_construction_link_col,
+    unweighted_backward_link_col,
+    unweighted_forward_link_col,
 )
 
 dataframe_types = {
@@ -121,9 +121,9 @@ dataframe_types = {
     link_inclusion_next_col: link_inclusion_next_type,
     trimmed_forward_col: trimmed_forward_type,
     trimmed_backward_col: trimmed_backward_type,
-    un_construction_col: un_construction_type,
-    un_backward_col: un_backward_type,
-    un_forward_col: un_forward_type,
+    unweighted_construction_link_col: unweighted_construction_link_type,
+    unweighted_backward_link_col: unweighted_backward_link_type,
+    unweighted_forward_link_col: unweighted_forward_link_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
@@ -140,6 +140,9 @@ params = {
     "marker_col": marker_col,
     "ratio_calculator": mean_of_ratios,
     "starting_period": "202001",
+    "unweighted_construction_link_col": unweighted_construction_link_col,
+    "unweighted_backward_link_col": unweighted_backward_link_col,
+    "unweighted_forward_link_col": unweighted_forward_link_col,
 }
 
 test_scenarios = []
@@ -246,14 +249,14 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     if "weight" in scenario:
         scenario_actual_output = (
             scenario_actual_output.withColumn(
-                un_forward_col, bround(col(un_forward_col).cast(decimal_type), 6)
+                unweighted_forward_link_col, bround(col(unweighted_forward_link_col).cast(decimal_type), 6)
             )
             .withColumn(
-                un_backward_col, bround(col(un_backward_col).cast(decimal_type), 6)
+                unweighted_backward_link_col, bround(col(unweighted_backward_link_col).cast(decimal_type), 6)
             )
             .withColumn(
-                un_construction_col,
-                bround(col(un_construction_col).cast(decimal_type), 6),
+                unweighted_construction_link_col,
+                bround(col(unweighted_construction_link_col).cast(decimal_type), 6),
             )
         )
 

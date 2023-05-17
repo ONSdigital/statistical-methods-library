@@ -140,13 +140,7 @@ def impute(
                 "construction_unweighted": unweighted_construction_link_col,
             }
         )
-        input_params.update(
-            {
-                unweighted_backward_link_col: "backward_unweighted",
-                unweighted_forward_link_col: "forward_unweighted",
-                unweighted_construction_link_col: "construction_unweighted",
-            }
-        )
+
         output_col_mapping.update(
             {
                 "backward_unweighted": unweighted_backward_link_col,
@@ -412,9 +406,9 @@ def impute(
                 calculate_weighted_link("construction"),
             )
             .join(
-                prepared_df.withColumnRenamed("forward", "unweighted_forward")
-                .withColumnRenamed("backward", "unweighted_backward")
-                .withColumnRenamed("construction", "unweighted_construction"),
+                prepared_df.withColumnRenamed("forward", "forward_unweighted")
+                .withColumnRenamed("backward", "backward_unweighted")
+                .withColumnRenamed("construction", "construction_unweighted"),
                 ["period", "grouping"],
             )
         )
