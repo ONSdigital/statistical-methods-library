@@ -128,7 +128,7 @@ weight_periodicity_multiplier = 12
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
-[scenarios.60_BI_BI_R_FI_FI_R_FI_50_weight]
+[scenarios.60_BI_BI_R_FI_FI_R_FI_50_weight_default]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
