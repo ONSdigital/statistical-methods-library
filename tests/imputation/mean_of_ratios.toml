@@ -159,8 +159,8 @@ trim_threshold = 10
 weight = "0.5"
 weight_periodicity_multiplier = 12
 link_filter = "NOT(identifier = '90003' AND date = '202001')"
-lower_trim = 50
-upper_trim = 50
+lower_trim = 10
+upper_trim = 10
 trim_threshold = 10
 
 [scenarios.66_TB_50_50_weight_filtered_partial_default]
