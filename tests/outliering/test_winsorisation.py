@@ -350,8 +350,8 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
     check_df_equality(
-        ret_val.sort(sort_col_list).select(exp_val.columns),
-        exp_val.sort(sort_col_list)
+        actual=ret_val.sort(sort_col_list).select(exp_val.columns),
+        expected=exp_val.sort(sort_col_list)
     )
 
 
