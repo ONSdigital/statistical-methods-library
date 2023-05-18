@@ -16,18 +16,23 @@ def check_df_equality(df1, df2):
     if msg:
         fail('\n'.join(msg))
 
-    df1 = df1.select(sorted(df1.columns)).alias("df1").withColumn("id", monotonically_increasing_id())
-    df2 = df2.select(sorted(df2.columns)).alias("df2").withColumn("id", monotonically_increasing_id())
+    col_list = sorted(df1.columns)
+    df1 = df1.select(col_list).alias("df1").withColumn("id", monotonically_increasing_id())
+    df2 = df2.select(col_list).alias("df2").withColumn("id", monotonically_increasing_id())
     filter_list = [
         ~col(f"df1.{name}").eqNullSafe(col(f"df2.{name}"))
-        for name in df1_cols
+        for name in col_list
     ]
     diff_df = (
         df1.join(df2, ["id"], "full")
-        .filter(reduce(lambda x, y: x & y, filter_list))
+        .filter(reduce(lambda x, y: x | y, filter_list))
+        .select(
+            *(col(f"df1.{name}").alias(f"df1_{name}") for name in col_list),
+            *(col(f"df2.{name}").alias(f"df2_{name}") for name in col_list)
+        )
     )
     if diff_df.count() > 0:
         diff_str = diff_df._jdf.showString(100, 100, False)
         fail(
-            "Mismatching rows in provided data frames:\n\n{diff_str}"
+            f"Mismatching rows in provided data frames:\n\n{diff_str}"
         )
