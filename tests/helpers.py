@@ -1,5 +1,5 @@
 from pytest import fail
-from pyspark.sql.functions import col, count, monotonically_increasing_id, when
+from pyspark.sql.functions import col, count, create_map, monotonically_increasing_id, lit, when
 from functools import reduce
 def check_df_equality(df1, df2, keep_cols=None):
     if keep_cols is None:
@@ -48,17 +48,19 @@ def check_df_equality(df1, df2, keep_cols=None):
                 for c in col_list
             ]
         ).collect()[0].asDict()
-        drop_cols = [
-            k for k, v in equal_counts.items()
-            if v == diff_count and k not in keep_cols
-        ]
-        diff_df = diff_df.drop(
-            *[f"df1_{c}" for c in drop_cols],
-            *[f"df2_{c}" for c in drop_cols]
-        )
 
-        if keep_cols:
-            diff_df = diff_df.sort([f"df1_{c}" for c in keep_cols] + [f"df2_{c}" for c in keep_cols])
+        diff_df = diff_df.select(
+            [
+                create_map(
+                    lit("df1"),
+                    col(f"df1_{name}"),
+                    lit("df2"),
+                    col(f"df2_{name}")
+                ).alias(name)
+                for name in sorted(col_list)
+                if equal_counts[name] != diff_count or name in keep_cols
+            ]
+        )
 
         diff_str = diff_df._jdf.showString(100, 100, False)
         fail(
