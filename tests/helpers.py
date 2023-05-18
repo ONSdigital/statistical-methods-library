@@ -54,7 +54,7 @@ def check_df_equality(df1, df2, keep_cols=None):
         ]
         diff_df = diff_df.drop(
             *[f"df1_{c}" for c in drop_cols],
-            *[f"df_2{c}" for c in drop_cols]
+            *[f"df2_{c}" for c in drop_cols]
         )
 
         if keep_cols:
