@@ -20,7 +20,6 @@ pytest-cov = "^4.0.0"
 chispa = "*"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.3"
-pyspark-test = "^0.2.0"
 
 [tool.isort]
 profile = "black"

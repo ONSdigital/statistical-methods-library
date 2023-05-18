@@ -383,21 +383,6 @@ mllib = ["numpy (>=1.7)"]
 sql = ["pandas (>=0.23.2)", "pyarrow (>=1.0.0)"]
 
 [[package]]
-name = "pyspark-test"
-version = "0.2.0"
-description = "Check that left and right spark DataFrame are equal."
-category = "dev"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pyspark_test-0.2.0-py3-none-any.whl", hash = "sha256:dd4fb03c4f438f718a870a9268a459f2f8924829c767302f5515202707c97709"},
-    {file = "pyspark_test-0.2.0.tar.gz", hash = "sha256:0d9d8d3a352a9b1c30761b0553a5771cb9dbb9a278955b3e7b0aed0ae13892d8"},
-]
-
-[package.dependencies]
-pyspark = ">=2.1.2"
-
-[[package]]
 name = "pytest"
 version = "7.3.1"
 description = "pytest: simple powerful testing with Python"
@@ -574,4 +559,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "ce3016b4dd645255ad2399419f6c2c1f2f84da2c3e32c47e32736792729e6654"
+content-hash = "5c7609c0dfcd0bdbde607960c17975d889343d3b36a0e1057999b3d6c1c63129"
