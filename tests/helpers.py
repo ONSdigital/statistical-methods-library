@@ -1,7 +1,11 @@
 from pytest import fail
-from pyspark.sql.functions import col, monotonically_increasing_id
+from pyspark.sql.functions import col, count, monotonically_increasing_id, when
 from functools import reduce
-def check_df_equality(df1, df2):
+def check_df_equality(df1, df2, keep_cols=None):
+    if keep_cols is None:
+        keep_cols = []
+    else:
+        keep_cols = list(keep_cols)
     msg = []
     df1_cols = set(df1.columns)
     df2_cols = set(df2.columns)
@@ -31,7 +35,31 @@ def check_df_equality(df1, df2):
             *(col(f"df2.{name}").alias(f"df2_{name}") for name in col_list)
         )
     )
-    if diff_df.count() > 0:
+    diff_count = diff_df.count()
+    if diff_count > 0:
+        # Drop any columns where all values are equal as we don't need these
+        # in our output.
+        # This expression should only return 1 row so will scale.
+        equal_counts = diff_df.select(
+            [
+                count(
+                    when(col(f"df1_{c}").eqNullSafe(col(f"df2_{c}")), c)
+                ).alias(c)
+                for c in col_list
+            ]
+        ).collect()[0].asDict()
+        drop_cols = [
+            k for k, v in equal_counts.items()
+            if v == diff_count and k not in keep_cols
+        ]
+        diff_df = diff_df.drop(
+            *[f"df1_{c}" for c in drop_cols],
+            *[f"df_2{c}" for c in drop_cols]
+        )
+
+        if keep_cols:
+            diff_df = diff_df.sort([f"df1_{c}" for c in keep_cols] + [f"df2_{c}" for c in keep_cols])
+
         diff_str = diff_df._jdf.showString(100, 100, False)
         fail(
             f"Mismatching rows in provided data frames:\n\n{diff_str}"

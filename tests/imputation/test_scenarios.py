@@ -116,5 +116,6 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     sort_col_list = [fields["reference_col"], fields["period_col"], fields["grouping_col"]]
     check_df_equality(
         scenario_actual_output.sort(sort_col_list).select(select_cols),
-        scenario_expected_output.sort(sort_col_list).select(select_cols)
+        scenario_expected_output.sort(sort_col_list).select(select_cols),
+        keep_cols=sort_col_list
     )
