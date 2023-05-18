@@ -1,7 +1,7 @@
 import glob
 import os
 import pathlib
-
+from tests.helpers import check_df_equality
 import pytest
 from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
@@ -349,9 +349,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
-    assert (
-        ret_val.sort(sort_col_list).select(exp_val.columns).collect()
-        == exp_val.sort(sort_col_list).collect()
+    check_df_equality(
+        ret_val.sort(sort_col_list).select(exp_val.columns),
+        exp_val.sort(sort_col_list)
     )
 
 
