@@ -1,13 +1,14 @@
 import glob
 import os
 import pathlib
-from tests.helpers import check_df_equality
+
 import pytest
 from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.outliering import winsorisation
 from statistical_methods_library.utilities.exceptions import ValidationError
+from tests.helpers import check_df_equality
 
 reference_col = "identifier"
 period_col = "date"
@@ -351,7 +352,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     sort_col_list = [reference_col, period_col]
     check_df_equality(
         actual=ret_val.sort(sort_col_list).select(exp_val.columns),
-        expected=exp_val.sort(sort_col_list)
+        expected=exp_val.sort(sort_col_list),
     )
 
 

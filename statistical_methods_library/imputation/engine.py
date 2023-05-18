@@ -11,11 +11,12 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, expr, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
-from statistical_methods_library.utilities.validation import validate_dataframe
 from statistical_methods_library.utilities.periods import (
-    calculate_previous_period,
     calculate_next_period,
+    calculate_previous_period,
 )
+from statistical_methods_library.utilities.validation import validate_dataframe
+
 from .ratio_calculators import RatioCalculator, construction
 
 # --- Marker constants ---

@@ -5,9 +5,10 @@ import pathlib
 import pytest
 from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import BooleanType, DecimalType, StringType
-from tests.helpers import check_df_equality
+
 from statistical_methods_library.estimation import ht_ratio
 from statistical_methods_library.utilities.exceptions import ValidationError
+from tests.helpers import check_df_equality
 
 unique_identifier_col = "identifier"
 period_col = "date"
@@ -483,5 +484,5 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     check_df_equality(
         actual=ret_val.sort(sort_col_list).select(select_cols),
-        expected=exp_val.sort(sort_col_list).select(select_cols)
+        expected=exp_val.sort(sort_col_list).select(select_cols),
     )
