@@ -25,7 +25,12 @@ profile = "black"
 
 [tool.pytest.ini_options]
 junit_suite_name = "statistical_methods_library"
-addopts = "--exitfirst --cov=statistical_methods_library --cov-fail-under=95"
+addopts = [
+    "--exitfirst",
+    "--cov=statistical_methods_library",
+    "--cov-fail-under=95",
+    "--import-mode=importlib"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,7 +1,7 @@
 import glob
 import os
 import pathlib
-
+from tests.helpers import check_df_equality
 import pytest
 import toml
 from decimal import Decimal
@@ -114,7 +114,7 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
 
     select_cols = sorted(set(fields.values()) & set(scenario_expected_output.columns))
     sort_col_list = [fields["reference_col"], fields["period_col"], fields["grouping_col"]]
-    assert (
-        scenario_actual_output.sort(sort_col_list).select(select_cols).collect()
-        == scenario_expected_output.sort(sort_col_list).select(select_cols).collect()
+    check_df_equality(
+        scenario_actual_output.sort(sort_col_list).select(select_cols),
+        scenario_expected_output.sort(sort_col_list).select(select_cols)
     )
