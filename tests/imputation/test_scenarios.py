@@ -5,7 +5,7 @@ import pathlib
 import pytest
 import toml
 from decimal import Decimal
-from pyspark.sql.functions import bround, col
+from pyspark.sql.functions import col
 from statistical_methods_library import imputation
 
 scenario_path_prefix = pathlib.Path(
@@ -107,11 +107,9 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
         fields["auxiliary_col"],
     )
     scenario_actual_output = imputation.impute(input_df=scenario_input, **imputation_kwargs)
-
     for field_name, field_type in scenario_actual_output.dtypes:
-
         if field_type.startswith("decimal"):
-            scenario_actual_output = scenario_actual_output.withColumn(field_name, bround(field_name, 6))
+            scenario_actual_output = scenario_actual_output.withColumn(field_name, col(field_name).cast("decimal(15, 6)"))
 
     select_cols = list(set(fields.values()) & set(scenario_expected_output.columns))
     sort_col_list = [fields["reference_col"], fields["period_col"], fields["grouping_col"]]
