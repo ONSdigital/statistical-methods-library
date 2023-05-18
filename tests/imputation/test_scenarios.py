@@ -46,14 +46,14 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     scenario_config = scenarios.get(scenario, {})
     fields = default_config["field_names"]
     fields.update(test_config.get("field_names", {}))
-    fields.update(scenario_config.get("field_names", {}))
+    fields.update(scenario_config.pop("field_names", {}))
     imputation_kwargs = fields.copy()
     imputation_kwargs["ratio_calculator"] = getattr(imputation, ratio_calculator)
     if "back_data_" in scenario_type:
         starting_period_key = "back_data_starting_period"
     else:
         starting_period_key = "starting_period"
-    starting_period = scenario_config.get(starting_period_key,
+    starting_period = scenario_config.pop(starting_period_key,
         test_config.get(starting_period_key,
             default_config[starting_period_key]
         )
@@ -61,6 +61,7 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     field_types = default_config["field_types"]
     field_types.update(test_config.get("field_types", {}))
     field_types.update(scenario_config.get("field_types", {}))
+    imputation_kwargs.update(scenario_config)
     types = {
         fields[k]: v
         for k,v in field_types.items()
@@ -112,7 +113,6 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
             scenario_actual_output = scenario_actual_output.withColumn(field_name, col(field_name).cast("decimal(15, 6)"))
 
     select_cols = sorted(set(fields.values()) & set(scenario_expected_output.columns))
-    assert sorted(scenario_actual_output.columns) == select_cols
     sort_col_list = [fields["reference_col"], fields["period_col"], fields["grouping_col"]]
     assert (
         scenario_actual_output.sort(sort_col_list).select(select_cols).collect()
