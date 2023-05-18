@@ -62,7 +62,7 @@ def check_df_equality(df1, df2, keep_cols=None):
             ]
         )
 
-        diff_str = diff_df._jdf.showString(100, 100, False)
+        diff_str = "\n".join(str(row) for row in diff_df.take(100))
         fail(
-            f"Mismatching rows in provided data frames:\n\n{diff_str}"
+            f"Mismatching rows in provided data frames (showing first 100):\n\n{diff_str}"
         )
