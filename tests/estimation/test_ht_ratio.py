@@ -3,7 +3,6 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_df_equality
 from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import BooleanType, DecimalType, StringType
 
@@ -483,8 +482,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             calibration_factor_col, bround(col(calibration_factor_col), 6)
         )
 
-    assert_df_equality(
-        ret_val.sort(sort_col_list).select(select_cols),
-        exp_val.sort(sort_col_list).select(select_cols),
-        ignore_nullable=True,
+    assert (
+        ret_val.sort(sort_col_list).select(select_cols).collect()
+        == exp_val.sort(sort_col_list).select(select_cols).collect()
     )

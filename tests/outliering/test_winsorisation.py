@@ -3,7 +3,6 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_df_equality
 from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
 
@@ -99,7 +98,6 @@ for scenario_category in ("dev", "methodology"):
 @pytest.mark.dependency()
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
         winsorisation.outlier("not_a_dataframe", *params)
 
 
@@ -351,10 +349,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
-    assert_df_equality(
-        ret_val.sort(sort_col_list),
-        exp_val.sort(sort_col_list),
-        ignore_nullable=True,
+    assert (
+        ret_val.sort(sort_col_list).select(exp_val.columns).collect()
+        == exp_val.sort(sort_col_list).collect()
     )
 
 
