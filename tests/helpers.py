@@ -47,7 +47,7 @@ def check_df_equality(expected, actual, keep_cols=None):
     diff_df = (
         expected.join(actual, ["id"], "full")
         .filter(reduce(lambda x, y: x | y, filter_list))
-        .select(
+        .select("id",
             *(col(f"expected.{name}").alias(f"expected_{name}") for name in col_list),
             *(col(f"actual.{name}").alias(f"actual_{name}") for name in col_list),
         )
@@ -70,7 +70,7 @@ def check_df_equality(expected, actual, keep_cols=None):
             .asDict()
         )
 
-        diff_df = diff_df.select(
+        diff_df = diff_df.sort("id").select(
             [
                 create_map(
                     lit("expected"),
