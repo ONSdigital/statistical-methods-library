@@ -184,3 +184,10 @@ include_zeros = true
 
 [scenarios.70_BI_BI_R_FI_FI_R_FI_alternating_filtered]
 link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
+
+[scenarios.71_TB_10_muti_variable_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
