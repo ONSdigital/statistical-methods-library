@@ -124,6 +124,17 @@ weight_periodicity_multiplier = 12
 weight = "0.5"
 weight_periodicity_multiplier = 12
 
+[scenarios.56_BI_BI_R_NS_C_FI_FI_zeros_included]
+include_zeros = true
+
+[scenarios.57_BI_BI_R_FI_FI_R_FI_alternating_filtered]
+link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
+
+[scenarios.58_TB_10_partial_default]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
 [scenarios.59_class_change_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
@@ -163,35 +174,13 @@ lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
 
-[scenarios.66_TB_50_50_weight_filtered_partial_default]
+[scenarios.66_partial_links_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
-link_filter = "identifier NOT IN ('30001', '30002', '30010')"
-lower_trim = 50
-upper_trim = 50
-trim_threshold = 10
 
-[scenarios.67_TB_50_50_weight_filtered_full_default]
-weight = "0.5"
-weight_periodicity_multiplier = 12
-link_filter = "identifier NOT IN ('30001', '30002', '30010')"
-lower_trim = 50
-upper_trim = 50
-trim_threshold = 10
-
-[scenarios.68_BI_BI_R_NS_C_FI_FI_zeros_included]
-include_zeros = true
-
-[scenarios.70_BI_BI_R_FI_FI_R_FI_alternating_filtered]
-link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
-
-[scenarios.71_TB_10_muti_variable_50_weight]
+[scenarios.67_TB_10_muti_variable_50_weight]
 weight = "0.5"
 weight_periodicity_multiplier = 12
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
-
-[scenarios.72_partial_links_50_weight]
-weight = "0.5"
-weight_periodicity_multiplier = 12
