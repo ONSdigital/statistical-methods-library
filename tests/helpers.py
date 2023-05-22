@@ -1,5 +1,3 @@
-
-import json
 from functools import reduce
 
 from pyspark.sql.functions import (
@@ -73,33 +71,34 @@ def check_df_equality(expected, actual, keep_cols=None):
         )
 
         diff_col_mapping = []
-        diff_cols = (set(col_list) - set(keep_cols)) & {
+        diff_cols = {
             name for name in equal_counts if equal_counts[name] != diff_count
-        }
+        } - set(keep_cols)
         for name in keep_cols + sorted(diff_cols):
-            diff_col_mapping += [
-                lit(name),
+            expected_col = col(f"expected_{name}")
+            actual_col = col(f"actual_{name}")
+            mapping = when(
+                ~expected_col.eqNullSafe(actual_col),
                 create_map(
-                    lit("expected"),
-                    col(f"expected_{name}"),
-                    lit("actual"),
-                    col(f"actual_{name}")
+                    lit("expected"), expected_col,
+                    lit("actual"), actual_col
                 )
-            ]
+            )
+
+            if name in keep_cols:
+                mapping = mapping.otherwise(
+                   create_map(lit("value"), expected_col)
+                )
+
+            diff_col_mapping.append(mapping .alias(name))
+
         diff_df = (
             diff_df.sort("id")
-            .select("id", create_map(*diff_col_mapping).alias("diff"))
+            .select(diff_col_mapping)
         )
 
-        display_list = []
-        for row in diff_df.take(100):
-            row_dict = row.asDict(True)
-            diff_dict = row_dict["diff"]
-            for key in list(diff_dict.keys()):
-                if diff_dict[key]["expected"] == diff_dict[key]["actual"]:
-                    del diff_dict[key]
-                display_list.append(json.dumps(row_dict, indent=4))
-        diff_str = '\n'.join(display_list)
+
+        diff_str = '\n'.join(str(row) for row in diff_df.take(100))
         fail(
             f"Mismatching rows in provided data frames (showing up to 100):\n\n{diff_str}"
         )
