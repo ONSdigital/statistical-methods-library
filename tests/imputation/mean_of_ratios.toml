@@ -191,3 +191,7 @@ weight_periodicity_multiplier = 12
 lower_trim = 10
 upper_trim = 10
 trim_threshold = 10
+
+[scenarios.72_partial_links_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
