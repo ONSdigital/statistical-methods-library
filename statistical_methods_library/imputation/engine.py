@@ -5,10 +5,11 @@ For Copyright information, please see LICENCE.
 """
 from decimal import Decimal
 from enum import Enum
+from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, lit, when
+from pyspark.sql.functions import col, expr, first, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -370,28 +371,38 @@ def impute(
                     .alias(link_name)
                 )
 
+            weight_col_names = [
+                name for name in ("forward", "backward", "construction")
+                if name not in input_params
+            ]
+
+            if not weight_col_names:
+                return
+
+            weight_cols = [
+
+            ]
             weighting_df = (
                 prepared_df.select(
                     "period",
                     "grouping",
-                    expr("forward AS forward_unweighted"),
-                    expr("backward AS backward_unweighted"),
-                    expr("construction AS construction_unweighted"),
+                    *(col(name).alias(f"{name}_unweighted")
+                        for name in weight_col_names
+                    )
                 )
                 .unionByName(
                     validated_back_data_df.select(
                         "period",
                         "grouping",
-                        "forward_unweighted",
-                        "backward_unweighted",
-                        "construction_unweighted",
+                        *(f"{name}_unweighted" for name in weight_col_names)
                     )
                 )
                 .groupBy("period", "grouping")
                 .agg(
-                    expr("first(forward_unweighted) AS forward"),
-                    expr("first(backward_unweighted) AS backward"),
-                    expr("first(construction_unweighted) AS construction"),
+                    *(
+                        first(f"{name}_unweighted").alias(name)
+                        for name in weight_col_names
+                    )
                 )
             )
 
@@ -414,14 +425,17 @@ def impute(
                 .select(
                     expr("curr.period AS period"),
                     expr("curr.grouping AS grouping"),
-                    calculate_weighted_link("forward"),
-                    calculate_weighted_link("backward"),
-                    calculate_weighted_link("construction"),
+                    *(
+                        calculate_weighted_link(name)
+                        for name in weight_col_names
+                    )
                 )
                 .join(
-                    prepared_df.withColumnRenamed("forward", "forward_unweighted")
-                    .withColumnRenamed("backward", "backward_unweighted")
-                    .withColumnRenamed("construction", "construction_unweighted"),
+                    reduce(
+                        lambda d, n: d.withColumnRenamed(n, f"{n}_unweighted"),
+                        weight_col_names,
+                        prepared_df
+                    ),
                     ["period", "grouping"],
                 )
             )
