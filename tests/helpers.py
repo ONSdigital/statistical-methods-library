@@ -1,7 +1,13 @@
 from functools import reduce
 
-from pyspark.sql.functions import (col, count, create_map, lit,
-                                   monotonically_increasing_id, when)
+from pyspark.sql.functions import (
+    col,
+    count,
+    create_map,
+    lit,
+    monotonically_increasing_id,
+    when,
+)
 from pytest import fail
 
 

@@ -34,6 +34,7 @@ def fxt_load_test_csv(fxt_spark_session):
 
     return load
 
+
 @pytest.fixture(scope="session")
 def fxt_spark_session():
     """
