@@ -137,21 +137,19 @@ def impute(
 
         weight = lit(weight)
         weight_periodicity = weight_periodicity_multiplier * periodicity
-        back_input_params.update(
-            {
-                "forward_unweighted": unweighted_forward_link_col,
-                "backward_unweighted": unweighted_backward_link_col,
-                "construction_unweighted": unweighted_construction_link_col,
-            }
-        )
+        weight_col_mapping = {
+            "forward_unweighted": unweighted_forward_link_col,
+            "backward_unweighted": unweighted_backward_link_col,
+            "construction_unweighted": unweighted_construction_link_col,
+        }
 
-        output_col_mapping.update(
-            {
-                "backward_unweighted": unweighted_backward_link_col,
-                "forward_unweighted": unweighted_forward_link_col,
-                "construction_unweighted": unweighted_construction_link_col,
-            }
-        )
+        for name in "forward", "backward", "construction":
+            if name not in input_params:
+                del weight_col_mapping[name]
+
+        back_input_params.update(weight_col_mapping)
+
+        output_col_mapping.update(weight_col_mapping)
 
     type_mapping = {
         "period": StringType,
