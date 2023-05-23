@@ -12,10 +12,8 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql.functions import col, expr, first, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
-from statistical_methods_library.utilities.periods import (
-    calculate_next_period,
-    calculate_previous_period,
-)
+from statistical_methods_library.utilities.periods import (calculate_next_period,
+                                                           calculate_previous_period)
 from statistical_methods_library.utilities.validation import validate_dataframe
 
 from .ratio_calculators import RatioCalculator, construction
@@ -370,29 +368,28 @@ def impute(
                 )
 
             weight_col_names = [
-                name for name in ("forward", "backward", "construction")
+                name
+                for name in ("forward", "backward", "construction")
                 if name not in input_params
             ]
 
             if not weight_col_names:
                 return
 
-            weight_cols = [
-
-            ]
             weighting_df = (
                 prepared_df.select(
                     "period",
                     "grouping",
-                    *(col(name).alias(f"{name}_unweighted")
+                    *(
+                        col(name).alias(f"{name}_unweighted")
                         for name in weight_col_names
-                    )
+                    ),
                 )
                 .unionByName(
                     validated_back_data_df.select(
                         "period",
                         "grouping",
-                        *(f"{name}_unweighted" for name in weight_col_names)
+                        *(f"{name}_unweighted" for name in weight_col_names),
                     )
                 )
                 .groupBy("period", "grouping")
@@ -423,16 +420,13 @@ def impute(
                 .select(
                     expr("curr.period AS period"),
                     expr("curr.grouping AS grouping"),
-                    *(
-                        calculate_weighted_link(name)
-                        for name in weight_col_names
-                    )
+                    *(calculate_weighted_link(name) for name in weight_col_names),
                 )
                 .join(
                     reduce(
                         lambda d, n: d.withColumnRenamed(n, f"{n}_unweighted"),
                         weight_col_names,
-                        prepared_df
+                        prepared_df,
                     ),
                     ["period", "grouping"],
                 )
@@ -560,7 +554,6 @@ def impute(
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
         if back_data_df:
-            # Add in the constructions and forward imputes from construction in the back data
             df = df.unionByName(
                 back_data_period_df.filter(
                     (

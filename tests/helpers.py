@@ -1,13 +1,7 @@
 from functools import reduce
 
-from pyspark.sql.functions import (
-    col,
-    count,
-    create_map,
-    lit,
-    monotonically_increasing_id,
-    when,
-)
+from pyspark.sql.functions import (col, count, create_map, lit,
+                                   monotonically_increasing_id, when)
 from pytest import fail
 
 
@@ -47,7 +41,8 @@ def check_df_equality(expected, actual, keep_cols=None):
     diff_df = (
         expected.join(actual, ["id"], "full")
         .filter(reduce(lambda x, y: x | y, filter_list))
-        .select("id",
+        .select(
+            "id",
             *(col(f"expected.{name}").alias(f"expected_{name}") for name in col_list),
             *(col(f"actual.{name}").alias(f"actual_{name}") for name in col_list),
         )
@@ -79,26 +74,17 @@ def check_df_equality(expected, actual, keep_cols=None):
             actual_col = col(f"actual_{name}")
             mapping = when(
                 ~expected_col.eqNullSafe(actual_col),
-                create_map(
-                    lit("expected"), expected_col,
-                    lit("actual"), actual_col
-                )
+                create_map(lit("expected"), expected_col, lit("actual"), actual_col),
             )
 
             if name in keep_cols:
-                mapping = mapping.otherwise(
-                   create_map(lit("value"), expected_col)
-                )
+                mapping = mapping.otherwise(create_map(lit("value"), expected_col))
 
-            diff_col_mapping.append(mapping .alias(name))
+            diff_col_mapping.append(mapping.alias(name))
 
-        diff_df = (
-            diff_df.sort("id")
-            .select(diff_col_mapping)
-        )
+        diff_df = diff_df.sort("id").select(diff_col_mapping)
 
-
-        diff_str = '\n'.join(str(row) for row in diff_df.take(100))
+        diff_str = "\n".join(str(row) for row in diff_df.take(100))
         fail(
             f"Mismatching rows in provided data frames (showing up to 100):\n\n{diff_str}"
         )
