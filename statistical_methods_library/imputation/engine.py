@@ -144,8 +144,8 @@ def impute(
         }
 
         for name in "forward", "backward", "construction":
-            if name not in input_params:
-                del weight_col_mapping[name]
+            if name in input_params:
+                del weight_col_mapping[f"{name}_unweighted"]
 
         back_input_params.update(weight_col_mapping)
 
