@@ -60,16 +60,18 @@ def estimate(
           otherwise Separate Ratio Estimation takes place.
         unadjusted_design_weight_col: The name of the column which will contain
           the unadjusted design weight. The column isn't output unless this
-          column is specified.
+          column is specified and design weight adjustment is performed.
         design_weight_col: The name of the column which will contain the
           design weight. If birth-death adjustment is being performed this
           will contain the adjusted value.
         calibration_factor_col: The name of the column which will contain the
-          calibration factor.
+          calibration factor if Ratio Estimation is performed.
 
     Returns:
     A data frame containing the estimated weights. The exact columns depend on
-    the type of estimation performed as specified by the provided arguments.
+    the type of estimation performed as specified by the provided arguments. The
+    data frame contains a row for each period, stratum and (if Combined Ratio
+    Estimation is performed) calibration group combination in the input data.
 
     Either both or neither of `adjustment_marker_col` and `h_value_col` must be specified.
     If they are then the design weight is adjusted using birth-death
