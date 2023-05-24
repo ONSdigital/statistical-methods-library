@@ -13,6 +13,10 @@ from tests.helpers import check_df_equality
 scenario_path_prefix = pathlib.Path("tests", "fixture_data", "imputation")
 ratio_calculators = ("mean_of_ratios", "ratio_of_means")
 test_scenarios = []
+
+# Collate list of test scenarios from ratio_calculators folders.
+# Also for back data testing, duplicate all tests. Will be using
+# first input period as a back data period.
 for ratio_calculator in ratio_calculators:
     scenario_type = "methodology_scenarios"
     test_files = glob.glob(
@@ -43,6 +47,8 @@ toml_path_prefix = pathlib.Path("tests", "imputation")
     test_scenarios,
 )
 def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenario):
+    # Default parameters and data types stored in default.toml, optional parameters
+    # and overwrites stored in matching ratio calculator toml file.
     with open(toml_path_prefix / "default.toml", "r") as f:
         default_config = toml.load(f)
 
