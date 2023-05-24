@@ -1,5 +1,8 @@
 """
-Perform imputation on a data frame.
+Perform link-based imputation on a data frame.
+
+This module provides the engine and other core aspects of imputation with
+ratio calculation being handled by provided callbacks.
 
 For Copyright information, please see LICENCE.
 """
@@ -18,9 +21,7 @@ from statistical_methods_library.utilities.periods import (
 )
 from statistical_methods_library.utilities.validation import validate_dataframe
 
-from .ratio_calculators import RatioCalculator, construction
-
-# --- Marker constants ---
+from .ratio_calculators import RatioCalculator, ratio_of_means_construction
 
 
 class Marker(Enum):
@@ -51,7 +52,10 @@ def impute(
     grouping_col: str,
     target_col: str,
     auxiliary_col: str,
-    ratio_calculator: RatioCalculator,
+    forward_backward_ratio_calculator: RatioCalculator,
+    construction_ratio_calculator: Optional[
+        RatioCalculator
+    ] = ratio_of_means_construction,
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
     forward_link_col: Optional[str] = "forward",
@@ -238,7 +242,7 @@ def impute(
             )
 
         else:
-            ratio_calculators.append(ratio_calculator)
+            ratio_calculators.append(forward_backward_ratio_calculator)
 
         if "construction" in prepared_df.columns:
             prepared_df = (
@@ -250,7 +254,7 @@ def impute(
             )
 
         else:
-            ratio_calculators.append(construction)
+            ratio_calculators.append(construction_ratio_calculator)
 
         if not ratio_calculators:
             return

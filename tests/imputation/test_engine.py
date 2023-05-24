@@ -81,7 +81,7 @@ params = {
     "auxiliary_col": auxiliary_col,
     "output_col": output_col,
     "marker_col": marker_col,
-    "ratio_calculator": ratio_of_means,
+    "forward_backward_ratio_calculator": ratio_of_means,
 }
 
 test_scenarios = []

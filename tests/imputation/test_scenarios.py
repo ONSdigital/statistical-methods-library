@@ -61,7 +61,9 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     fields.update(test_config.get("field_names", {}))
     fields.update(scenario_config.pop("field_names", {}))
     imputation_kwargs = fields.copy()
-    imputation_kwargs["ratio_calculator"] = getattr(imputation, ratio_calculator)
+    imputation_kwargs["forward_backward_ratio_calculator"] = getattr(
+        imputation, ratio_calculator
+    )
     if "back_data_" in scenario_type:
         starting_period_key = "back_data_starting_period"
     else:

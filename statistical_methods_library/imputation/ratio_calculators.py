@@ -347,7 +347,9 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
     ]
 
 
-def construction(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
+def ratio_of_means_construction(
+    *, df: DataFrame, **_kw
+) -> List[RatioCalculationResult]:
     return [
         RatioCalculationResult(
             data=(
