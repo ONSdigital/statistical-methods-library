@@ -19,9 +19,6 @@ pytest-cov = "^4.1.0"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.3"
 
-[tool.isort]
-profile = "black"
-
 [tool.pytest.ini_options]
 junit_suite_name = "statistical_methods_library"
 addopts = [
