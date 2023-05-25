@@ -80,6 +80,54 @@ def impute(
     unweighted_construction_link_col: Optional[str] = "construction_unweighted",
     **ratio_calculator_params,
 ) -> DataFrame:
+    """
+    Perform imputation.
+
+    Missing target variables are imputed using imputation links.
+
+    Args:
+        input_df: The input data frame.
+        reference_col: The name of the column containing the unique identifier for a contributor.
+        period_col: The name of the column containing the period.
+        grouping_col: The name of the column containing the information data is grouped by.
+        target_col: The name of the column containing the target variable to be imputed.
+        auxiliary_col: The name of the column containing the auxiliary value.
+        forward_backward_ratio_calculator: The name of the ratio calculator to used for forwards and backwards imputation. See Ratio Calculators for more details.
+        construction_ratio_calculator: The name of the column containing the ratio calculator to used for construction imputation. See Ratio Calculators for more details.
+        output_col: The name of the column containing the variable post imputation processing.
+        marker_col: The name of the column containing the imputation marker.
+        forward_link_col: The name of the column containing the forward imputation link. If a column containing this is in the input data, the input links will be used instead of calculating them. Must pass both forward and backward.
+        backward_link_col: The name of the column containing the backward imputation link. If a column containing this is in the input data, the input links will be used instead of calculating them. Must pass both forward and backward.
+        construction_link_col: The name of the column containing the construction imputation link. If a column containing this is in the input data, the input links will be used instead of calculating them.
+        count_construction_col: The name of the column containing the count of matched pairs used in the calculation of links.
+        count_forward_col: The name of the column containing the count of matched pairs used in the calculation of links.
+        count_backward_col: The name of the column containing the count of matched pairs used in the calculation of links.
+        default_construction_col: The name of the column containing a marker specifiying a link was defaulted to one and not calculated/passed in.
+        default_forward_col: The name of the column containing a marker specifiying a link was defaulted to one and not calculated/passed in.
+        default_backward_col: The name of the column containing a marker specifiying a link was defaulted to one and not calculated/passed in.
+        link_inclusion_current_col: The name of the column containing a marker specifiying if the contributors current response is still included in calculations if filtering occured.
+        link_inclusion_previous_col: The name of the column containing a marker specifiying if the contributors previous response is still included in calculations if filtering occured.
+        link_inclusion_next_col: The name of the column containing a marker specifiying if the contributors next response is still included in calculations if filtering occured.
+        back_data_df: The back data data frame. Contains previously calculated data to be imputed from and/or data for link weighting.
+        link_filter: An inclusive filter statement that specifiys conditions under which a responce can be used for imputation. If this is provided the link_inclusion columns will be in the output, otherwise they will not be.
+        periodicity: Number of months between response periods.
+        weight: Figure indicating how strongly to weight the links against previous links. This is used on the current link, previous link will be weighted as 1 - weight. If both weight and weight_periodicity_multiplier are provided the unweighted columns will be in the output, otherwise they will not be.
+        weight_periodicity_multiplier: Number of sets of the periodicity back that the previous link is taken from. If both weight and weight_periodicity_multiplier are provided the unweighted columns will be in the output, otherwise they will not be.
+        unweighted_forward_link_col: The name of the column containing the links prior to weighting if weighting occured.
+        unweighted_backward_link_col: The name of the column containing the links prior to weighting if weighting occured.
+        unweighted_construction_link_col: The name of the column containing the links prior to weighting if weighting occured.
+
+    Returns:
+    A data frame containing the imputed variables and links. The exact columns depend on
+    the type of imputation performed as specified by the provided arguments. The
+    data frame contains a row for each reference, period, grouping.
+
+    Either both or neither of `weight` and `weight_periodicity_multiplier` must be specified.
+    If they are then the links are adjusted using weighting, otherwise it is not.
+    Either both or neither of `forward_link_col` and `backward_link_col` must be in the input.
+    If they are then the links are not calculated, otherwise they are.
+    If `link_filter` is provided, the data will filter data to remove data not wanted in calculating links.
+    """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
         raise TypeError("Input is not a DataFrame")
@@ -112,7 +160,6 @@ def impute(
         "ref": reference_col,
         "period": period_col,
         "grouping": grouping_col,
-        "target": target_col,
     }
 
     if forward_link_col in input_df.columns or backward_link_col in input_df.columns:
