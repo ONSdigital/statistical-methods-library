@@ -11,11 +11,11 @@ pyspark = "3.1.1"
 
 [tool.poetry.group.dev.dependencies]
 toml = "^0.10.2"
-pytest = "^7.2.1"
+pytest = "^7.3.1"
 black = "^23.1"
 flake8 = "^5.0.4"
-coverage = "^7.0"
-pytest-cov = "^4.0.0"
+coverage = "^7.2"
+pytest-cov = "^4.1.0"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.3"
 
