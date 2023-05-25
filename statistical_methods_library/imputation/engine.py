@@ -127,6 +127,8 @@ def impute(
     Either both or neither of `forward_link_col` and `backward_link_col` must be in the input.
     If they are then the links are not calculated, otherwise they are.
     If `link_filter` is provided, the data will filter data to remove data not wanted in calculating links.
+
+    Note: Additional parameters will need to be passed to this method depending on the ratio calculators used.
     """
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):

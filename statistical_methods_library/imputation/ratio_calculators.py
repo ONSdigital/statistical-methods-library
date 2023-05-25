@@ -35,6 +35,28 @@ def mean_of_ratios(
     trim_inclusion_backward_col: Optional[str] = "trim_inclusion_backward",
     **_kwargs,
 ) -> List[RatioCalculationResult]:
+    """
+    Perform Mean of Ratios ratio calculator.
+
+    Args:
+        df: The input data frame.
+        trim_threshold: Number specifying how many matched pairs needed to allow trimming to occur. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
+        lower_trim: Number specifying percentage to trim off the bottom. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
+        upper_trim: Number specifying percentage to trim off the top. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
+        include_zeros: Allows/Prohibits a return of zero being allowed in the calculations.
+        growth_forward_col: The name of the column containing the forward growth ratio.
+        growth_backward_col: The name of the column containing the backward growth ratio.
+        trim_inclusion_forward_col: The name of the column containing an marker specifiying if a growth ratio is included in calculations post trimming.
+        trim_inclusion_backward_col: The name of the column containing an marker specifiying if a growth ratio is included in calculations post trimming.
+
+    Returns:
+    Two datas frame:
+    Ratio DF containing forward and backward links. Count of matched pairs and if the link was defaulted.
+    The data frame contains a row for each period, grouping.
+
+    Growth DF containing forward and backward growth ratios. The exact columns depend on if trimming is performed as specified by the provided arguments.
+    The data frame contains a row for each reference, period, grouping.
+    """
     if lower_trim is not None:
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
@@ -301,6 +323,16 @@ def mean_of_ratios(
 
 
 def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
+    """
+    Perform Ratio of Means ratio calculator.
+
+    Args:
+        df: The input data frame.
+
+    Returns:
+    A data frame containing forward and backward links. Count of matched pairs and if the link was defaulted.
+    The data frame contains a row for each period, grouping.
+    """
     df = (
         df.filter(col("link_inclusion_current"))
         .groupBy("period", "grouping")
@@ -350,6 +382,16 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
 def ratio_of_means_construction(
     *, df: DataFrame, **_kw
 ) -> List[RatioCalculationResult]:
+    """
+    Perform construction ratio calculator.
+
+    Args:
+        df: The input data frame.
+
+    Returns:
+    A data frame containing construction links. Count of matched pairs and if the link was defaulted.
+    The data frame contains a row for each period, grouping.
+    """
     return [
         RatioCalculationResult(
             data=(
