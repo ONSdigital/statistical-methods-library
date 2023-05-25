@@ -127,7 +127,8 @@ def impute(
         back_data_df: The back data data frame.
         link_filter: An inclusive filter statement that specifies conditions
           under which a responce can be used for ratio calculation. The link
-          inclusion marker columns will only be present in the output if this is provided.
+          inclusion marker columns will only be present in the output if this
+          is provided.
         periodicity: The periodicity of the data as used by the calculation
           functions in the `utilities.periods` module.
         unweighted_forward_link_col: The name of the column containing the
@@ -139,12 +140,13 @@ def impute(
         weight: A decimal value between 0 and 1 inclusive used to weigh links
           in the current period against those in a previous period. The current
           link is multiplied by the weight whereas the corresponding previous
-          link is multiplied by (1 - weight). If no corresponding previous link can be found
-          the current link is left unchanged. Link weighting is only performed
-          and the unweighted link columns above are only present in the output
-          if this value is provided.
+          link is multiplied by (1 - weight). If no corresponding previous link
+          can be found the current link is left unchanged. Link weighting is
+          only performed and the unweighted link columns above are only present
+          in the output if this value is provided.
         weight_periodicity_multiplier: Multiplied by the periodicity of the
-          dataset to calculate the previous period when finding the previous links for weighting.
+          dataset to calculate the previous period when finding the previous
+          links for weighting.
         ratio_calculator_params: Any extra keyword arguments to the engine are
           passed to the specified ratio calculators as keyword args and are
           otherwise ignored by this function. Please see the specified ratio
