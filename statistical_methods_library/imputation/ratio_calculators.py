@@ -1,4 +1,30 @@
-# For Copyright information, please see LICENCE.
+"""
+Ratio calculator functions written for use with the imputation engine.
+
+At a minimum ratio calculators are passed a data frame containing the following columns:
+* `ref` - Aliased from the `reference_col` engine argument
+* `grouping` - Aliased from the `grouping_col` engine argument
+* `period` - Aliased from the `period_col` engine argument
+* `aux` - Aliased from the `auxiliary_col` engine argument
+`current.output` - Aliased version of the `target_col` engine argument for
+  the data in the current period
+`link_inclusion_current` - See the `link_inclusion_current_col` argument for the
+  semantics of this column
+`next.output` - Aliased version of the `target_col` engine argument for
+  the data in the next period
+`link_inclusion_next` - See the `link_inclusion_next_col` argument for the
+  semantics of this column
+`previous.output` - Aliased version of the `target_col` engine argument for
+  the data in the previous period
+`link_inclusion_previous` - See the `link_inclusion_previous_col` argument for the
+  semantics of this column
+
+Ratio calculators can also accept arbitrary keyword arguments from the engine
+(see the `ratio_calculator_params` engine argument).
+
+For Copyright information, please see LICENCE.
+"""
+
 from dataclasses import dataclass, field
 from decimal import Decimal
 from numbers import Number
@@ -13,13 +39,31 @@ from pyspark.sql.functions import lit, when
 
 @dataclass
 class RatioCalculationResult:
+    "Type for returns from ratio calculators"
     data: DataFrame
+    "The data being returned"
+
     join_columns: List[str]
-    fill_values: Optional[Dict[str, str]] = field(default_factory=dict)
+    """
+    The names of columns used to join the `data` attribute to the data to be
+    imputed.
+    """
+
+    fill_values: Optional[Dict[str, Any]] = field(default_factory=dict)
+    """
+    A mapping of column names in the `data` attribute to their fill values for
+    columns requiring filling.
+    """
     additional_outputs: Optional[Dict[str, str]] = field(default_factory=dict)
+    """
+    A mapping from the column name in the `data` attribute to the column's
+    user-provided name for output in cases where the ratio calculator provides
+    additional output columns.
+    """
 
 
 RatioCalculator = Callable[[DataFrame, Any], Iterable[RatioCalculationResult]]
+"The overall type for a ratio calculator to be provided to the engine"
 
 
 def mean_of_ratios(
@@ -36,27 +80,39 @@ def mean_of_ratios(
     **_kwargs,
 ) -> List[RatioCalculationResult]:
     """
-    Perform Mean of Ratios ratio calculator.
+    Perform Mean of Ratios forward and backward ratio calculation.
 
     Args:
         df: The input data frame.
-        trim_threshold: Number specifying how many matched pairs needed to allow trimming to occur. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
-        lower_trim: Number specifying percentage to trim off the bottom. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
-        upper_trim: Number specifying percentage to trim off the top. For trimming to occur, trim_threshold, lower_trim and upper_trim need to be present. When trimming occurs, trim_inclusion_forward_col and trim_inclusion_backward_col will be output.
-        include_zeros: Allows/Prohibits a return of zero being allowed in the calculations.
-        growth_forward_col: The name of the column containing the forward growth ratio.
-        growth_backward_col: The name of the column containing the backward growth ratio.
-        trim_inclusion_forward_col: The name of the column containing an marker specifiying if a growth ratio is included in calculations post trimming.
-        trim_inclusion_backward_col: The name of the column containing an marker specifiying if a growth ratio is included in calculations post trimming.
+        trim_threshold: The Number of matched pairs needed for trimming to
+          occur.
+        lower_trim: The percentage to trim off the bottom.
+        upper_trim: percentage to trim off the top.
+        include_zeros: Set to True to include zeros in ratio calculations,
+            otherwise zeros are removed from the data prior to processing.
+        growth_forward_col: The name of the column containing the forward
+          growth ratio.
+        growth_backward_col: The name of the column containing the backward
+          growth ratio.
+        trim_inclusion_forward_col: The name of the column marking whether the
+          growth ratio was included in forward ratio calculations post trimming.
+        trim_inclusion_backward_col: The name of the column marking whether the
+          growth ratio was included in backward ratio calculations post trimming.
 
-    Returns:
-    Two datas frame:
-    Ratio DF containing forward and backward links. Count of matched pairs and if the link was defaulted.
-    The data frame contains a row for each period, grouping.
+    Returns a list of results:
+        A result containing forward and backward links, count of matched pairs
+          and if the links were defaulted. The data frame contains a row for
+          each period and grouping combination in the input data.
+        A result containing forward and backward growth ratios. The exact
+            columns depend on if trimming is performed as specified by the
+            provided arguments. The data frame contains a row for each
+            reference, period and grouping combination in the input data.
 
-    Growth DF containing forward and backward growth ratios. The exact columns depend on if trimming is performed as specified by the provided arguments.
-    The data frame contains a row for each reference, period, grouping.
+    For trimming to occur, `trim_threshold`, `lower_trim` and `upper_trim` need
+    to be present. When trimming occurs, `trim_inclusion_forward_col` and
+    `trim_inclusion_backward_col` will be output.
     """
+
     if lower_trim is not None:
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
@@ -324,14 +380,15 @@ def mean_of_ratios(
 
 def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
     """
-    Perform Ratio of Means ratio calculator.
+    Perform Ratio of Means forward and backward ratio calculation.
 
     Args:
         df: The input data frame.
 
     Returns:
-    A data frame containing forward and backward links. Count of matched pairs and if the link was defaulted.
-    The data frame contains a row for each period, grouping.
+    A result containing forward and backward links, count of matched pairs and
+        if the links were defaulted. The data frame contains a row for each
+        period and grouping combination in the input data.
     """
     df = (
         df.filter(col("link_inclusion_current"))
@@ -383,14 +440,15 @@ def ratio_of_means_construction(
     *, df: DataFrame, **_kw
 ) -> List[RatioCalculationResult]:
     """
-    Perform construction ratio calculator.
+    Perform Ratio of Means construction ratio calculation.
 
     Args:
         df: The input data frame.
 
     Returns:
-    A data frame containing construction links. Count of matched pairs and if the link was defaulted.
-    The data frame contains a row for each period, grouping.
+    A result containing construction links, the count of matched pairs and if the
+    links were defaulted. The data frame contains a row for each period and
+    grouping combination in the input data.
     """
     return [
         RatioCalculationResult(

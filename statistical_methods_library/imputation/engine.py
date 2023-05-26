@@ -118,12 +118,15 @@ def impute(
           marker for the forward link.
         default_backward_col: The name of the column containing the default
           marker for the backward link.
-        link_inclusion_current_col: The name of the column containing the
-          inclusion marker for the current period.
-        link_inclusion_previous_col: The name of the column containing the
-          inclusion marker for the previous period.
-        link_inclusion_next_col: The name of the column containing the
-          inclusion marker for the next period.
+        link_inclusion_current_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          current period.
+        link_inclusion_previous_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          previous period.
+        link_inclusion_next_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          next period.
         back_data_df: The back data data frame.
         link_filter: An inclusive filter statement that specifies conditions
           under which a responce can be used for ratio calculation. The link
