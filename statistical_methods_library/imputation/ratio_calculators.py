@@ -1,23 +1,24 @@
 """
 Ratio calculator functions written for use with the imputation engine.
 
-At a minimum ratio calculators are passed a data frame containing the following columns:
-* `ref` - Aliased from the `reference_col` engine argument
-* `grouping` - Aliased from the `grouping_col` engine argument
-* `period` - Aliased from the `period_col` engine argument
-* `aux` - Aliased from the `auxiliary_col` engine argument
-`current.output` - Aliased version of the `target_col` engine argument for
-  the data in the current period
-`link_inclusion_current` - See the `link_inclusion_current_col` argument for the
-  semantics of this column
-`next.output` - Aliased version of the `target_col` engine argument for
-  the data in the next period
-`link_inclusion_next` - See the `link_inclusion_next_col` argument for the
-  semantics of this column
-`previous.output` - Aliased version of the `target_col` engine argument for
-  the data in the previous period
-`link_inclusion_previous` - See the `link_inclusion_previous_col` argument for the
-  semantics of this column
+At a minimum ratio calculators are passed a data frame containing the
+following columns:
+    ref: Aliased from the `reference_col` engine argument.
+    grouping: Aliased from the `grouping_col` engine argument.
+    period: Aliased from the `period_col` engine argument.
+    aux: Aliased from the `auxiliary_col` engine argument.
+    current.output: Aliased version of the `target_col` engine argument for
+      the data in the current period.
+    link_inclusion_current: See the `link_inclusion_current_col` argument for
+      the semantics of this column.
+    next.output: Aliased version of the `target_col` engine argument for
+      the data in the next period.
+    link_inclusion_next: See the `link_inclusion_next_col` argument for the
+      semantics of this column.
+    previous.output: Aliased version of the `target_col` engine argument for
+      the data in the previous period.
+    link_inclusion_previous: See the `link_inclusion_previous_col` argument for the
+      semantics of this column.
 
 Ratio calculators can also accept arbitrary keyword arguments from the engine
 (see the `ratio_calculator_params` engine argument).
@@ -63,7 +64,7 @@ class RatioCalculationResult:
 
 
 RatioCalculator = Callable[[DataFrame, Any], Iterable[RatioCalculationResult]]
-"The overall type for a ratio calculator to be provided to the engine"
+"The overall type for a ratio calculator to be provided to the engine."
 
 
 def mean_of_ratios(
@@ -84,10 +85,10 @@ def mean_of_ratios(
 
     Args:
         df: The input data frame.
-        trim_threshold: The Number of matched pairs needed for trimming to
-          occur.
+        trim_threshold: The minimum number of matched pairs needed for trimming
+          to occur.
         lower_trim: The percentage to trim off the bottom.
-        upper_trim: percentage to trim off the top.
+        upper_trim: The percentage to trim off the top.
         include_zeros: Set to True to include zeros in ratio calculations,
             otherwise zeros are removed from the data prior to processing.
         growth_forward_col: The name of the column containing the forward
@@ -97,20 +98,24 @@ def mean_of_ratios(
         trim_inclusion_forward_col: The name of the column marking whether the
           growth ratio was included in forward ratio calculations post trimming.
         trim_inclusion_backward_col: The name of the column marking whether the
-          growth ratio was included in backward ratio calculations post trimming.
+          growth ratio was included in backward ratio calculations post
+          trimming.
 
-    Returns a list of results:
+    Returns:
         A result containing forward and backward links, count of matched pairs
           and if the links were defaulted. The data frame contains a row for
           each period and grouping combination in the input data.
         A result containing forward and backward growth ratios. The exact
-            columns depend on if trimming is performed as specified by the
-            provided arguments. The data frame contains a row for each
-            reference, period and grouping combination in the input data.
+          columns depend on if trimming is performed as specified by the
+          provided arguments. The data frame contains a row for each
+          reference, period and grouping combination in the input data.
 
     For trimming to occur, `trim_threshold`, `lower_trim` and `upper_trim` need
     to be present. When trimming occurs, `trim_inclusion_forward_col` and
     `trim_inclusion_backward_col` will be output.
+
+    The `lower_trim` and `upper_trim` are approximate percentages as trimming
+    uses exclusive bounds when calculating which rows to remove.
     """
 
     if lower_trim is not None:
