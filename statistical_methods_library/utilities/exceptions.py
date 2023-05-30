@@ -1,6 +1,13 @@
+"""
+Exception classes used by this library.
+
+For Copyright information, please see LICENCE.
+"""
+
+
 class SMLError(Exception):
     """
-    Error raised by the SML.
+    Base class for errors raised by statistical methods.
     """
 
     pass

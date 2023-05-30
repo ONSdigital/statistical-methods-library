@@ -1,14 +1,16 @@
 """
-Functions to work with periods. Periods are in "yyyymm" format i.e. 4 digit
-year and 2 digit month. The terms year and month here do not necessarily have
-to be actual years and months although the period calculations assume 12
-periods in a year. In particular, because these functions are intended to work
-with data where the periods are used to identify sample periods rather than to
-act as calendar dates (e.g. accounting periods in economic survey data) no
-calendar related arithmetic is performed (e.g. leap years etc) with all
-calculations being strictly period based.
+Functions to work with periods.
 
-For Copyright information, please see LICENCE.
+Periods are in "yyyymm" format i.e. 4 digit year and 2 digit month. The terms
+year and month here do not necessarily have to be actual years and months
+although the period calculations assume 12 periods in a year. In particular,
+because these functions are intended to work with data where the periods are
+used to identify sample periods rather than to act as calendar dates (e.g.
+accounting periods in economic survey data) no calendar related arithmetic is
+performed (e.g. leap years etc) with all calculations being strictly period
+based.
+
+for Copyright information, please see LICENCE.
 """
 
 from pyspark.sql import Column
@@ -21,7 +23,7 @@ def calculate_previous_period(period: Column, relative: int):
 
     Args:
         period - The column containing the period.
-        relative: The mount of periods to subtract.
+        relative: The amount of periods to subtract.
 
     Returns:
     A column containing the previous period.
@@ -45,7 +47,7 @@ def calculate_next_period(period: Column, relative: int) -> Column:
 
     Args:
         period - The column containing the period.
-        relative: The mount of periods to add.
+        relative: The amount of periods to add.
 
     Returns:
     A column containing the next period.

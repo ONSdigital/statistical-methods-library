@@ -1,4 +1,6 @@
 """
+Data frame validation and aliasing functions.
+
 For Copyright information, please see LICENCE.
 """
 
