@@ -48,8 +48,10 @@ def outlier(
     Args:
         input_df: The input data frame.
         reference_col: The name of the column to reference a unique contributor.
-        period_col: The name of the column containing the period information for
-          a contributor.
+        period_col: The name of the column identifying the period. Values in
+          this column are merely for grouping purposes and thus do not need
+          to conform to the conventions or data type documented for periods
+          in the `utilities.periods` module.
         grouping_col: The name of the column containing the grouping information
           for a contributor.
         target_col: The name of the column containing the target variable.

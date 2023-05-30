@@ -37,7 +37,10 @@ def estimate(
         input_df: The input data frame.
         unique_identifier_col: The name of the column containing the unique
           identifier for a contributor.
-        period_col: The name of the column containing the period.
+        period_col: The name of the column identifying the period. Values in
+          this column are merely for grouping purposes and thus do not need
+          to conform to the conventions or data type documented for periods
+          in the `utilities.periods` module.
         strata_col: The name of the column containing the stratum.
         sample_marker_col: The name of the column containing a boolean marker
           where True means to include the contributor in the sample otherwise
