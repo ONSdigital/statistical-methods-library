@@ -231,7 +231,6 @@ def impute(
         "ref": reference_col,
         "period": period_col,
         "grouping": grouping_col,
-        "aux": auxiliary_col,
         "output": output_col,
         "marker": marker_col,
     }
@@ -310,7 +309,7 @@ def impute(
         ).localCheckpoint(eager=False)
         back_data_period_df = (
             validated_back_data_df.select(
-                "ref", "period", "grouping", "output", "aux", "marker"
+                "ref", "period", "grouping", "output", "marker"
             )
             .join(prior_period_df, [col("period") == col("prior_period")])
             .drop("prior_period")
