@@ -128,10 +128,11 @@ def impute(
           value was included in link calculations based on filtering for the
           next period.
         back_data_df: The back data data frame.
-        link_filter: An inclusive filter statement that specifies conditions
-          under which a responce can be used for ratio calculation. The link
-          inclusion marker columns will only be present in the output if this
-          is provided.
+        link_filter: An inclusive filter that specifies whether a responce
+          can be used for ratio calculation. The link inclusion marker
+          columns will only be present in the output if this is provided.
+          This filter is either a boolen column expression or a spark
+          sql string which yields a boolean result.
         periodicity: The periodicity of the data as used by the calculation
           functions in the `utilities.periods` module.
         unweighted_forward_link_col: The name of the column containing the
