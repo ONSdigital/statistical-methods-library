@@ -6,29 +6,13 @@ on:
      - "*"
 
 jobs:
-  create-release:
-    name: Create github release
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            *.whl
-            *.tar.gz
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    name: Build artifact
+    name: Build and release artifact
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: [3.10]
       fail-fast: false 
     steps:
       - uses: actions/checkout@v3
@@ -42,20 +26,11 @@ jobs:
           poetry-version: 1.3.2
       - name: build
         run: poetry build
-      - name: upload-wheel
-        run: |-
-          gh release upload "${GITHUB_REF##*/}" dist/*.whl dist/*.tar.gz
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  mark-release-as-released:
-    name: Set release as not draft
-    runs-on: ubuntu-latest
-    needs: [build, create-release]
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: Mark as not-draft
-        run: gh release edit "${GITHUB_REF##*/}" --draft=false --latest
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
