@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "statistical_methods_library"
-version = "12.0.1-rc2"
+version = "12.0.1-rc3"
 description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.7"
-pyspark = "^3.3"
+pyspark = "3.3.0"
 
 [tool.poetry.group.dev.dependencies]
 toml = "^0.10.2"
