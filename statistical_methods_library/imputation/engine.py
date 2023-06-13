@@ -299,7 +299,7 @@ def impute(
     )
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
-    ).localCheckpoint(eager=True)
+    ).localCheckpoint(eager=False)
 
     if back_data_df:
         validated_back_data_df = validate_dataframe(
@@ -369,9 +369,8 @@ def impute(
             )
         else:
             ratio_filter_df = prepared_df.withColumn("match", lit(True))
-        ratio_filter_df = ratio_filter_df.filter(
-            ~ratio_filter_df.output.isNull()
-        ).select(
+
+        ratio_filter_df = ratio_filter_df.filter("output IS NOT NULL").select(
             "ref",
             "period",
             "grouping",
@@ -387,33 +386,24 @@ def impute(
         ratio_calculation_df = (
             ratio_filter_df.join(
                 ratio_filter_df.selectExpr(
-                    "ref AS join_ref",
-                    "period AS join_period",
+                    "ref",
+                    "period AS previous_period",
                     "output AS previous_output",
-                    "grouping AS join_grouping",
+                    "grouping",
                     "match AS link_inclusion_previous",
                 ),
-                [
-                    col("ref") == col("join_ref"),
-                    col("previous_period") == col("join_period"),
-                    col("grouping") == col("join_grouping"),
-                ],
+                ["ref", "grouping", "previous_period"],
                 "leftouter",
             )
-            .drop("join_period", "join_ref", "join_grouping")
             .join(
                 ratio_filter_df.selectExpr(
-                    "ref AS join_ref",
-                    "period AS join_period",
+                    "ref",
+                    "period AS next_period",
                     "output AS next_output",
-                    "grouping AS join_grouping",
+                    "grouping",
                     "match AS link_inclusion_next",
                 ),
-                [
-                    col("ref") == col("join_ref"),
-                    col("next_period") == col("join_period"),
-                    col("grouping") == col("join_grouping"),
-                ],
+                ["ref", "next_period", "grouping"],
                 "leftouter",
             )
             .selectExpr(
