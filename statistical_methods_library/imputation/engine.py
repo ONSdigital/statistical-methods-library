@@ -424,7 +424,8 @@ def impute(
                 "output",
                 "match AS link_inclusion_current",
                 "next_output",
-                "link_inclusion_next" "previous_output",
+                "link_inclusion_next",
+                "previous_output",
                 "link_inclusion_previous",
             )
         )
