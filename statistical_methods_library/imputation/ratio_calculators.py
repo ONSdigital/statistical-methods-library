@@ -7,15 +7,15 @@ following columns:
     grouping: Aliased from the `grouping_col` engine argument.
     period: Aliased from the `period_col` engine argument.
     aux: Aliased from the `auxiliary_col` engine argument.
-    current.output: Aliased version of the `target_col` engine argument for
+    output: Aliased version of the `target_col` engine argument for
       the data in the current period.
     link_inclusion_current: See the `link_inclusion_current_col` argument for
       the semantics of this column.
-    next.output: Aliased version of the `target_col` engine argument for
+    next_output: Aliased version of the `target_col` engine argument for
       the data in the next period.
     link_inclusion_next: See the `link_inclusion_next_col` argument for the
       semantics of this column.
-    previous.output: Aliased version of the `target_col` engine argument for
+    previous_output: Aliased version of the `target_col` engine argument for
       the data in the previous period.
     link_inclusion_previous: See the `link_inclusion_previous_col` argument for the
       semantics of this column.
@@ -133,18 +133,18 @@ def mean_of_ratios(
         "link_inclusion_current",
         when(
             col("link_inclusion_previous")
-            & (lit(include_zeros) | (col("previous.output") != lit(0))),
-            col("previous.output"),
+            & (lit(include_zeros) | (col("previous_output") != lit(0))),
+            col("previous_output"),
         ).alias("previous_output"),
         when(
             col("link_inclusion_current")
-            & (lit(include_zeros) | (col("current.output") != lit(0))),
-            col("current.output"),
+            & (lit(include_zeros) | (col("output") != lit(0))),
+            col("output"),
         ).alias("current_output"),
         when(
             col("link_inclusion_next")
-            & (lit(include_zeros) | (col("next.output") != lit(0))),
-            col("next.output"),
+            & (lit(include_zeros) | (col("next_output") != lit(0))),
+            col("next_output"),
         ).alias("next_output"),
     ).selectExpr(
         "period",
@@ -403,26 +403,26 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
                 """
                     sum(
                         CASE
-                            WHEN previous.output IS NOT NULL
-                            THEN current.output
+                            WHEN previous_output IS NOT NULL
+                            THEN output
                         END
-                    )/sum(previous.output) AS forward
+                    )/sum(previous_output) AS forward
                 """
             ),
             expr(
                 """
                     sum(
                         CASE
-                            WHEN next.output IS NOT NULL
-                            THEN current.output
+                            WHEN next_output IS NOT NULL
+                            THEN output
                         END
-                    )/sum(next.output) AS backward
+                    )/sum(next_output) AS backward
                 """
             ),
-            expr("count(previous.output) AS count_forward"),
-            expr("count(next.output) AS count_backward"),
-            expr("coalesce(sum(previous.output), 0) = 0 AS default_forward"),
-            expr("coalesce(sum(next.output), 0) = 0 AS default_backward"),
+            expr("count(previous_output) AS count_forward"),
+            expr("count(next_output) AS count_backward"),
+            expr("coalesce(sum(previous_output), 0) = 0 AS default_forward"),
+            expr("coalesce(sum(next_output), 0) = 0 AS default_backward"),
         )
     )
     return [
@@ -461,7 +461,7 @@ def ratio_of_means_construction(
                 df.filter(col("link_inclusion_current"))
                 .groupBy("period", "grouping")
                 .agg(
-                    expr("sum(current.output)/sum(aux) AS construction"),
+                    expr("sum(output)/sum(aux) AS construction"),
                     expr("count(aux) AS count_construction"),
                     expr("coalesce(sum(aux), 0) = 0 AS default_construction"),
                 )

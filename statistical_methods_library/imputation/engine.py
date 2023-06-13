@@ -384,41 +384,41 @@ def impute(
 
         # Put the values from the current and previous periods for a
         # contributor on the same row.
-        ratio_calculation_df = ratio_filter_df.alias("current")
         ratio_calculation_df = (
-            ratio_calculation_df.join(
-                ratio_filter_df.select(
-                    "ref", "period", "output", "grouping", "match"
-                ).alias("previous"),
+            ratio_filter_df.join(
+                ratio_filter_df.selectExpr(
+                    "ref AS join_ref", "period AS join_period", "output AS previous_output", "grouping AS join_grouping", "match AS link_inclusion_previous"
+                ),
                 [
-                    col("current.ref") == col("previous.ref"),
-                    col("current.previous_period") == col("previous.period"),
-                    col("current.grouping") == col("previous.grouping"),
+                    col("ref") == col("join_ref"),
+                    col("previous_period") == col("join_period"),
+                    col("grouping") == col("join_grouping"),
                 ],
                 "leftouter",
             )
+            .drop("join_period", "join_ref", "join_grouping")
             .join(
-                ratio_filter_df.select(
-                    "ref", "period", "output", "grouping", "match"
-                ).alias("next"),
+                ratio_filter_df.selectExpr(
+                    "ref AS join_ref", "period AS join_period", "output AS next_output", "grouping AS join_grouping", "match AS link_inclusion_next"
+                ),
                 [
-                    col("current.ref") == col("next.ref"),
-                    col("current.next_period") == col("next.period"),
-                    col("current.grouping") == col("next.grouping"),
+                    col("ref") == col("join_ref"),
+                    col("next_period") == col("join_period"),
+                    col("grouping") == col("join_grouping"),
                 ],
                 "leftouter",
             )
-            .select(
-                col("current.ref").alias("ref"),
-                col("current.grouping").alias("grouping"),
-                col("current.period").alias("period"),
-                col("current.aux").alias("aux"),
-                col("current.output"),
-                col("current.match").alias("link_inclusion_current"),
-                col("next.output"),
-                col("next.match").alias("link_inclusion_next"),
-                col("previous.output"),
-                col("previous.match").alias("link_inclusion_previous"),
+            .selectExpr(
+                "ref",
+                "grouping",
+                "period",
+                "aux",
+                "output",
+                "match AS link_inclusion_current",
+                "next_output",
+                "link_inclusion_next"
+                "previous_output",
+                "link_inclusion_previous",
             )
         )
 
