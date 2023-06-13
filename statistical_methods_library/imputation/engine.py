@@ -387,7 +387,11 @@ def impute(
         ratio_calculation_df = (
             ratio_filter_df.join(
                 ratio_filter_df.selectExpr(
-                    "ref AS join_ref", "period AS join_period", "output AS previous_output", "grouping AS join_grouping", "match AS link_inclusion_previous"
+                    "ref AS join_ref",
+                    "period AS join_period",
+                    "output AS previous_output",
+                    "grouping AS join_grouping",
+                    "match AS link_inclusion_previous",
                 ),
                 [
                     col("ref") == col("join_ref"),
@@ -399,7 +403,11 @@ def impute(
             .drop("join_period", "join_ref", "join_grouping")
             .join(
                 ratio_filter_df.selectExpr(
-                    "ref AS join_ref", "period AS join_period", "output AS next_output", "grouping AS join_grouping", "match AS link_inclusion_next"
+                    "ref AS join_ref",
+                    "period AS join_period",
+                    "output AS next_output",
+                    "grouping AS join_grouping",
+                    "match AS link_inclusion_next",
                 ),
                 [
                     col("ref") == col("join_ref"),
@@ -416,8 +424,7 @@ def impute(
                 "output",
                 "match AS link_inclusion_current",
                 "next_output",
-                "link_inclusion_next"
-                "previous_output",
+                "link_inclusion_next" "previous_output",
                 "link_inclusion_previous",
             )
         )
