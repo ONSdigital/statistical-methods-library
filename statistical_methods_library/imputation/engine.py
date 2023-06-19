@@ -482,7 +482,11 @@ def impute(
                 return
 
             weighting_df = (
-                prepared_df.select(
+                prepared_df.join(
+                    prior_period_df,
+                    (col("prior_period") < col("period"))
+                )
+                .select(
                     "period",
                     "grouping",
                     *(
