@@ -3,12 +3,12 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_df_equality
 from pyspark.sql.functions import bround, col, lit
 from pyspark.sql.types import BooleanType, DecimalType, StringType
 
 from statistical_methods_library.estimation import ht_ratio
 from statistical_methods_library.utilities.exceptions import ValidationError
+from tests.helpers import check_df_equality
 
 unique_identifier_col = "identifier"
 period_col = "date"
@@ -88,7 +88,6 @@ for scenario_category in ("dev", "methodology"):
 @pytest.mark.dependency()
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
         ht_ratio.estimate("not_a_dataframe", **params)
 
 
@@ -483,8 +482,7 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
             calibration_factor_col, bround(col(calibration_factor_col), 6)
         )
 
-    assert_df_equality(
-        ret_val.sort(sort_col_list).select(select_cols),
-        exp_val.sort(sort_col_list).select(select_cols),
-        ignore_nullable=True,
+    check_df_equality(
+        actual=ret_val.sort(sort_col_list).select(select_cols),
+        expected=exp_val.sort(sort_col_list).select(select_cols),
     )

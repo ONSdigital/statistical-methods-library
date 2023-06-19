@@ -1,5 +1,5 @@
 """
-This module performs Winsorisation.
+Perform Winsorisation on a data frame.
 
 Currently only One-sided Winsorisation is implemented.
 For Copyright information, please see LICENCE.
@@ -45,50 +45,40 @@ def outlier(
     """
     Perform One-sided Winsorisation.
 
-    ###Arguments
-    * input_df: The input data frame.
-    * reference_col: The name of the column to reference a unique contributor.
-    * period_col: The name of the column containing the period information for
-      a contributor.
-    * grouping_col: The name of the column containing the grouping information
-      for a contributor.
-    * target_col: The name of the column containing the target variable.
-    * design_col: The name of the column containing the design weight.
-    * l_value_col: The name of the column containing the l value.
-    * outlier_col: The name of the column which will contain the calculated
-      outlier weight. Defaults to `outlier_weight`.
-    * calibration_col: The name of the column containing the calibration factor
-      if Ratio Winsorisation is to be performed.
-    * auxiliary_col: The name of the column containing the auxiliary values if
-      Ratio Winsorisation is to be performed.
-    * marker_col: The name of the column which will contain the
-      marker for winsorisation. Defaults to `winsorisation_marker`.
+    Args:
+        input_df: The input data frame.
+        reference_col: The name of the column to reference a unique contributor.
+        period_col: The name of the column identifying the period. Values in
+          this column are merely for grouping purposes and thus do not need
+          to conform to the conventions or data type documented for periods
+          in the `utilities.periods` module.
+        grouping_col: The name of the column containing the grouping information
+          for a contributor.
+        target_col: The name of the column containing the target variable.
+        design_col: The name of the column containing the design weight.
+        l_value_col: The name of the column containing the l value.
+        outlier_col: The name of the column which will contain the calculated
+          outlier weight.
+        calibration_col: The name of the column containing the calibration factor
+          if Ratio Winsorisation is to be performed.
+        auxiliary_col: The name of the column containing the auxiliary values if
+          Ratio Winsorisation is to be performed.
+        marker_col: The name of the column which will contain the
+          marker for winsorisation (one of the values defined by the `Marker`
+          class).
 
-    ###Returns
-    A new data frame containing:
-
-    * `reference_col`
-    * `period_col`
-    * `outlier_col`
-    * `marker_col`
-
-    ###Notes
+    Returns:
+    A new data frame containing the columns as described by the arguments
+    `reference_col`, `period_col`, `outlier_col` and `marker_col`.
 
     The provided columns containing input values must be fully
-    populated. Otherwise an error is raised.
-
-    If a stratum contains multiple l-values in the same period then an error
-    will be raised.
+    populated. In addition there must only be one l-value per stratum and
+    period.
 
     Both or neither of `calibration_col` and `auxiliary_col` must be
-    specified. Specifying one without the other raises an error.
-
-    If these columns are specified then they are used in calculations so
-    Ratio Winsorisation is performed. If not then Expansion Winsorisation is
-    performed.
-
-    `marker_col` will contain one of the marker constants defined in the
-    `Marker` enum.
+    specified. If these columns are specified then they are used in
+    calculations so Ratio Winsorisation is performed. If not then Expansion
+    Winsorisation is performed.
     """
 
     ratio_cols = [auxiliary_col, calibration_col]

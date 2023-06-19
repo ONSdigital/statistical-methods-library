@@ -1,0 +1,5 @@
+identifier,date,group,output,marker,growth_forward,growth_backward,forward,backward,construction,count_forward,count_backward,count_construction,default_forward,default_backward,default_construction
+10001,202001,100,3892,R,,,1,1,147.8876404,0,0,3,true,true,false
+10002,202001,100,3873,R,,,1,1,147.8876404,0,0,3,true,true,false
+10003,202001,100,5397,R,,,1,1,147.8876404,0,0,3,true,true,false
+10004,202001,100,10500.022472,C,,,1,1,147.8876404,0,0,3,true,true,false

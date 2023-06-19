@@ -1,0 +1,186 @@
+[field_names]
+forward_growth_col = "growth_forward"
+backward_growth_col = "growth_backward"
+trimmed_forward_col = "trim_inclusion_forward"
+trimmed_backward_col = "trim_inclusion_backward"
+
+[field_types]
+forward_growth_col = "decimal(15,6)"
+backward_growth_col = "decimal(15,6)"
+trimmed_forward_col = "boolean"
+trimmed_backward_col = "boolean"
+
+[scenarios.05_R_R_FI_FI_FI_year_span]
+starting_period = "202010"
+
+[scenarios.26_C_FI_FI_NS_BI_BI_R_filtered]
+link_filter = "identifier != '140005'"
+
+[scenarios.27_BI_BI_R_NS_R_FI_FI_filtered]
+link_filter = "identifier NOT IN ('150005', '150006')"
+
+[scenarios.28_link_columns_filtered]
+link_filter = "identifier != '190007'"
+
+[scenarios.29_mixed_data_filtered]
+link_filter = "identifier NOT IN ('200013', '200014')"
+
+[scenarios.30_class_change_C_C_FI_filtered]
+link_filter = "identifier NOT IN ('230006', '230008')"
+
+[scenarios.35_TB_10_R_R_FI]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.36_TB_10_BI_BI_R]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.37_TB_10_C_FI_FI]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.38_T_10_R_R_FI]
+lower_trim = 0
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.39_B_10_R_R_FI]
+lower_trim = 10
+upper_trim = 0
+trim_threshold = 10
+
+[scenarios.40_TB_10_R_R_FI_no_trim]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.41_TB_10_R_R_FI_filtered]
+link_filter = "NOT(identifier = '30004' AND date = '202002')"
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.42_TB_10_R_R_FI-BI_R_R]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.43_TB_10_BI_BI_R_boundary]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.44_TB_5_BI_BI_R_boundary]
+lower_trim = 5
+upper_trim = 5
+trim_threshold = 10
+
+[scenarios.45_TB_10_R_R_FI_partial_no_trim]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.46_TB_10_BI_BI_R_filtered]
+link_filter = "NOT(identifier = '90003' AND date = '202001')"
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.47_TB_50]
+lower_trim = 50
+upper_trim = 50
+trim_threshold = 10
+
+[scenarios.48_BI_BI_R-R_R_FI_filtered_default]
+link_filter = "identifier NOT IN ('110005', '110006', '110007')"
+
+# Provide weights as strings here as they'll be converted in the test code
+# to Decimal to avoid floating point to Decimal issues
+[scenarios.49_R_R_FI-BI_R_R_50_weight_previous_month]
+weight = "0.5"
+weight_periodicity_multiplier = 1
+
+[scenarios.50_R_R_FI_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.51_R_R_FI_80_weight]
+weight = "0.8"
+weight_periodicity_multiplier = 12
+
+[scenarios.52_BI_BI_R_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.53_C_FI_FI_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.54_R_R_FI-BI_R_R_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.56_BI_BI_R_NS_C_FI_FI_zeros_included]
+include_zeros = true
+
+[scenarios.57_BI_BI_R_FI_FI_R_FI_alternating_filtered]
+link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
+
+[scenarios.58_TB_10_partial_default]
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.59_class_change_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.60_BI_BI_R_FI_FI_R_FI_50_weight_default]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.61_R_R_FI-BI_R_R_50_weight_filtered]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+link_filter = "identifier NOT IN ('110009', '110011')"
+
+[scenarios.62_mixed_data_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.63_TB_10_R_R_FI-BI_R_R_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.64_TB_10_C_FI_FI_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.65_TB_10_BI_BI_R_50_weight_filtered]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+link_filter = "NOT(identifier = '90003' AND date = '202001')"
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10
+
+[scenarios.66_partial_links_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+
+[scenarios.67_TB_10_muti_variable_50_weight]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+lower_trim = 10
+upper_trim = 10
+trim_threshold = 10

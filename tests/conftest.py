@@ -35,8 +35,7 @@ def fxt_load_test_csv(fxt_spark_session):
     return load
 
 
-# We want to isolate the session per tests to prevent interactions
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def fxt_spark_session():
     """
     Creates a Spark session to be used throughout all tests.

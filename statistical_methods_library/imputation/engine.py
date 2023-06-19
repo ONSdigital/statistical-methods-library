@@ -1,20 +1,27 @@
 """
-Perform imputation on a data frame.
+Perform link-based imputation on a data frame.
 
-Currently only Ratio of Means (or Ratio of Sums) imputation is implemented.
+This module provides the engine and other core aspects of imputation with
+ratio calculation being handled by provided callables.
+
 For Copyright information, please see LICENCE.
 """
-from dataclasses import dataclass
+from decimal import Decimal
 from enum import Enum
-from typing import Callable, Iterable, List, Optional, Union
+from functools import reduce
+from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, lit, when
-from pyspark.sql.types import DecimalType, IntegerType, StringType
+from pyspark.sql.functions import col, expr, first, lit, when
+from pyspark.sql.types import DecimalType, StringType
 
-from statistical_methods_library.utilities import validation
+from statistical_methods_library.utilities.periods import (
+    calculate_next_period,
+    calculate_previous_period,
+)
+from statistical_methods_library.utilities.validation import validate_dataframe
 
-# --- Marker constants ---
+from .ratio_calculators import RatioCalculator, ratio_of_means_construction
 
 
 class Marker(Enum):
@@ -37,83 +44,217 @@ class Marker(Enum):
     """The value has been forward imputed from a constructed value."""
 
 
-@dataclass
-class RatioCalculationResult:
-    data: DataFrame
-    join_columns: List[Union[str, Column]]
-    fill_columns: List[Union[str, Column]] = None
-
-
 def impute(
     *,
     input_df: DataFrame,
     reference_col: str,
     period_col: str,
-    strata_col: str,
+    grouping_col: str,
     target_col: str,
     auxiliary_col: str,
-    ratio_calculation_function: Callable[[DataFrame], Iterable[RatioCalculationResult]],
+    forward_backward_ratio_calculator: RatioCalculator,
+    construction_ratio_calculator: Optional[
+        RatioCalculator
+    ] = ratio_of_means_construction,
     output_col: Optional[str] = "imputed",
     marker_col: Optional[str] = "imputation_marker",
-    forward_link_col: Optional[str] = None,
-    backward_link_col: Optional[str] = None,
-    construction_link_col: Optional[str] = None,
+    forward_link_col: Optional[str] = "forward",
+    backward_link_col: Optional[str] = "backward",
+    construction_link_col: Optional[str] = "construction",
     count_construction_col: Optional[str] = "count_construction",
     count_forward_col: Optional[str] = "count_forward",
     count_backward_col: Optional[str] = "count_backward",
+    default_construction_col: Optional[str] = "default_construction",
+    default_forward_col: Optional[str] = "default_forward",
+    default_backward_col: Optional[str] = "default_backward",
+    link_inclusion_current_col: Optional[str] = "link_inclusion_current",
+    link_inclusion_previous_col: Optional[str] = "link_inclusion_previous",
+    link_inclusion_next_col: Optional[str] = "link_inclusion_next",
     back_data_df: Optional[DataFrame] = None,
     link_filter: Optional[Union[str, Column]] = None,
+    periodicity: Optional[int] = 1,
+    weight: Optional[Decimal] = None,
+    weight_periodicity_multiplier: Optional[int] = None,
+    unweighted_forward_link_col: Optional[str] = "forward_unweighted",
+    unweighted_backward_link_col: Optional[str] = "backward_unweighted",
+    unweighted_construction_link_col: Optional[str] = "construction_unweighted",
+    **ratio_calculator_params,
 ) -> DataFrame:
+    """
+    Impute a target variable using imputation links (a.k.a. ratios).
+
+    Args:
+        input_df: The input data frame.
+        reference_col: The name of the column containing the identifier for a
+          contributor. Must be unique within a period and grouping.
+        period_col: The name of the column containing the period.
+        grouping_col: The name of the column containing the imputation
+          grouping for a given record..
+        target_col: The name of the column containing the target variable.
+        auxiliary_col: The name of the column containing the auxiliary variable.
+        forward_backward_ratio_calculator: Used to calculate the ratios for
+            forward and backward imputation. See the
+          `imputation.ratio_calculators` module for more details.
+        construction_ratio_calculator: Used to calculate the ratio for
+          construction imputation. See the `imputation.ratio_calculators`
+          module for more details.
+        output_col: The name of the column containing the imputed variable.
+        marker_col: The name of the column containing the imputation marker.
+        forward_link_col: The name of the column containing the forward
+          imputation link.
+        backward_link_col: The name of the column containing the backward
+          imputation link.
+        construction_link_col: The name of the column containing the
+          construction imputation link.
+        count_construction_col: The name of the column containing the count of
+          matched pairs used in construction link calculations.
+        count_forward_col: The name of the column containing the count of
+          matched pairs used inforward link calculations.
+        count_backward_col: The name of the column containing the count of
+          matched pairs used in backward link calculations.
+        default_construction_col: The name of the column containing the default
+          marker for the construction link.
+        default_forward_col: The name of the column containing the default
+          marker for the forward link.
+        default_backward_col: The name of the column containing the default
+          marker for the backward link.
+        link_inclusion_current_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          current period.
+        link_inclusion_previous_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          previous period.
+        link_inclusion_next_col: The name of the column marking whether the
+          value was included in link calculations based on filtering for the
+          next period.
+        back_data_df: The back data data frame.
+        link_filter: An inclusive filter that specifies whether a responce
+          can be used for ratio calculation. The link inclusion marker
+          columns will only be present in the output if this is provided.
+          This filter is either a boolen column expression or a spark
+          sql string which yields a boolean result.
+        periodicity: The periodicity of the data as used by the calculation
+          functions in the `utilities.periods` module.
+        unweighted_forward_link_col: The name of the column containing the
+          forward link prior to weighting.
+        unweighted_backward_link_col: The name of the column containing the
+          backward link prior to weighting.
+        unweighted_construction_link_col: The name of the column containing the
+          construction link prior to weighting.
+        weight: A decimal value between 0 and 1 inclusive used to weigh links
+          in the current period against those in a previous period. The current
+          link is multiplied by the weight whereas the corresponding previous
+          link is multiplied by (1 - weight). If no corresponding previous link
+          can be found the current link is left unchanged. Link weighting is
+          only performed and the unweighted link columns above are only present
+          in the output if this value is provided.
+        weight_periodicity_multiplier: Multiplied by the periodicity of the
+          dataset to calculate the previous period when finding the previous
+          links for weighting.
+        ratio_calculator_params: Any extra keyword arguments to the engine are
+          passed to the specified ratio calculators as keyword args and are
+          otherwise ignored by this function. Please see the specified ratio
+          calculator callables for details.
+
+    Returns:
+    A data frame containing the imputed variable and links. The exact columns
+    depend on the provided arguments.
+    the specified arguments. The data frame contains a row for each reference,
+    period and grouping combination in the input data.
+
+    Either both or neither of `weight` and `weight_periodicity_multiplier`
+    must be specified.
+
+    Either both or neither of `forward_link_col` and `backward_link_col` must
+    be in the input.
+
+    If `forward_link_col` and `backward_link_col` are present in the input
+    then they will not be calculated or weighted. The same also applies to
+    `construction_link_col`. This also means that the corresponding unweighted
+    columns will not be present in the output even if the arguments for
+    weighting are specified. In addition the corresponding count columns will
+    be set to `0` in this case and any NULL values defaulted with the
+    corresponding default markers set accordingly.
+
+    If `link_filter` is provided then the inclusion marker columns will be
+    present in the output otherwise they will not be.
+
+    Ratio calculators may also provide additional output columns.
+    Please see the specified ratio calculators and the
+    `imputation.ratio_calculators` module for more details.
+    """
     # --- Validate params ---
-    link_cols = [forward_link_col, backward_link_col, construction_link_col]
+    if not isinstance(input_df, DataFrame):
+        raise TypeError("Input is not a DataFrame")
+
+    link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
 
     input_params = {
         "ref": reference_col,
         "period": period_col,
-        "strata": strata_col,
+        "grouping": grouping_col,
         "target": target_col,
         "aux": auxiliary_col,
     }
 
-    optional_params = {
-        "forward": forward_link_col,
-        "backward": backward_link_col,
-        "construction": construction_link_col,
-    }
-
     # Mapping of column aliases to parameters
-    created_col_mapping = {
+    output_col_mapping = {
         "output": output_col,
         "marker": marker_col,
         "count_construction": count_construction_col,
         "count_forward": count_forward_col,
         "count_backward": count_backward_col,
-    }
-
-    new_link_map = {
-        "forward": "forward",
-        "backward": "backward",
-        "construction": "construction",
-    }
-
-    if forward_link_col is not None:
-        input_params.update(optional_params)
-
-    full_col_mapping = {**input_params, **created_col_mapping}
-
-    if forward_link_col is None:
-        full_col_mapping = {**full_col_mapping, **new_link_map}
-
-    back_expected_columns = {
+        "default_construction": default_construction_col,
+        "default_forward": default_forward_col,
+        "default_backward": default_backward_col,
+        "forward": forward_link_col,
+        "backward": backward_link_col,
+        "construction": construction_link_col,
         "ref": reference_col,
         "period": period_col,
-        "strata": strata_col,
-        "aux": auxiliary_col,
+        "grouping": grouping_col,
+    }
+
+    if forward_link_col in input_df.columns or backward_link_col in input_df.columns:
+        input_params.update(
+            {
+                "forward": forward_link_col,
+                "backward": backward_link_col,
+            }
+        )
+
+    if construction_link_col in input_df.columns:
+        input_params["construction"] = construction_link_col
+
+    back_input_params = {
+        "ref": reference_col,
+        "period": period_col,
+        "grouping": grouping_col,
         "output": output_col,
         "marker": marker_col,
     }
+
+    if weight is not None:
+        if not isinstance(weight, Decimal):
+            raise TypeError("weight must be of type Decimal")
+
+        weight = lit(weight)
+        weight_periodicity = weight_periodicity_multiplier * periodicity
+        weight_col_mapping = {
+            "forward_unweighted": unweighted_forward_link_col,
+            "backward_unweighted": unweighted_backward_link_col,
+            "construction_unweighted": unweighted_construction_link_col,
+        }
+
+        for name in "forward", "backward", "construction":
+            if name in input_params:
+                del weight_col_mapping[f"{name}_unweighted"]
+
+        back_input_params.update(weight_col_mapping)
+
+        output_col_mapping.update(weight_col_mapping)
 
     type_mapping = {
         "period": StringType,
@@ -124,167 +265,280 @@ def impute(
         "forward": DecimalType,
         "backward": DecimalType,
         "construction": DecimalType,
+        "forward_unweighted": DecimalType,
+        "backward_unweighted": DecimalType,
+        "construction_unweighted": DecimalType,
     }
 
-    aliased_input_df = validation.validate_dataframe(
-        input_df,
-        input_params,
-        type_mapping,
-        ["ref", "period"],
-        ["target", "forward", "backward", "construction"],
-    )
+    if link_filter:
+        filtered_refs = (
+            input_df.unionByName(back_data_df, allowMissingColumns=True).select(
+                col(reference_col).alias("ref"),
+                col(period_col).alias("period"),
+                col(grouping_col).alias("grouping"),
+                (
+                    expr(link_filter) if isinstance(link_filter, str) else link_filter
+                ).alias("match"),
+            )
+        ).localCheckpoint(eager=False)
 
-    # Cache the prepared back data df since we'll need a few differently
-    # filtered versions
-    prepared_back_data_df = None
+    prepared_df = (
+        validate_dataframe(
+            input_df,
+            input_params,
+            type_mapping,
+            ["ref", "period", "grouping"],
+            ["target", "forward", "backward", "construction"],
+        )
+        .withColumnRenamed("target", "output")
+        .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
+        .withColumn(
+            "previous_period", calculate_previous_period(col("period"), periodicity)
+        )
+        .withColumn("next_period", calculate_next_period(col("period"), periodicity))
+    )
+    prior_period_df = prepared_df.selectExpr(
+        "min(previous_period) AS prior_period"
+    ).localCheckpoint(eager=False)
 
     if back_data_df:
-        prepared_back_data_df = validation.validate_dataframe(
-            back_data_df, back_expected_columns, type_mapping, ["ref", "period"]
-        )
-        input_df = input_df.unionByName(back_data_df, allowMissingColumns=True)
-
-    if link_filter:
-        filtered_refs = input_df.filter(link_filter).select(
-            col(reference_col).alias("ref"), col(period_col).alias("period")
-        )
-
-    # Store the value for the period prior to the start of imputation.
-    # Stored as a value to avoid a join in output creation.
-    prior_period = None
-
-    # --- Run ---
-    def run() -> DataFrame:
-        nonlocal back_data_df
-
-        def should_null_check(func, perform_null_check, *args, **kwargs):
-            return lambda df: (func(df, *args, **kwargs), perform_null_check)
-
-        stages = [
-            should_null_check(prepare_df, False),
-            should_null_check(calculate_ratios, True),
-            should_null_check(forward_impute_from_response, True),
-            should_null_check(backward_impute, True),
-            should_null_check(construct_values, True),
-            should_null_check(forward_impute_from_construction, True),
-        ]
-        df = aliased_input_df
-        for stage in stages:
-            result = stage(df)
-            if result:
-                df = result[0].localCheckpoint(eager=False)
-
-                if result[1] and df.filter(col("output").isNull()).count() == 0:
-                    break
-
-        return create_output(df)
-
-    # --- Prepare DF ---
-
-    def prepare_df(df: DataFrame) -> DataFrame:
-        nonlocal prepared_back_data_df
-
-        prepared_df = (
-            df.withColumn("output", col("target"))
-            .drop("target")
-            .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
-            .withColumn("previous_period", calculate_previous_period(col("period")))
-            .withColumn("next_period", calculate_next_period(col("period")))
-        )
-
-        nonlocal prior_period
-        # We know this will be a single value so use collect as then we
-        # can filter directly.
-        prior_period = prepared_df.selectExpr("min(previous_period)").collect()[0][0]
-
-        if prepared_back_data_df:
-            prepared_back_data_df = (
-                prepared_back_data_df.filter(
-                    (
-                        (col(period_col) == lit(prior_period))
-                        & (col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))
-                    )
-                )
-                .withColumn("previous_period", calculate_previous_period(col("period")))
-                .withColumn("next_period", calculate_next_period(col("period")))
+        validated_back_data_df = validate_dataframe(
+            back_data_df,
+            back_input_params,
+            type_mapping,
+            ["ref", "period", "grouping"],
+        ).localCheckpoint(eager=False)
+        back_data_period_df = (
+            validated_back_data_df.select(
+                "ref", "period", "grouping", "output", "marker"
             )
-
-        else:
-            # Set the prepared_back_data_df to be empty when back_data not
-            # supplied.
-            prepared_back_data_df = prepared_df.filter(col(period_col).isNull())
-
-        prepared_back_data_df = prepared_back_data_df.localCheckpoint(eager=True)
-        # Ratio calculation needs all the responses from the back data
+            .join(prior_period_df, [col("period") == col("prior_period")])
+            .drop("prior_period")
+            .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
+            .withColumn(
+                "previous_period",
+                calculate_previous_period(col("period"), periodicity),
+            )
+            .withColumn(
+                "next_period", calculate_next_period(col("period"), periodicity)
+            )
+            .localCheckpoint(eager=False)
+        )
         prepared_df = prepared_df.unionByName(
-            filter_back_data(col("marker") == lit(Marker.RESPONSE.value)),
+            back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
 
-        return prepared_df
-
-    # --- Calculate Ratios ---
-
-    def calculate_ratios(df: DataFrame) -> DataFrame:
-        if "forward" in df.columns:
-            df = (
-                df.fillna(1.0, ["forward", "backward", "construction"])
-                .withColumn("count_forward", lit(None).cast("long"))
-                .withColumn("count_backward", lit(None).cast("long"))
-                .withColumn("count_construction", lit(None).cast("long"))
+    def calculate_ratios():
+        # This allows us to return early if we have nothing to do
+        nonlocal prepared_df
+        ratio_calculators = []
+        if "forward" in prepared_df.columns:
+            prepared_df = (
+                prepared_df.withColumn("default_forward", expr("forward IS NULL"))
+                .withColumn("default_backward", expr("backward IS NULL"))
+                .fillna(1.0, ["forward", "backward"])
+                .withColumn("count_forward", lit(0).cast("long"))
+                .withColumn("count_backward", lit(0).cast("long"))
             )
-            return df
 
-        # Since we're going to join on to the main df at the end filtering here
-        # won't cause us to lose strata as they'll just be filled with
+        else:
+            ratio_calculators.append(forward_backward_ratio_calculator)
+
+        if "construction" in prepared_df.columns:
+            prepared_df = (
+                prepared_df.withColumn(
+                    "default_construction", expr("construction IS NULL")
+                )
+                .fillna(1.0, ["construction"])
+                .withColumn("count_construction", lit(0).cast("long"))
+            )
+
+        else:
+            ratio_calculators.append(construction_ratio_calculator)
+
+        if not ratio_calculators:
+            return
+
+        # Since we're going to join on to the main df filtering here
+        # won't cause us to lose grouping as they'll just be filled with
         # default ratios.
         if link_filter:
-            filtered_df = df.join(filtered_refs, ["ref", "period"])
+            ratio_filter_df = prepared_df.join(
+                filtered_refs, ["ref", "period", "grouping"]
+            )
         else:
-            filtered_df = df
-        filtered_df = filtered_df.filter(~df.output.isNull()).select(
+            ratio_filter_df = prepared_df.withColumn("match", lit(True))
+
+        ratio_filter_df = ratio_filter_df.filter("output IS NOT NULL").select(
             "ref",
             "period",
-            "strata",
+            "grouping",
             "output",
             "aux",
             "previous_period",
             "next_period",
+            "match",
         )
 
         # Put the values from the current and previous periods for a
         # contributor on the same row.
-        working_df = filtered_df.alias("current")
-        working_df = working_df.join(
-            filtered_df.select("ref", "period", "output", "strata").alias("prev"),
-            [
-                col("current.ref") == col("prev.ref"),
-                col("current.previous_period") == col("prev.period"),
-                col("current.strata") == col("prev.strata"),
-            ],
-            "leftouter",
-        ).select(
-            col("current.strata").alias("strata"),
-            col("current.period").alias("period"),
-            when(~col("prev.output").isNull(), col("current.output")).alias("output"),
-            col("current.aux").alias("aux"),
-            col("prev.output").alias("other_output"),
-            col("current.output").alias("output_for_construction"),
-            col("current.next_period").alias("next_period"),
+        ratio_calculation_df = (
+            ratio_filter_df.join(
+                ratio_filter_df.selectExpr(
+                    "ref",
+                    "period AS previous_period",
+                    "output AS previous_output",
+                    "grouping",
+                    "match AS link_inclusion_previous",
+                ),
+                ["ref", "grouping", "previous_period"],
+                "leftouter",
+            )
+            .join(
+                ratio_filter_df.selectExpr(
+                    "ref",
+                    "period AS next_period",
+                    "output AS next_output",
+                    "grouping",
+                    "match AS link_inclusion_next",
+                ),
+                ["ref", "next_period", "grouping"],
+                "leftouter",
+            )
+            .selectExpr(
+                "ref",
+                "grouping",
+                "period",
+                "aux",
+                "output",
+                "match AS link_inclusion_current",
+                "next_output",
+                "link_inclusion_next",
+                "previous_output",
+                "link_inclusion_previous",
+            )
         )
 
-        # Join the strata ratios onto the input such that each contributor has
+        # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
-        all_fill_cols = []
-        for result in ratio_calculation_function(working_df):
-            df = df.join(result.data, result.join_columns, "left")
-            if result.fill_columns:
-                all_fill_cols += result.fill_columns
+        fill_values = {}
+        for result in sum(
+            (
+                calculator(df=ratio_calculation_df, **ratio_calculator_params)
+                for calculator in ratio_calculators
+            ),
+            [],
+        ):
+            prepared_df = prepared_df.join(result.data, result.join_columns, "left")
+            fill_values.update(result.fill_values)
+            output_col_mapping.update(result.additional_outputs)
 
-        if all_fill_cols:
-            df = df.fillna(1.0, all_fill_cols)
+        for fill_column, fill_value in fill_values.items():
+            prepared_df = prepared_df.fillna(fill_value, fill_column)
 
-        return df
+        if link_filter:
+            prepared_df = prepared_df.join(
+                ratio_calculation_df.select(
+                    "ref",
+                    "period",
+                    "grouping",
+                    "link_inclusion_previous",
+                    "link_inclusion_current",
+                    "link_inclusion_next",
+                ),
+                ["ref", "period", "grouping"],
+                "left",
+            )
+            output_col_mapping.update(
+                {
+                    "link_inclusion_current": link_inclusion_current_col,
+                    "link_inclusion_previous": link_inclusion_previous_col,
+                    "link_inclusion_next": link_inclusion_next_col,
+                }
+            )
+
+        if weight is not None:
+
+            def calculate_weighted_link(link_name):
+                prev_link = col(f"prev.{link_name}")
+                curr_link = col(f"curr.{link_name}")
+                return (
+                    when(
+                        prev_link.isNotNull(),
+                        weight * curr_link + (lit(Decimal(1)) - weight) * prev_link,
+                    )
+                    .otherwise(curr_link)
+                    .alias(link_name)
+                )
+
+            weight_col_names = [
+                name
+                for name in ("forward", "backward", "construction")
+                if name not in input_params
+            ]
+
+            if not weight_col_names:
+                return
+
+            weighting_df = (
+                prepared_df.join(prior_period_df, (col("prior_period") < col("period")))
+                .select(
+                    "period",
+                    "grouping",
+                    *(
+                        col(name).alias(f"{name}_unweighted")
+                        for name in weight_col_names
+                    ),
+                )
+                .unionByName(
+                    validated_back_data_df.select(
+                        "period",
+                        "grouping",
+                        *(f"{name}_unweighted" for name in weight_col_names),
+                    )
+                )
+                .groupBy("period", "grouping")
+                .agg(
+                    *(
+                        first(f"{name}_unweighted").alias(name)
+                        for name in weight_col_names
+                    )
+                )
+            )
+
+            curr_df = weighting_df.alias("curr")
+            prev_df = weighting_df.alias("prev")
+            prepared_df = (
+                curr_df.join(
+                    prev_df,
+                    (
+                        (
+                            col("prev.period")
+                            == calculate_previous_period(
+                                col("curr.period"), weight_periodicity
+                            )
+                        )
+                        & (col("curr.grouping") == col("prev.grouping"))
+                    ),
+                    "left",
+                )
+                .select(
+                    expr("curr.period AS period"),
+                    expr("curr.grouping AS grouping"),
+                    *(calculate_weighted_link(name) for name in weight_col_names),
+                )
+                .join(
+                    reduce(
+                        lambda d, n: d.withColumnRenamed(n, f"{n}_unweighted"),
+                        weight_col_names,
+                        prepared_df,
+                    ),
+                    ["period", "grouping"],
+                )
+            )
+
+    calculate_ratios()
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
@@ -307,7 +561,7 @@ def impute(
             working_df = df.select(
                 "ref",
                 "period",
-                "strata",
+                "grouping",
                 "output",
                 "marker",
                 "previous_period",
@@ -325,13 +579,13 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
-            # Any refs which have no values at all can't be imputed from so we
-            # don't care about them here.
-            ref_df = imputed_df.select("ref").distinct()
+            # Any ref and grouping combos which have no values at all can't be
+            # imputed from so we don't care about them here.
+            ref_df = imputed_df.select("ref", "grouping").distinct()
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
-                .join(ref_df, "ref")
+                .join(ref_df, ["ref", "grouping"])
                 .localCheckpoint(eager=True)
             )
 
@@ -340,7 +594,7 @@ def impute(
                 "ref AS other_ref",
                 "period AS other_period",
                 "output AS other_output",
-                "strata AS other_strata",
+                "grouping AS other_grouping",
             )
             calculation_df = (
                 null_response_df.join(
@@ -348,13 +602,13 @@ def impute(
                     [
                         col(other_period_col) == col("other_period"),
                         col("ref") == col("other_ref"),
-                        col("strata") == col("other_strata"),
+                        col("grouping") == col("other_grouping"),
                     ],
                 )
                 .select(
                     "ref",
                     "period",
-                    "strata",
+                    "grouping",
                     (col(link_col) * col("other_output")).alias("output"),
                     lit(marker.value).alias("marker"),
                     "previous_period",
@@ -374,27 +628,30 @@ def impute(
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
-                calculation_df.select("ref", "period"), ["ref", "period"], "leftanti"
+                calculation_df.select("ref", "period", "grouping"),
+                ["ref", "period", "grouping"],
+                "leftanti",
             ).localCheckpoint(eager=True)
 
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "output", "marker"),
-            ["ref", "period"],
+            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            ["ref", "period", "grouping"],
             "leftouter",
         )
 
     # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
-        # Add the forward imputes from responses from the back data
-        df = df.unionByName(
-            filter_back_data(
-                col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
-            ),
-            allowMissingColumns=True,
-        )
+        if back_data_df:
+            # Add the forward imputes from responses from the back data
+            df = df.unionByName(
+                back_data_period_df.filter(
+                    col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
+                ),
+                allowMissingColumns=True,
+            )
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
@@ -402,35 +659,37 @@ def impute(
 
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
-        # Add in the constructions and forward imputes from construction in the back data
-        df = df.unionByName(
-            filter_back_data(
-                (
-                    (col("marker") == lit(Marker.CONSTRUCTED.value))
-                    | (
-                        col("marker")
-                        == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+        if back_data_df:
+            df = df.unionByName(
+                back_data_period_df.filter(
+                    (
+                        (col("marker") == lit(Marker.CONSTRUCTED.value))
+                        | (
+                            col("marker")
+                            == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+                        )
                     )
-                )
-            ),
-            allowMissingColumns=True,
-        )
+                ),
+                allowMissingColumns=True,
+            )
+
         construction_df = df.filter(df.output.isNull()).select(
-            "ref", "period", "strata", "aux", "construction", "previous_period"
+            "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "strata").alias("other")
+        other_df = df.select("ref", "period", "grouping").alias("other")
         construction_df = construction_df.alias("construction")
         construction_df = construction_df.join(
             other_df,
             [
                 col("construction.ref") == col("other.ref"),
                 col("construction.previous_period") == col("other.period"),
-                col("construction.strata") == col("other.strata"),
+                col("construction.grouping") == col("other.grouping"),
             ],
             "leftanti",
         ).select(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
+            col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         )
@@ -440,7 +699,7 @@ def impute(
             .withColumnRenamed("marker", "existing_marker")
             .join(
                 construction_df,
-                ["ref", "period"],
+                ["ref", "period", "grouping"],
                 "leftouter",
             )
             .select(
@@ -466,43 +725,20 @@ def impute(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
 
-    # --- Utility functions ---
-    def create_output(df: DataFrame) -> DataFrame:
-        del full_col_mapping["aux"]
-        del full_col_mapping["strata"]
-        return select_cols(
-            df.filter(col("period") != lit(prior_period)), reversed=False
-        ).withColumnRenamed("output", output_col)
+    df = prepared_df
+    for stage in (
+        forward_impute_from_response,
+        backward_impute,
+        construct_values,
+        forward_impute_from_construction,
+    ):
+        df = stage(df).localCheckpoint(eager=False)
+        if df.filter(col("output").isNull()).count() == 0:
+            break
 
-    def select_cols(
-        df: DataFrame,
-        reversed: bool = True,
-        drop_unmapped: bool = True,
-        mapping: dict = full_col_mapping,
-    ) -> DataFrame:
-        col_mapping = {v: k for k, v in mapping.items()} if reversed else mapping
-        col_set = set(df.columns)
-
-        return df.select(
-            [
-                col(k).alias(col_mapping.get(k, k))
-                for k in ((col_mapping.keys() & col_set) if drop_unmapped else col_set)
-            ]
-        )
-
-    def calculate_previous_period(period: Column) -> Column:
-        return when(
-            period.endswith("01"), (period.cast(IntegerType()) - 89).cast(StringType())
-        ).otherwise((period.cast(IntegerType()) - 1).cast(StringType()))
-
-    def calculate_next_period(period: Column) -> Column:
-        return when(
-            period.endswith("12"), (period.cast(IntegerType()) + 89).cast(StringType())
-        ).otherwise((period.cast(IntegerType()) + 1).cast(StringType()))
-
-    def filter_back_data(filter_col: Column) -> DataFrame:
-        return prepared_back_data_df.filter(filter_col).localCheckpoint(eager=True)
-
-    # ----------
-
-    return run()
+    return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
+        [
+            col(k).alias(output_col_mapping[k])
+            for k in sorted(output_col_mapping.keys() & set(df.columns))
+        ]
+    )

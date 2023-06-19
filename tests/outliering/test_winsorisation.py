@@ -3,12 +3,12 @@ import os
 import pathlib
 
 import pytest
-from chispa import assert_df_equality
 from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.outliering import winsorisation
 from statistical_methods_library.utilities.exceptions import ValidationError
+from tests.helpers import check_df_equality
 
 reference_col = "identifier"
 period_col = "date"
@@ -99,7 +99,6 @@ for scenario_category in ("dev", "methodology"):
 @pytest.mark.dependency()
 def test_input_not_a_dataframe():
     with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
         winsorisation.outlier("not_a_dataframe", *params)
 
 
@@ -351,10 +350,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
 
     assert isinstance(ret_val, type(test_dataframe))
     sort_col_list = [reference_col, period_col]
-    assert_df_equality(
-        ret_val.sort(sort_col_list),
-        exp_val.sort(sort_col_list),
-        ignore_nullable=True,
+    check_df_equality(
+        actual=ret_val.sort(sort_col_list).select(exp_val.columns),
+        expected=exp_val.sort(sort_col_list),
     )
 
 
