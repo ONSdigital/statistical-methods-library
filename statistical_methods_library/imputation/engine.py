@@ -344,12 +344,9 @@ def impute(
             ratio_calculators.append(forward_backward_ratio_calculator)
 
         if "construction" in prepared_df.columns:
-            prepared_df = (
-                prepared_df.withColumn(
-                    "default_construction", expr("construction IS NULL")
-                )
-                .withColumn("count_construction", lit(0).cast("long"))
-            )
+            prepared_df = prepared_df.withColumn(
+                "default_construction", expr("construction IS NULL")
+            ).withColumn("count_construction", lit(0).cast("long"))
 
         else:
             ratio_calculators.append(construction_ratio_calculator)
