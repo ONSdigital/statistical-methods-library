@@ -173,8 +173,7 @@ def impute(
     `construction_link_col`. This also means that the corresponding unweighted
     columns will not be present in the output even if the arguments for
     weighting are specified. In addition the corresponding count columns will
-    be set to `0` in this case and any NULL values defaulted with the
-    corresponding default markers set accordingly.
+    be set to `0` in this case.
 
     If `link_filter` is provided then the inclusion marker columns will be
     present in the output otherwise they will not be.
@@ -288,7 +287,7 @@ def impute(
             input_params,
             type_mapping,
             ["ref", "period", "grouping"],
-            ["target", "forward", "backward", "construction"],
+            ["target"],
         )
         .withColumnRenamed("target", "output")
         .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
@@ -337,7 +336,6 @@ def impute(
             prepared_df = (
                 prepared_df.withColumn("default_forward", expr("forward IS NULL"))
                 .withColumn("default_backward", expr("backward IS NULL"))
-                .fillna(1.0, ["forward", "backward"])
                 .withColumn("count_forward", lit(0).cast("long"))
                 .withColumn("count_backward", lit(0).cast("long"))
             )
@@ -346,13 +344,9 @@ def impute(
             ratio_calculators.append(forward_backward_ratio_calculator)
 
         if "construction" in prepared_df.columns:
-            prepared_df = (
-                prepared_df.withColumn(
-                    "default_construction", expr("construction IS NULL")
-                )
-                .fillna(1.0, ["construction"])
-                .withColumn("count_construction", lit(0).cast("long"))
-            )
+            prepared_df = prepared_df.withColumn(
+                "default_construction", expr("construction IS NULL")
+            ).withColumn("count_construction", lit(0).cast("long"))
 
         else:
             ratio_calculators.append(construction_ratio_calculator)

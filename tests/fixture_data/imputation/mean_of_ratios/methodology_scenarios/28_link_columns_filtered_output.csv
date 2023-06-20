@@ -3,7 +3,7 @@ identifier,date,group,forward,backward,construction,output,marker,count_forward,
 190001,202002,100,0.8521,1.5274,121.4187,4996,R,0,0,0,false,false,false
 190001,202003,100,0.9685,1.8795,89.3761,1480,R,0,0,0,false,false,false
 190001,202004,100,1.113,1,110.5473,4350,R,0,0,0,false,false,false
-190002,202001,100,1,0.9214,50.3694,2433,R,0,0,0,true,false,false
+190002,202001,100,1,0.9214,50.3694,2433,R,0,0,0,false,false,false
 190002,202002,100,0.8521,1.5274,121.4187,4324,R,0,0,0,false,false,false
 190002,202003,100,0.9685,1.8795,89.3761,6598,R,0,0,0,false,false,false
 190002,202004,100,1.113,1,110.5473,700,R,0,0,0,false,false,false
