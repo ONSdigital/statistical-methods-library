@@ -31,3 +31,8 @@ addopts = [
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.flake8]
+max-line-length = 90 
+exclude = ".venv"
