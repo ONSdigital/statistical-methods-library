@@ -270,8 +270,16 @@ def impute(
     }
 
     if link_filter:
+        if back_data_df:
+            filtered_refs = input_df.unionByName(
+                back_data_df,
+                allowMissingColumns=True
+            )
+        else:
+            filtered_refs = input_df
+
         filtered_refs = (
-            input_df.unionByName(back_data_df, allowMissingColumns=True).select(
+            filtered_refs.select(
                 col(reference_col).alias("ref"),
                 col(period_col).alias("period"),
                 col(grouping_col).alias("grouping"),
@@ -279,7 +287,8 @@ def impute(
                     expr(link_filter) if isinstance(link_filter, str) else link_filter
                 ).alias("match"),
             )
-        ).localCheckpoint(eager=False)
+            .localCheckpoint(eager=False)
+        )
 
     prepared_df = (
         validate_dataframe(

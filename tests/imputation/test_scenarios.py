@@ -101,8 +101,8 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     back_data_df = scenario_expected_output.filter(
         col(fields["period_col"]) < starting_period
     )
-
-    imputation_kwargs["back_data_df"] = back_data_df
+    if back_data_df.count() > 0:
+        imputation_kwargs["back_data_df"] = back_data_df
 
     scenario_input = scenario_input.filter(col(fields["period_col"]) >= starting_period)
 
@@ -110,12 +110,6 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
         col(fields["period_col"]) >= starting_period
     )
 
-    # We need to drop our auxiliary column from our output now
-    # we've potentially set up our back data as this must not come out of
-    # imputation.
-    scenario_expected_output = scenario_expected_output.drop(
-        fields["auxiliary_col"],
-    )
     scenario_actual_output = imputation.impute(
         input_df=scenario_input, **imputation_kwargs
     )
