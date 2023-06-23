@@ -18,6 +18,7 @@ coverage = "^7.2"
 pytest-cov = "^4.1.0"
 pytest-dependency = "^0.5.1"
 pytest-tap = "^3.3"
+flake8-pyproject = "^1.2.3"
 
 [tool.pytest.ini_options]
 junit_suite_name = "statistical_methods_library"
