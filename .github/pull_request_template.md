@@ -9,5 +9,5 @@ Briefly describe the purpose of the pr.
 
 ## Description
 
-Add a more detailed description of the pr including background and ticket
-references if necessary. 
+Add a more detailed description of the pr if necessary (can reference release
+notes if included).
