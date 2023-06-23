@@ -121,8 +121,6 @@ venv.bak/
 .devcontainer/
 # Editor backup files
 *~
-# portray generated docs
-site/
+
 # asdf tool versions
 .tool-versions
-
