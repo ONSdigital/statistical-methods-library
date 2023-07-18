@@ -24,6 +24,7 @@ link_inclusion_next_col = "link_inclusion_next"
 unweighted_construction_link_col = "unweighted_construction"
 unweighted_backward_link_col = "unweighted_backward"
 unweighted_forward_link_col = "unweighted_forward"
+filter_col = "filter_col"
 
 [field_types]
 reference_col = "string"
@@ -49,3 +50,5 @@ link_inclusion_next_col = "boolean"
 unweighted_construction_link_col = "decimal(15,6)"
 unweighted_backward_link_col = "decimal(15,6)"
 unweighted_forward_link_col = "decimal(15,6)"
+
+filter_col = "string"
