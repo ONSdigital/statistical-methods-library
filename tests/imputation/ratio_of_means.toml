@@ -2,19 +2,19 @@
 starting_period = "202010"
 
 [scenarios.26_C_FI_FI_NS_BI_BI_R_filtered]
-link_filter = "question < 100000"
+link_filter = "identifier != '140005'"
 
 [scenarios.27_BI_BI_R_NS_R_FI_FI_filtered]
-link_filter = "question < 100000"
+link_filter = "identifier NOT IN ('150005', '150006')"
 
 [scenarios.28_link_columns_filtered]
-link_filter = "question < 100000"
+link_filter = "identifier != '190007'"
 
 [scenarios.29_mixed_data_filtered]
-link_filter = "question < 100000"
+link_filter = "identifier NOT IN ('200013', '200014')"
 
 [scenarios.30_class_change_C_C_FI_filtered]
-link_filter = "question < 100000"
+link_filter = "identifier NOT IN ('230006', '230008')"
 
 [scenarios.34_multi_variable_C_BI_R_filtered]
 link_filter = "identifier != '10003'"
