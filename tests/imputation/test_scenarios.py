@@ -131,5 +131,5 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
         actual=scenario_actual_output.sort(sort_cols),
         expected=scenario_expected_output.sort(sort_cols),
         keep_cols=sort_cols,
-        exclude_cols=excluded_fields
+        exclude_cols=excluded_fields,
     )
