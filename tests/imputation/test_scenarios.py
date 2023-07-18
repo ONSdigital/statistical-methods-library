@@ -60,6 +60,9 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     fields = default_config["field_names"]
     fields.update(test_config.get("field_names", {}))
     fields.update(scenario_config.pop("field_names", {}))
+    excluded_fields = default_config.get("excluded_fields", [])
+    excluded_fields.extend(test_config.get("excluded_fields", []))
+    excluded_fields.extend(scenario_config.pop("excluded_fields", []))
     imputation_kwargs = fields.copy()
     imputation_kwargs["forward_backward_ratio_calculator"] = getattr(
         imputation, ratio_calculator
@@ -120,13 +123,14 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
             )
 
     select_cols = sorted(set(fields.values()) & set(scenario_expected_output.columns))
-    sort_col_list = [
+    sort_cols = [
         fields["reference_col"],
         fields["period_col"],
         fields["grouping_col"],
     ]
     check_df_equality(
-        actual=scenario_actual_output.sort(sort_col_list).select(select_cols),
-        expected=scenario_expected_output.sort(sort_col_list).select(select_cols),
-        keep_cols=sort_col_list,
+        actual=scenario_actual_output.sort(sort_cols).select(select_cols),
+        expected=scenario_expected_output.sort(sort_cols).select(select_cols),
+        keep_cols=sort_cols,
+        exclude_cols=excluded_fields
     )

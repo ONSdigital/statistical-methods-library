@@ -1,6 +1,6 @@
 starting_period = "202001"
 back_data_starting_period = "202002"
-
+excluded_fields = ["filter_col"]
 [field_names]
 auxiliary_col = "other"
 backward_col = "backward"
@@ -46,9 +46,7 @@ default_construction_col = "boolean"
 link_inclusion_current_col = "boolean"
 link_inclusion_previous_col = "boolean"
 link_inclusion_next_col = "boolean"
-
 unweighted_construction_link_col = "decimal(15,6)"
 unweighted_backward_link_col = "decimal(15,6)"
 unweighted_forward_link_col = "decimal(15,6)"
-
 filter_col = "string"

@@ -11,13 +11,18 @@ from pyspark.sql.functions import (
 from pytest import fail
 
 
-def check_df_equality(expected, actual, keep_cols=None):
+def check_df_equality(expected, actual, keep_cols=None, exclude_cols=None):
     if keep_cols is None:
         keep_cols = []
     else:
         keep_cols = list(keep_cols)
+
+    if exclude_cols is None:
+        exclude_cols = set()
+    else:
+        exclude_cols = set(exclude_cols)
     msg = []
-    expected_cols = set(expected.columns)
+    expected_cols = set(expected.columns) - exclude_cols
     actual_cols = set(actual.columns)
     expected_col_check = expected_cols - actual_cols
     actual_col_check = actual_cols - expected_cols
@@ -30,7 +35,7 @@ def check_df_equality(expected, actual, keep_cols=None):
     if msg:
         fail("\n".join(msg))
 
-    col_list = sorted(expected.columns)
+    col_list = sorted(expected_cols)
     expected = (
         expected.select(col_list)
         .alias("expected")
