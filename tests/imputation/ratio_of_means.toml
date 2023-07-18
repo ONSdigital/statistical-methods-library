@@ -14,7 +14,7 @@ link_filter = "identifier != '190007'"
 link_filter = "identifier NOT IN ('200013', '200014')"
 
 [scenarios.30_class_change_C_C_FI_filtered]
-link_filter = "identifier NOT IN ('230006', '230008')"
+link_filter = "identifier NOT IN ('10006', '10008')"
 
 [scenarios.34_multi_variable_C_BI_R_filtered]
 link_filter = "identifier != '10003'"
