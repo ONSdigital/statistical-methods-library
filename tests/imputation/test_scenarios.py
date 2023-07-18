@@ -122,15 +122,14 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
                 field_name, col(field_name).cast("decimal(15, 6)")
             )
 
-    select_cols = sorted(set(fields.values()) & set(scenario_expected_output.columns))
     sort_cols = [
         fields["reference_col"],
         fields["period_col"],
         fields["grouping_col"],
     ]
     check_df_equality(
-        actual=scenario_actual_output.sort(sort_cols).select(select_cols),
-        expected=scenario_expected_output.sort(sort_cols).select(select_cols),
+        actual=scenario_actual_output.sort(sort_cols),
+        expected=scenario_expected_output.sort(sort_cols),
         keep_cols=sort_cols,
         exclude_cols=excluded_fields
     )
