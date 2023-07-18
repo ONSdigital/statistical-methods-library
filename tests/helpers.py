@@ -27,10 +27,10 @@ def check_df_equality(expected, actual, keep_cols=None, exclude_cols=None):
     expected_col_check = expected_cols - actual_cols
     actual_col_check = actual_cols - expected_cols
     if expected_col_check:
-        msg.append("extra columns in expected: {', '.join(expected_col_check)}")
+        msg.append(f"extra columns in expected: {', '.join(expected_col_check)}")
 
     if actual_col_check:
-        msg.append("extra columns in actual: {', '.join(actual_col_check)}")
+        msg.append(f"extra columns in actual: {', '.join(actual_col_check)}")
 
     if msg:
         fail("\n".join(msg))
