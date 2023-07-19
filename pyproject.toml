@@ -26,7 +26,8 @@ addopts = [
     "--exitfirst",
     "--cov=statistical_methods_library",
     "--cov-fail-under=95",
-    "--import-mode=importlib"
+    "--import-mode=importlib",
+    "--tb=native"
 ]
 
 [build-system]

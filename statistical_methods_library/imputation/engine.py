@@ -128,10 +128,10 @@ def impute(
           value was included in link calculations based on filtering for the
           next period.
         back_data_df: The back data data frame.
-        link_filter: An inclusive filter that specifies whether a responce
+        link_filter: An inclusive filter that specifies whether a response
           can be used for ratio calculation. The link inclusion marker
           columns will only be present in the output if this is provided.
-          This filter is either a boolen column expression or a spark
+          This filter is either a boolean column expression or a spark
           sql string which yields a boolean result.
         periodicity: The periodicity of the data as used by the calculation
           functions in the `utilities.periods` module.
@@ -158,9 +158,8 @@ def impute(
 
     Returns:
     A data frame containing the imputed variable and links. The exact columns
-    depend on the provided arguments.
-    the specified arguments. The data frame contains a row for each reference,
-    period and grouping combination in the input data.
+    depend on the provided arguments. The data frame contains a row for each
+    reference, period and grouping combination in the input data.
 
     Either both or neither of `weight` and `weight_periodicity_multiplier`
     must be specified.

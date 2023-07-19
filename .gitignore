@@ -124,3 +124,5 @@ venv.bak/
 
 # asdf tool versions
 .tool-versions
+# libreoffice lock files (sometimes used when editing csvs)
+*.~lock.*
