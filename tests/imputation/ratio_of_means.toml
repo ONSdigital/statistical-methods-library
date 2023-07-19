@@ -18,3 +18,6 @@ link_filter = "identifier NOT IN ('10006', '10008')"
 
 [scenarios.34_multi_variable_C_BI_R_filtered]
 link_filter = "identifier != '10003'"
+
+[scenarios.35_BI_BI_R_FI_FI_R_FI_alternating_filtered]
+link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
