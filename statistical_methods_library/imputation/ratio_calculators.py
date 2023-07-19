@@ -399,11 +399,11 @@ def ratio_of_means(*, df: DataFrame, **_kw) -> List[RatioCalculationResult]:
         df.filter(col("link_inclusion_current"))
         .withColumn(
             "previous_output",
-            expr("CASE WHEN link_inclusion_previous <=> TRUE then previous_output END")
+            expr("CASE WHEN link_inclusion_previous <=> TRUE then previous_output END"),
         )
         .withColumn(
             "next_output",
-            expr("CASE WHEN link_inclusion_next <=> TRUE then next_output END")
+            expr("CASE WHEN link_inclusion_next <=> TRUE then next_output END"),
         )
         .groupBy("period", "grouping")
         .agg(
