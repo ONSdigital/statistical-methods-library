@@ -69,7 +69,7 @@ def outlier(
 
     Returns:
     A new data frame containing the columns as described by the arguments
-    `reference_col`, `period_col`, `outlier_col` and `marker_col`.
+    `reference_col`, `period_col`, `grouping_col`, `outlier_col` and `marker_col`.
 
     The provided columns containing input values must be fully
     populated. In addition there must only be one l-value per stratum and
