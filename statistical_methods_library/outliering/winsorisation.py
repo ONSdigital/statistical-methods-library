@@ -87,7 +87,7 @@ def outlier(
             "Both or neither of auxiliary_col and calibration_col must be specified."
         )
 
-    # --- Validate params ---
+    # Validate params
     input_params = {
         "reference": reference_col,
         "period": period_col,
@@ -220,6 +220,7 @@ def outlier(
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
+            col("grouping").alias(grouping_col),
             col("outlier").alias(outlier_col),
             col("marker").alias(marker_col),
         )
