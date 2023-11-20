@@ -3,7 +3,6 @@ import os
 import pathlib
 
 import pytest
-from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.outliering import winsorisation
