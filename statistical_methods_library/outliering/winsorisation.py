@@ -69,7 +69,7 @@ def outlier(
 
     Returns:
     A new data frame containing the columns as described by the arguments
-    `reference_col`, `period_col`, `outlier_col` and `marker_col`.
+    `reference_col`, `period_col`, `grouping_col`, `outlier_col` and `marker_col`.
 
     The provided columns containing input values must be fully
     populated. In addition there must only be one l-value per stratum and
@@ -87,7 +87,7 @@ def outlier(
             "Both or neither of auxiliary_col and calibration_col must be specified."
         )
 
-    # --- Validate params ---
+    # Validate params
     input_params = {
         "reference": reference_col,
         "period": period_col,
@@ -113,7 +113,7 @@ def outlier(
     }
 
     aliased_df = validation.validate_dataframe(
-        input_df, input_params, type_mapping, ["reference", "period"]
+        input_df, input_params, type_mapping, ["reference", "period", "grouping"]
     )
     validation.validate_one_value_per_group(
         input_df, [period_col, grouping_col], l_value_col
@@ -220,6 +220,7 @@ def outlier(
         .select(
             col("reference").alias(reference_col),
             col("period").alias(period_col),
+            col("grouping").alias(grouping_col),
             col("outlier").alias(outlier_col),
             col("marker").alias(marker_col),
         )

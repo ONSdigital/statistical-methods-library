@@ -3,7 +3,6 @@ import os
 import pathlib
 
 import pytest
-from pyspark.sql.functions import lit
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.outliering import winsorisation
@@ -239,57 +238,6 @@ def test_dataframe_column_missing(fxt_load_test_csv):
         winsorisation.outlier(bad_dataframe, *params)
 
 
-# --- Test if output contents are as expected, both new columns and data ---
-
-
-@pytest.mark.dependency()
-def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "outliering",
-        "winsorisation",
-        "unit",
-        "basic_functionality",
-    )
-    # Make sure that no extra columns pass through.
-    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = winsorisation.outlier(test_dataframe, *params)
-    # perform action on the dataframe to trigger lazy evaluation...
-    ret_val.count()
-    # ...and then check
-    assert isinstance(ret_val, type(test_dataframe))
-    ret_cols = ret_val.columns
-    assert "bonus_column" not in ret_cols
-
-
-# --- Test expected columns are in the output ---
-@pytest.mark.dependency()
-def test_dataframe_expected_columns(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "outliering",
-        "winsorisation",
-        "unit",
-        "basic_functionality",
-    )
-    ret_val = winsorisation.outlier(
-        test_dataframe,
-        *default_params,
-    )
-    # perform action on the dataframe to trigger lazy evaluation
-    ret_val.count()
-    ret_cols = set(ret_val.columns)
-    expected_cols = {
-        reference_col,
-        period_col,
-        "outlier_weight",
-        "winsorisation_marker",
-    }
-    assert expected_cols == ret_cols
-
-
 @pytest.mark.dependency()
 def test_incorrect_column_types(fxt_load_test_csv):
     test_dataframe = fxt_load_test_csv(
@@ -317,8 +265,6 @@ def test_incorrect_column_types(fxt_load_test_csv):
         "test_dataframe_nulls_in_data",
         "test_dataframe_column_missing",
         "test_params_mismatched_calibration_cols",
-        "test_dataframe_returned_as_expected",
-        "test_dataframe_expected_columns",
         "test_incorrect_column_types",
     ]
 )
@@ -349,9 +295,9 @@ def test_calculations(fxt_load_test_csv, scenario_type, scenario):
     ret_val = winsorisation.outlier(test_dataframe, *params, **winsorisation_kwargs)
 
     assert isinstance(ret_val, type(test_dataframe))
-    sort_col_list = [reference_col, period_col]
+    sort_col_list = [reference_col, period_col, grouping_col]
     check_df_equality(
-        actual=ret_val.sort(sort_col_list).select(exp_val.columns),
+        actual=ret_val.sort(sort_col_list),
         expected=exp_val.sort(sort_col_list),
     )
 

@@ -1,5 +1,5 @@
-identifier,date,outlier_weight,winsorisation_marker
-3,202001,1,"NW_FE"
-3,202002,1,"W"
-3,202003,1,"W"
-3,202004,1,"W"
+identifier,date,outlier_weight,winsorisation_marker,group
+3,202001,1,"NW_FE",2
+3,202002,1,"W",2
+3,202003,1,"W",2
+3,202004,1,"W",2
