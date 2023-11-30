@@ -24,7 +24,7 @@ jobs:
       - name: Run image
         uses: abatilo/actions-poetry@v2.0.0
         with:
-          poetry-version: 1.3.2
+          poetry-version: 1.7.1
       - name: Install dependencies
         run: poetry install
       - name: test
@@ -59,7 +59,7 @@ jobs:
       - name: Run image
         uses: abatilo/actions-poetry@v2.0.0
         with:
-          poetry-version: 1.3.2
+          poetry-version: 1.7.1
       - name: Install dependencies
         run: poetry install
       - name: run flake8
@@ -80,7 +80,7 @@ jobs:
       - name: Run image
         uses: abatilo/actions-poetry@v2.0.0
         with:
-          poetry-version: 1.3.2
+          poetry-version: 1.7.1
       - name: Install dependencies
         run: poetry install
       - name: run black
