@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: statistical-methods-library
+  description: The Statistical Methods Library (S.M.L.) is a set of approved statistical methods.
+  annotations:
+    jira/project-key: SPP
+    github.com/project-slug: ONSdigital/statistical-methods-library
+  tags:
+    - python
+    - spp
+    - sml
+  links:
+      icon: search
+spec:
+  type: library
+  lifecycle: production
+  owner: group:spp-results
