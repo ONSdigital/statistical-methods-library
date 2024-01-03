@@ -6,3 +6,7 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: pyspark
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: "daily"
