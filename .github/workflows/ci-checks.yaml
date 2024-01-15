@@ -26,15 +26,16 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
-      - name: Run image
+      - name: Run image ${{matrix.python-version}}
         uses: abatilo/actions-poetry@v2.0.0
         with:
           poetry-version: 1.5.1
-      - name: Install dependencies
-        run: poetry install
-      - name: test
-        run: poetry run pytest --tap-stream --cov-report=lcov:lcov-${{matrix.python-version}}.info --junitxml=junit-${{matrix.python-version}}.xml
-      - name: Upload Test report
+      - name: Test ${{matrix.python-version}}
+        run: |-
+          set -e
+          poetry install
+          poetry run pytest --tap-stream --cov-report=lcov:lcov-${{matrix.python-version}}.info --junitxml=junit-${{matrix.python-version}}.xml
+      - name: Upload Test report ${{matrix.python-version}}
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
@@ -63,10 +64,10 @@ jobs:
         uses: abatilo/actions-poetry@v2.0.0
         with:
           poetry-version: 1.5.1
-      - name: Install dependencies
-        run: poetry install
-      - name: run flake8
-        run: poetry run flake8 statistical_methods_library tests
+      - name: Run flake8
+        run: |-
+          poetry install
+          poetry run flake8 statistical_methods_library tests
   black:
     runs-on: ubuntu-latest
     strategy:
@@ -84,7 +85,7 @@ jobs:
         uses: abatilo/actions-poetry@v2.0.0
         with:
           poetry-version: 1.5.1
-      - name: Install dependencies
-        run: poetry install
-      - name: run black
-        run: poetry run black --check --diff statistical_methods_library tests
+      - name: Run Black
+        run: |-
+          poetry install
+          poetry run black --check --diff statistical_methods_library tests
