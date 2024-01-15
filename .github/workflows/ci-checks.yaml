@@ -41,13 +41,11 @@ jobs:
           name: test-results-${{matrix.python-version}}
           path: junit-${{matrix.python-version}}.xml
           reporter: java-junit
-          fail-on-error: false
-      - name: upload-coverage-report
+      - name: upload-coverage-report-${matrix.python-version}}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${matrix.python-version}}-lcov
+          name: coverage-report-${{matrix.python-version}}-lcov
           path: lcov-${{matrix.python-version}}.info
-          if-no-files-found: warn
   flake8:
     runs-on: ubuntu-latest
     strategy:
