@@ -57,6 +57,8 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
 
     scenarios = test_config.pop("scenarios", {})
     scenario_config = scenarios.get(scenario, {})
+    print("test1111 scenario_config")
+    print(scenario_config)
     fields = default_config["field_names"]
     fields.update(test_config.get("field_names", {}))
     fields.update(scenario_config.pop("field_names", {}))
@@ -64,6 +66,8 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     excluded_fields.extend(test_config.get("excluded_fields", []))
     excluded_fields.extend(scenario_config.pop("excluded_fields", []))
     imputation_kwargs = fields.copy()
+    print("test1111 fields")
+    print(fields)
     imputation_kwargs["forward_backward_ratio_calculator"] = getattr(
         imputation, ratio_calculator
     )
@@ -78,7 +82,11 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     field_types = default_config["field_types"]
     field_types.update(test_config.get("field_types", {}))
     field_types.update(scenario_config.get("field_types", {}))
+    print("test1111 field_types")
+    print(field_types)
     imputation_kwargs.update(scenario_config)
+    print("test1111 imputation_kwargs")
+    print(imputation_kwargs)
     types = {fields[k]: v for k, v in field_types.items()}
     scenario_file_type = scenario_type.replace("back_data_", "")
     scenario_input = fxt_load_test_csv(
@@ -112,7 +120,9 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     scenario_expected_output = scenario_expected_output.filter(
         col(fields["period_col"]) >= starting_period
     )
-
+    scenario_input.show(100)
+    print("test2222 imputation_kwargs")
+    print(imputation_kwargs)
     scenario_actual_output = imputation.impute(
         input_df=scenario_input, **imputation_kwargs
     )
@@ -121,7 +131,8 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
             scenario_actual_output = scenario_actual_output.withColumn(
                 field_name, col(field_name).cast("decimal(15, 6)")
             )
-
+    print("test33333 scenario_actual_output")
+    scenario_actual_output.show(100)
     sort_cols = [
         fields["reference_col"],
         fields["period_col"],

@@ -4,11 +4,15 @@ backward_growth_col = "growth_backward"
 trimmed_forward_col = "trim_inclusion_forward"
 trimmed_backward_col = "trim_inclusion_backward"
 
+manual_construction_col = "manual_construction"
+
 [field_types]
 forward_growth_col = "decimal(15,6)"
 backward_growth_col = "decimal(15,6)"
 trimmed_forward_col = "boolean"
 trimmed_backward_col = "boolean"
+#TODO check
+manual_construction_col = "decimal(15,6)"
 
 [scenarios.05_R_R_FI_FI_FI_year_span]
 starting_period = "202010"
@@ -195,3 +199,6 @@ weight_periodicity_multiplier = 12
 [scenarios.70_C_FI_FI_65_weight]
 weight = "0.65"
 weight_periodicity_multiplier = 12
+
+[scenarios.001_71_MC_R_MC_1]
+manual_construction_col = "manual_construction"

@@ -42,6 +42,12 @@ class Marker(Enum):
 
     FORWARD_IMPUTE_FROM_CONSTRUCTION = "FIC"
     """The value has been forward imputed from a constructed value."""
+    
+    MANUAL_CONSTRUCTION = "MC"
+    """The value is manual construction."""
+    
+    FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION = "FIMC"
+    """The value has been forward imputed from a manual construction."""
 
 
 def impute(
@@ -78,6 +84,7 @@ def impute(
     unweighted_forward_link_col: Optional[str] = "forward_unweighted",
     unweighted_backward_link_col: Optional[str] = "backward_unweighted",
     unweighted_construction_link_col: Optional[str] = "construction_unweighted",
+    manual_construction_col: Optional[str] = "manual_construction",
     **ratio_calculator_params,
 ) -> DataFrame:
     """
@@ -188,7 +195,7 @@ def impute(
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
-
+    # input_df.show(100)
     input_params = {
         "ref": reference_col,
         "period": period_col,
@@ -225,6 +232,10 @@ def impute(
 
     if construction_link_col in input_df.columns:
         input_params["construction"] = construction_link_col
+    
+    
+
+
 
     back_input_params = {
         "ref": reference_col,
@@ -233,7 +244,14 @@ def impute(
         "output": output_col,
         "marker": marker_col,
     }
-
+    # input_df.show(100)
+    # TODO CHECK in nimpuation wrapper the same column name is avaliable in back data df as well ?!
+    if manual_construction_col in input_df.columns:
+        input_params["manual_const"] = manual_construction_col
+        
+    if back_data_df and manual_construction_col in back_data_df.columns:
+        back_input_params["manual_const"] = manual_construction_col
+        
     if weight is not None:
         if not isinstance(weight, Decimal):
             raise TypeError("weight must be of type Decimal")
@@ -266,6 +284,7 @@ def impute(
         "forward_unweighted": DecimalType,
         "backward_unweighted": DecimalType,
         "construction_unweighted": DecimalType,
+        "manual_const": DecimalType,
     }
 
     if link_filter:
@@ -289,7 +308,7 @@ def impute(
             input_params,
             type_mapping,
             ["ref", "period", "grouping"],
-            ["target"],
+            ["target","manual_const"],
         )
         .withColumnRenamed("target", "output")
         .withColumn("marker", when(~col("output").isNull(), Marker.RESPONSE.value))
@@ -301,19 +320,43 @@ def impute(
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
     ).localCheckpoint(eager=False)
-
+    # TODO Remove manual construction record from data before the rotio calculation.
+    print("test1111 input_df.columns")
+    print(str(input_df.columns))
+    prepared_df.show(100)
+    if manual_construction_col in input_df.columns: #TODO check is it needed ?!
+        df_with_mc_data = prepared_df.withColumn(
+                                       "marker",when((col("manual_const").isNotNull()) & 
+                                   (col("output").isNull()),lit(Marker.MANUAL_CONSTRUCTION.value)).otherwise(col("marker"))).withColumn("output",when((col("manual_const").isNotNull()) & 
+                                   (col("output").isNull()),col("manual_const")).otherwise(col("output")))
+        only_mc_data = df_with_mc_data.filter((col("marker") == Marker.MANUAL_CONSTRUCTION.value) | (col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value))
+        print("only_mc_data")
+        only_mc_data.show(100)
+        df_with_mc_data.show(100)
+        # TODO Additionally, after MC data is entered, filter out the immediate missing responses. 
+        prepared_df = prepared_df.filter(~(col("marker") == Marker.MANUAL_CONSTRUCTION.value) | ~(col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value))
+        print("prepared_df_without_mc_fimc :: ")
+        prepared_df.show()
+        # ["ref", "period", "grouping"]
+        # mc_join_cont = [mc_df1.marker_mc != Marker.MANUAL_CONSTRUCTION.value , mc_df1.ref == prepared_df.ref, mc_df1.period == prepared_df.period,mc_df1.grouping == prepared_df.grouping]
+        # mc_df2 = prepared_df.join(mc_df1,mc_join_cont, "left")
+        # mc_df2.show(100)
+        
+        
     if back_data_df:
+        
         validated_back_data_df = validate_dataframe(
             back_data_df,
             back_input_params,
             type_mapping,
             ["ref", "period", "grouping"],
+            ["manual_const"]
         ).localCheckpoint(eager=False)
         back_data_period_df = (
             validated_back_data_df.select(
-                "ref", "period", "grouping", "output", "marker"
+                "ref", "period", "grouping", "output", "marker","manual_const"
             )
-            .join(prior_period_df, [col("period") == col("prior_period")])
+            .join(prior_period_df, [col("period") == col("prior_period")]) # TODO check what is the impact to miss the mc column in prior_period_df
             .drop("prior_period")
             .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
             .withColumn(
@@ -325,11 +368,23 @@ def impute(
             )
             .localCheckpoint(eager=False)
         )
+        # Remove manual construction record from back data before the rotio calculation.
+        if manual_construction_col in back_data_period_df.columns: #TODO check is it needed ?!
+            back_data_mc = back_data_period_df.filter((col("marker") == Marker.MANUAL_CONSTRUCTION.value) | (col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value))
+            print("back_data_mc")
+            back_data_mc.show(100)
+            # TODO Additionally, after MC data is entered, filter out the immediate missing responses. 
+            back_data_period_df = back_data_period_df.filter(~(col("marker") == Marker.MANUAL_CONSTRUCTION.value) | ~(col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value))
+            print("back_data_period_df_without_mc_fimc :: ")
+            back_data_period_df.show()
+            
         prepared_df = prepared_df.unionByName(
-            back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
+            back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)), 
             allowMissingColumns=True,
         )
-
+        
+        
+    
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
@@ -354,6 +409,7 @@ def impute(
             ratio_calculators.append(construction_ratio_calculator)
 
         if not ratio_calculators:
+            print("empty return......")
             return
 
         # Since we're going to join on to the main df filtering here
@@ -546,6 +602,8 @@ def impute(
     ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
+        print("inside impute_helper")
+        print(f"inside impute_helper :: {marker.value}")
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -722,6 +780,9 @@ def impute(
         )
 
     df = prepared_df
+    i=0
+    print(" imputation call ...")
+    prepared_df.show(100)
     for stage in (
         forward_impute_from_response,
         backward_impute,
@@ -729,9 +790,19 @@ def impute(
         forward_impute_from_construction,
     ):
         df = stage(df).localCheckpoint(eager=False)
-        if df.filter(col("output").isNull()).count() == 0:
+        print(f"stage:: {i}")
+        df.show(100)
+        if manual_construction_col in input_df.columns and stage == backward_impute:
+            print("after backward_impute add the mc only data")
+            only_mc_data.show(100)
+            df = df.unionByName(only_mc_data, allowMissingColumns=True)
+            print("Merged mc only data")
+            df.show(100)
+            
+        if df.filter(col("output").isNull()).count() == 0 and i==2:
             break
-
+        
+        i=i+1
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
