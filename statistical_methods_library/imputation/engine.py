@@ -241,7 +241,8 @@ def impute(
         "marker": marker_col,
     }
     # input_df.show(100)
-    # TODO CHECK in nimpuation wrapper the same column name is avaliable in back data df as well ?!
+    # TODO CHECK in impuation wrapper the same column name
+    # is avaliable in back data df as well ?!
     if manual_construction_col in input_df.columns:
         input_params["manual_const"] = manual_construction_col
 
@@ -344,7 +345,8 @@ def impute(
         # print("only_mc_data")
         # only_mc_data.show(100)
         # df_with_mc_data.show(100)
-        # TODO Additionally, after MC data is entered, filter out the immediate missing responses.
+        # TODO Additionally, after MC data is entered,
+        # filter out the immediate missing responses.
         prepared_df = prepared_df.filter(
             ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
             | ~(col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
@@ -352,8 +354,6 @@ def impute(
         # print("prepared_df_without_mc_fimc :: ")
         # prepared_df.show()
         # ["ref", "period", "grouping"]
-        # mc_join_cont = [mc_df1.marker_mc != Marker.MANUAL_CONSTRUCTION.value , mc_df1.ref == prepared_df.ref, mc_df1.period == prepared_df.period,mc_df1.grouping == prepared_df.grouping]
-        # mc_df2 = prepared_df.join(mc_df1,mc_join_cont, "left")
         # mc_df2.show(100)
 
     # TODO refactor do with one select
@@ -394,7 +394,7 @@ def impute(
                 )
                 .join(
                     prior_period_df, [col("period") == col("prior_period")]
-                )  # TODO check what is the impact to miss the mc column in prior_period_df
+                )  # TODO chek impact to miss the mccolumn in prior_period_df
                 .drop("prior_period")
                 .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
                 .withColumn(
@@ -417,9 +417,11 @@ def impute(
                     == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
                 )
             )
+            back_data_mc.show(10)
             # print("back_data_mc")
             # back_data_mc.show(100)
-            # TODO Additionally, after MC data is entered, filter out the immediate missing responses.
+            # TODO Additionally, after MC data is entered,
+            # filter out the immediate missing responses.
             back_data_period_df = back_data_period_df.filter(
                 ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
                 | ~(
@@ -839,7 +841,8 @@ def impute(
     ):
         df = stage(df).localCheckpoint(eager=False)
         # df.show(100)
-        # TODO move thid code after the rotio calculation. So dont need to do multiple times.
+        # TODO move thid code after the rotio calculation.
+        # So dont need to do multiple times.
         if manual_construction_col in input_df.columns and stage == backward_impute:
             # print("after backward_impute add the mc only data")
             # only_mc_data.show(100)
