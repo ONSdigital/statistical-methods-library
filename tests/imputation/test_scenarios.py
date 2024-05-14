@@ -132,7 +132,7 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
                 field_name, col(field_name).cast("decimal(15, 6)")
             )
     # print("test33333 scenario_actual_output")
-    # scenario_actual_output.orderBy("identifier","date").show(100)
+    # scenario_actual_output.orderBy("identifier", "date").show(100)
     sort_cols = [
         fields["reference_col"],
         fields["period_col"],
