@@ -320,7 +320,6 @@ def impute(
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
     ).localCheckpoint(eager=False)
-    # TODO Remove manual construction record from data before the rotio calculation.
     # print("test1111 input_df.columns")
     # print(str(input_df.columns))
     # prepared_df.show(100)
@@ -345,11 +344,6 @@ def impute(
         # print("only_mc_data")
         # only_mc_data.show(100)
         # df_with_mc_data.show(100)
-        # TODO Additionally, after MC data is entered,
-        # filter out the immediate missing responses.
-        # may 13
-        # remove consecutive missing response after a MC
-        # TODO unCOMMENT
         prepared_df = df_with_mc_data.filter(
             col("marker").isNull()
             | (
@@ -376,7 +370,7 @@ def impute(
             )
             .join(
                 prior_period_df, [col("period") == col("prior_period")]
-            )  # TODO check what is the impact to miss the mc column in prior_period_df
+            )
             .drop("prior_period")
             .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
             .withColumn(
@@ -403,7 +397,7 @@ def impute(
                 )
                 .join(
                     prior_period_df, [col("period") == col("prior_period")]
-                )  # TODO chek impact to miss the mccolumn in prior_period_df
+                )
                 .drop("prior_period")
                 .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
                 .withColumn(
@@ -429,8 +423,6 @@ def impute(
             back_data_mc.show(1)
             # print("back_data_mc")
             # back_data_mc.show(100)
-            # TODO Additionally, after MC data is entered,
-            # filter out the immediate missing responses.
             back_data_period_df = back_data_period_df.filter(
                 ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
                 | ~(
@@ -890,7 +882,7 @@ def impute(
         df = stage(df).localCheckpoint(eager=False)
         # print(f"after imputation stage: {stage}")
         # df.show(1)
-        # TODO move thid code after the rotio calculation.
+        # TODO CHECK can we move thid code after the rotio calculation. ??
         # So dont need to do multiple times.
         if manual_construction_col in input_df.columns and stage == backward_impute:
             # print("after backward_impute add the mc only data")
