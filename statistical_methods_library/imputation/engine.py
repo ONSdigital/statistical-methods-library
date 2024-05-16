@@ -195,7 +195,7 @@ def impute(
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
-    # input_df.show(100)
+    input_df.show(100)
     input_params = {
         "ref": reference_col,
         "period": period_col,
@@ -249,8 +249,8 @@ def impute(
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
             raise TypeError("Input is not a DataFrame")
-        if manual_construction_col in back_data_df.columns:
-            back_input_params["manual_const"] = manual_construction_col
+        # if manual_construction_col in back_data_df.columns:
+        #     back_input_params["manual_const"] = manual_construction_col
 
     if weight is not None:
         if not isinstance(weight, Decimal):
@@ -368,9 +368,7 @@ def impute(
             validated_back_data_df.select(
                 "ref", "period", "grouping", "output", "marker"
             )
-            .join(
-                prior_period_df, [col("period") == col("prior_period")]
-            )
+            .join(prior_period_df, [col("period") == col("prior_period")])
             .drop("prior_period")
             .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
             .withColumn(
@@ -383,55 +381,30 @@ def impute(
             .localCheckpoint(eager=False)
         )
 
-        if back_data_df and manual_construction_col in back_data_period_df.columns:
-            validated_back_data_df = validate_dataframe(
-                back_data_df,
-                back_input_params,
-                type_mapping,
-                ["ref", "period", "grouping"],
-                ["manual_const"],
-            ).localCheckpoint(eager=False)
-            back_data_period_df = (
-                validated_back_data_df.select(
-                    "ref", "period", "grouping", "output", "marker", "manual_const"
-                )
-                .join(
-                    prior_period_df, [col("period") == col("prior_period")]
-                )
-                .drop("prior_period")
-                .filter(((col(marker_col) != lit(Marker.BACKWARD_IMPUTE.value))))
-                .withColumn(
-                    "previous_period",
-                    calculate_previous_period(col("period"), periodicity),
-                )
-                .withColumn(
-                    "next_period", calculate_next_period(col("period"), periodicity)
-                )
-                .localCheckpoint(eager=False)
-            )
-        # Remove manual construction record from back data before the rotio calculation.
-        if (
-            manual_construction_col in back_data_period_df.columns
-        ):  # TODO check is it needed ?!
-            back_data_mc = back_data_period_df.filter(
-                (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-                | (
-                    col("marker")
-                    == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
-                )
-            )
-            back_data_mc.show(1)
-            # print("back_data_mc")
-            # back_data_mc.show(100)
-            back_data_period_df = back_data_period_df.filter(
-                ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-                | ~(
-                    col("marker")
-                    == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
-                )
-            )
-            # print("back_data_period_df_without_mc_fimc :: ")
-            # back_data_period_df.show()
+        # TODO Remove manual construction record from back data
+        # before the rotio calculation.
+        # if (
+        #     manual_construction_col in back_data_period_df.columns
+        # ):  # TODO check is it needed ?!
+        #     back_data_mc = back_data_period_df.filter(
+        #         (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
+        #         | (
+        #             col("marker")
+        #             == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
+        #         )
+        #     )
+        #     back_data_mc.show(1)
+        #     # print("back_data_mc")
+        #     # back_data_mc.show(100)
+        #     back_data_period_df = back_data_period_df.filter(
+        #         ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
+        #         | ~(
+        #             col("marker")
+        #             == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
+        #         )
+        #     )
+        # print("back_data_period_df_without_mc_fimc :: ")
+        # back_data_period_df.show()
 
         prepared_df = prepared_df.unionByName(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
@@ -791,6 +764,19 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
+
+        df = df.unionByName(
+            back_data_period_df.filter(
+                (col("marker") == lit(Marker.MANUAL_CONSTRUCTION.value))
+                | (
+                    col("marker")
+                    == lit(Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
+                )
+            ),
+            allowMissingColumns=True,
+        )
+        df.show()
+
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
         )
@@ -884,6 +870,8 @@ def impute(
         # df.show(1)
         # TODO CHECK can we move thid code after the rotio calculation. ??
         # So dont need to do multiple times.
+        input_df.show()
+        print(f"*****this is the column {manual_construction_col}****")
         if manual_construction_col in input_df.columns and stage == backward_impute:
             # print("after backward_impute add the mc only data")
             # only_mc_data.show(100)
@@ -918,7 +906,8 @@ def impute(
             df = df.unionByName(only_mc_data, allowMissingColumns=True)
             # print("Merged mc only data")
             # df.show(100)
-
+        print(f"**********{stage}***********")
+        df.show()
         if df.filter(col("output").isNull()).count() == 0 and stage == construct_values:
             break
 
