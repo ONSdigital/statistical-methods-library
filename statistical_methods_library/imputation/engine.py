@@ -381,31 +381,6 @@ def impute(
             .localCheckpoint(eager=False)
         )
 
-        # TODO Remove manual construction record from back data
-        # before the rotio calculation.
-        # if (
-        #     manual_construction_col in back_data_period_df.columns
-        # ):  # TODO check is it needed ?!
-        #     back_data_mc = back_data_period_df.filter(
-        #         (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-        #         | (
-        #             col("marker")
-        #             == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
-        #         )
-        #     )
-        #     back_data_mc.show(1)
-        #     # print("back_data_mc")
-        #     # back_data_mc.show(100)
-        #     back_data_period_df = back_data_period_df.filter(
-        #         ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-        #         | ~(
-        #             col("marker")
-        #             == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
-        #         )
-        #     )
-        # print("back_data_period_df_without_mc_fimc :: ")
-        # back_data_period_df.show()
-
         prepared_df = prepared_df.unionByName(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
