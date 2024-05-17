@@ -1,0 +1,5 @@
+identifier,date,group,output,marker,forward,backward,construction,count_forward,count_backward,count_construction,default_forward,default_backward,default_construction
+1234,202105,900,10,FIMC,1,1,1,0,0,0,true,true,true
+1235,202105,100,20,FIMC,1,1,26.08641975,0,0,1,true,true,false
+1236,202105,100,2113,R,1,1,26.08641975,0,0,1,true,true,false
+1237,202105,200,3189,MC,1,1,1,0,0,0,true,true,true

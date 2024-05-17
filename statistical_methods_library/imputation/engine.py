@@ -84,7 +84,7 @@ def impute(
     unweighted_forward_link_col: Optional[str] = "forward_unweighted",
     unweighted_backward_link_col: Optional[str] = "backward_unweighted",
     unweighted_construction_link_col: Optional[str] = "construction_unweighted",
-    manual_construction_col: Optional[str] = "manual_construction",
+    manual_construction_col: Optional[str] = None,
     **ratio_calculator_params,
 ) -> DataFrame:
     """
@@ -195,7 +195,6 @@ def impute(
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
-    input_df.show(100)
     input_params = {
         "ref": reference_col,
         "period": period_col,
@@ -240,17 +239,14 @@ def impute(
         "output": output_col,
         "marker": marker_col,
     }
-    # input_df.show(100)
-    # TODO CHECK in impuation wrapper the same column name
-    # is avaliable in back data df as well ?!
-    if manual_construction_col in input_df.columns:
+    apply_manual_construction = False
+    if manual_construction_col and manual_construction_col in input_df.columns:
         input_params["manual_const"] = manual_construction_col
+        apply_manual_construction = True
 
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
             raise TypeError("Input is not a DataFrame")
-        # if manual_construction_col in back_data_df.columns:
-        #     back_input_params["manual_const"] = manual_construction_col
 
     if weight is not None:
         if not isinstance(weight, Decimal):
@@ -320,10 +316,9 @@ def impute(
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
     ).localCheckpoint(eager=False)
-    # print("test1111 input_df.columns")
-    # print(str(input_df.columns))
-    # prepared_df.show(100)
-    if manual_construction_col in input_df.columns:  # TODO check is it needed ?!
+    if apply_manual_construction:
+        # Set manual construction value as output
+        # and set marker as MC
         df_with_mc_data = prepared_df.withColumn(
             "marker",
             when(
@@ -337,13 +332,13 @@ def impute(
                 col("manual_const"),
             ).otherwise(col("output")),
         )
-        only_mc_data = df_with_mc_data.filter(
+        manual_construction_data = df_with_mc_data.filter(
             (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
             | (col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
         )
-        # print("only_mc_data")
-        # only_mc_data.show(100)
-        # df_with_mc_data.show(100)
+        #  Filter out the MC and FIMC data so
+        #  it will be not inculded in the link calculations
+
         prepared_df = df_with_mc_data.filter(
             col("marker").isNull()
             | (
@@ -354,12 +349,7 @@ def impute(
                 )
             )
         )
-        # print("prepared_df_without_mc_fimc :: ")
-        # prepared_df.show()
-        # ["ref", "period", "grouping"]
-        # mc_df2.show(100)
 
-    # TODO refactor do with one select
     if back_data_df:
         validated_back_data_df = validate_dataframe(
             back_data_df, back_input_params, type_mapping, ["ref", "period", "grouping"]
@@ -385,8 +375,6 @@ def impute(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
-    # print("before calculate_ratios :: ")
-    # prepared_df.show(100)
 
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
@@ -593,12 +581,56 @@ def impute(
             )
 
     calculate_ratios()
+    if apply_manual_construction:
+        # populate link, count, default information
+        # for manual_construction data
+        manual_construction_data = (
+            manual_construction_data.alias("mc")
+            .join(prepared_df, ["period", "grouping"], "leftouter")
+            .select(
+                "mc.ref",
+                "mc.period",
+                "mc.grouping",
+                "mc.aux",
+                "mc.manual_const",
+                "mc.previous_period",
+                "mc.next_period",
+                "mc.output",
+                "mc.marker",
+                when(col("forward").isNull(), lit(1).cast("long"))
+                .otherwise(col("forward"))
+                .alias("forward"),
+                when(col("backward").isNull(), lit(1).cast("long"))
+                .otherwise(col("backward"))
+                .alias("backward"),
+                when(col("construction").isNull(), lit(1).cast("long"))
+                .otherwise(col("construction"))
+                .alias("construction"),
+                when(col("count_forward").isNull(), lit(0).cast("int"))
+                .otherwise(col("count_forward"))
+                .alias("count_forward"),
+                when(col("count_backward").isNull(), lit(0).cast("int"))
+                .otherwise(col("count_backward"))
+                .alias("count_backward"),
+                when(col("count_construction").isNull(), lit(0).cast("int"))
+                .otherwise(col("count_construction"))
+                .alias("count_construction"),
+                when(col("default_forward").isNull(), lit(True))
+                .otherwise(col("default_forward"))
+                .alias("default_forward"),
+                when(col("default_backward").isNull(), lit(True))
+                .otherwise(col("default_backward"))
+                .alias("default_backward"),
+                when(col("default_construction").isNull(), lit(True))
+                .otherwise(col("default_construction"))
+                .alias("default_construction"),
+            )
+            .distinct()
+        )
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
-    # print("After calculate_ratios :: ")
-    # prepared_df.show(100)
 
     # --- Impute helper ---
     def impute_helper(
@@ -606,12 +638,6 @@ def impute(
     ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
-        # print("inside impute_helper")
-        # print(f"inside impute_helper :: {marker.value}")
-        # print("imputation helper :: df :: ")
-        # if imputed_df is None:
-        #     print("imputation helper :: imputed_df is None :: ")
-        # df.show(100)
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -631,8 +657,6 @@ def impute(
                 "forward",
                 "backward",
             )
-            # print("imputation helper :: working_df :: ")
-            # working_df.show(100)
             # Anything which isn't null is already imputed or a response and thus
             # can be imputed from. Note that in the case of backward imputation
             # this still holds since it always happens after forward imputation
@@ -642,21 +666,16 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
-            # print("imputation helper :: imputed_df :: ")
-            # imputed_df.show(100)
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
-            # print("imputation helper :: ref_df :: ")
-            # ref_df.show(100)
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
                 .join(ref_df, ["ref", "grouping"])
                 .localCheckpoint(eager=True)
             )
-        # print("imputation helper :: null_response_df :: ")
-        # null_response_df.show(100)
+
         while True:
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref",
@@ -686,8 +705,6 @@ def impute(
                 )
                 .localCheckpoint(eager=False)
             )
-            # print("imputation helper :: calculation_df :: ")
-            # calculation_df.show(100)
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if calculation_df.count() == 0:
@@ -696,23 +713,15 @@ def impute(
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
-            # print("imputation helper :: imputed_df :: after union ")
-            # imputed_df.show(100)
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
                 calculation_df.select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
             ).localCheckpoint(eager=True)
-            # print("imputation helper :: null_response_df :: after join ")
-            # null_response_df.show(100)
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        # print("imputation helper :: df :: before return ")
-        # df.show(100)
-        # print("imputation helper :: imputed_df :: before return ")
-        # imputed_df.show(100)
         return df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
@@ -734,23 +743,24 @@ def impute(
     def backward_impute(df: DataFrame) -> DataFrame:
         return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
-    def forward_impute_from_manualconstruction(df: DataFrame) -> DataFrame:
+    # --- Forward impute from manual construction ---
+    def forward_impute_from_manual_construction(df: DataFrame) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-
-        df = df.unionByName(
-            back_data_period_df.filter(
-                (col("marker") == lit(Marker.MANUAL_CONSTRUCTION.value))
-                | (
-                    col("marker")
-                    == lit(Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
-                )
-            ),
-            allowMissingColumns=True,
-        )
-        df.show()
+        if back_data_df:
+            # Add the MC and FIMC from the back data
+            df = df.unionByName(
+                back_data_period_df.filter(
+                    (col("marker") == lit(Marker.MANUAL_CONSTRUCTION.value))
+                    | (
+                        col("marker")
+                        == lit(Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
+                    )
+                ),
+                allowMissingColumns=True,
+            )
 
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
@@ -828,61 +838,18 @@ def impute(
     for stage in (
         forward_impute_from_response,
         backward_impute,
-        forward_impute_from_manualconstruction,
+        forward_impute_from_manual_construction,
         construct_values,
         forward_impute_from_construction,
     ):
-        # print(f"imputation stage: {stage}")
-        # df.show(100)
         if (
-            manual_construction_col not in input_df.columns
-            and stage == forward_impute_from_manualconstruction
+            apply_manual_construction
+            and stage == forward_impute_from_manual_construction
         ):
-            continue
+            # Add the mc data
+            df = df.unionByName(manual_construction_data, allowMissingColumns=True)
 
         df = stage(df).localCheckpoint(eager=False)
-        # print(f"after imputation stage: {stage}")
-        # df.show(1)
-        # TODO CHECK can we move thid code after the rotio calculation. ??
-        # So dont need to do multiple times.
-        input_df.show()
-        print(f"*****this is the column {manual_construction_col}****")
-        if manual_construction_col in input_df.columns and stage == backward_impute:
-            # print("after backward_impute add the mc only data")
-            # only_mc_data.show(100)
-            # TODO CHECK default inner join is good enough or not ?
-            only_mc_data = (
-                only_mc_data.alias("mc")
-                .join(df, ["period", "grouping"])
-                .select(
-                    "mc.ref",
-                    "mc.period",
-                    "mc.grouping",
-                    "mc.aux",
-                    "mc.manual_const",
-                    "mc.previous_period",
-                    "mc.next_period",
-                    "forward",
-                    "backward",
-                    "count_forward",
-                    "count_backward",
-                    "default_forward",
-                    "default_backward",
-                    "construction",
-                    "count_construction",
-                    "default_construction",
-                    "mc.output",
-                    "mc.marker",
-                )
-                .distinct()
-            )
-            # print("test try to get the links")
-            # only_mc_data.show(100)
-            df = df.unionByName(only_mc_data, allowMissingColumns=True)
-            # print("Merged mc only data")
-            # df.show(100)
-        print(f"**********{stage}***********")
-        df.show()
         if df.filter(col("output").isNull()).count() == 0 and stage == construct_values:
             break
 
