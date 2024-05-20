@@ -11,7 +11,6 @@ forward_growth_col = "decimal(15,6)"
 backward_growth_col = "decimal(15,6)"
 trimmed_forward_col = "boolean"
 trimmed_backward_col = "boolean"
-#TODO check
 manual_construction_col = "decimal(15,6)"
 
 [scenarios.05_R_R_FI_FI_FI_year_span]
