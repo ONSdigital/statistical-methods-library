@@ -78,7 +78,12 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     field_types = default_config["field_types"]
     field_types.update(test_config.get("field_types", {}))
     field_types.update(scenario_config.get("field_types", {}))
+
     imputation_kwargs.update(scenario_config)
+    if "manual_construction_col" in imputation_kwargs:
+        field_types.update({"manual_construction_col": "decimal(15,6)"})
+        fields.update({"manual_construction_col": "manual_construction"})
+
     types = {fields[k]: v for k, v in field_types.items()}
     scenario_file_type = scenario_type.replace("back_data_", "")
     scenario_input = fxt_load_test_csv(

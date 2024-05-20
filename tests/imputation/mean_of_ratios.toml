@@ -4,14 +4,11 @@ backward_growth_col = "growth_backward"
 trimmed_forward_col = "trim_inclusion_forward"
 trimmed_backward_col = "trim_inclusion_backward"
 
-manual_construction_col = "manual_construction"
-
 [field_types]
 forward_growth_col = "decimal(15,6)"
 backward_growth_col = "decimal(15,6)"
 trimmed_forward_col = "boolean"
 trimmed_backward_col = "boolean"
-manual_construction_col = "decimal(15,6)"
 
 [scenarios.05_R_R_FI_FI_FI_year_span]
 starting_period = "202010"
@@ -198,3 +195,33 @@ weight_periodicity_multiplier = 12
 [scenarios.70_C_FI_FI_65_weight]
 weight = "0.65"
 weight_periodicity_multiplier = 12
+
+[scenarios.71_MC_R_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.72_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.73_R_R_MC_FIMC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.74_C_FIC_FIC_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.75_C_FIC_MC_R]
+manual_construction_col = "manual_construction"
+
+[scenarios.76_C_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.77_R_FIR_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.78_C_FIC_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.79_MC_BI_R]
+manual_construction_col = "manual_construction"
+
+[scenarios.80_MC_R_FIR]
+manual_construction_col = "manual_construction"

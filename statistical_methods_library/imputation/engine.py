@@ -239,10 +239,10 @@ def impute(
         "output": output_col,
         "marker": marker_col,
     }
-    apply_manual_construction = False
-    if manual_construction_col and manual_construction_col in input_df.columns:
+    # Add manual_construction parm
+    # only if manual_construction_col is not None.
+    if manual_construction_col:
         input_params["manual_const"] = manual_construction_col
-        apply_manual_construction = True
 
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
@@ -316,7 +316,7 @@ def impute(
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
     ).localCheckpoint(eager=False)
-    if apply_manual_construction:
+    if manual_construction_col:
         # Set manual construction value as output
         # and set marker as MC
         df_with_mc_data = prepared_df.withColumn(
@@ -581,7 +581,7 @@ def impute(
             )
 
     calculate_ratios()
-    if apply_manual_construction:
+    if manual_construction_col:
         # populate link, count, default information
         # for manual_construction data
         manual_construction_data = (
@@ -842,10 +842,7 @@ def impute(
         construct_values,
         forward_impute_from_construction,
     ):
-        if (
-            apply_manual_construction
-            and stage == forward_impute_from_manual_construction
-        ):
+        if manual_construction_col and stage == forward_impute_from_manual_construction:
             # Add the mc data
             df = df.unionByName(manual_construction_data, allowMissingColumns=True)
 
