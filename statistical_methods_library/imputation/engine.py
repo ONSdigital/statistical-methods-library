@@ -841,8 +841,12 @@ def impute(
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
         df = stage(df).localCheckpoint(eager=False)
-        if df.filter(col("output").isNull()).count() == 0 and stage == construct_values:
-            break
+        if df.filter(col("output").isNull()).count() == 0:
+            if not manual_construction_col:
+                break
+            elif manual_construction_col and stage == forward_impute_from_construction:
+                break
+
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
