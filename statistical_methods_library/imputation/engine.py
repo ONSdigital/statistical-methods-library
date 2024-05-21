@@ -319,7 +319,7 @@ def impute(
     if manual_construction_col:
         # Set manual construction value as output
         # and set marker as MC
-        df_with_mc_data = prepared_df.withColumn(
+        mc_df = prepared_df.withColumn(
             "marker",
             when(
                 (col("manual_const").isNotNull()) & (col("output").isNull()),
@@ -332,22 +332,15 @@ def impute(
                 col("manual_const"),
             ).otherwise(col("output")),
         )
-        manual_construction_data = df_with_mc_data.filter(
+        manual_construction_df = mc_df.filter(
             (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-            | (col("marker") == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
         )
         #  Filter out the MC and FIMC data so
         #  it will be not inculded in the link calculations
 
-        prepared_df = df_with_mc_data.filter(
+        prepared_df = mc_df.filter(
             col("marker").isNull()
-            | (
-                ~(col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-                & ~(
-                    col("marker")
-                    == Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value
-                )
-            )
+            | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
 
     if back_data_df:
@@ -581,12 +574,14 @@ def impute(
             )
 
     calculate_ratios()
+
     if manual_construction_col:
         # populate link, count, default information
         # for manual_construction data
-        manual_construction_data = (
-            manual_construction_data.alias("mc")
-            .join(prepared_df, ["period", "grouping"], "leftouter")
+        unique_grp_prd = prepared_df.dropDuplicates(["period", "grouping"])
+        manual_construction_df = (
+            manual_construction_df.alias("mc")
+            .join(unique_grp_prd, ["period", "grouping"], "leftouter")
             .select(
                 "mc.ref",
                 "mc.period",
@@ -625,7 +620,6 @@ def impute(
                 .otherwise(col("default_construction"))
                 .alias("default_construction"),
             )
-            .distinct()
         )
 
     # Caching for both imputed and unimputed data.
@@ -844,12 +838,11 @@ def impute(
     ):
         if manual_construction_col and stage == forward_impute_from_manual_construction:
             # Add the mc data
-            df = df.unionByName(manual_construction_data, allowMissingColumns=True)
+            df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
         df = stage(df).localCheckpoint(eager=False)
         if df.filter(col("output").isNull()).count() == 0 and stage == construct_values:
             break
-
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
