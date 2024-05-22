@@ -243,6 +243,7 @@ def impute(
     # only if manual_construction_col is not None.
     if manual_construction_col:
         input_params["manual_const"] = manual_construction_col
+        fill_values_mc = {}
 
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
@@ -335,14 +336,12 @@ def impute(
         manual_construction_df = mc_df.filter(
             (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
         )
-        #  Filter out the MC and FIMC data so
+        #  Filter out the MC data so
         #  it will be not inculded in the link calculations
-
         prepared_df = mc_df.filter(
             col("marker").isNull()
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
-
     if back_data_df:
         validated_back_data_df = validate_dataframe(
             back_data_df, back_input_params, type_mapping, ["ref", "period", "grouping"]
@@ -372,6 +371,7 @@ def impute(
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
+        nonlocal fill_values_mc
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -469,8 +469,9 @@ def impute(
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
 
-        for fill_column, fill_value in fill_values.items():
-            prepared_df = prepared_df.fillna(fill_value, fill_column)
+        prepared_df = prepared_df.fillna(fill_values)
+
+        fill_values_mc = fill_values
 
         if link_filter:
             prepared_df = prepared_df.join(
@@ -579,48 +580,26 @@ def impute(
         # populate link, count, default information
         # for manual_construction data
         unique_grp_prd = prepared_df.dropDuplicates(["period", "grouping"])
+        # Get the required additional output columns
+        mc_cols = manual_construction_df.columns
+        mc_additional_cols = []
+        for key in output_col_mapping.keys():
+            # Remove growth_forward and growth_backward
+            # as it should be null for non responder
+            if (key not in mc_cols) and (
+                key not in ["growth_forward", "growth_backward"]
+            ):
+                mc_additional_cols.append(key)
         manual_construction_df = (
             manual_construction_df.alias("mc")
             .join(unique_grp_prd, ["period", "grouping"], "leftouter")
             .select(
-                "mc.ref",
-                "mc.period",
-                "mc.grouping",
-                "mc.aux",
-                "mc.manual_const",
-                "mc.previous_period",
-                "mc.next_period",
-                "mc.output",
-                "mc.marker",
-                when(col("forward").isNull(), lit(1).cast("long"))
-                .otherwise(col("forward"))
-                .alias("forward"),
-                when(col("backward").isNull(), lit(1).cast("long"))
-                .otherwise(col("backward"))
-                .alias("backward"),
-                when(col("construction").isNull(), lit(1).cast("long"))
-                .otherwise(col("construction"))
-                .alias("construction"),
-                when(col("count_forward").isNull(), lit(0).cast("int"))
-                .otherwise(col("count_forward"))
-                .alias("count_forward"),
-                when(col("count_backward").isNull(), lit(0).cast("int"))
-                .otherwise(col("count_backward"))
-                .alias("count_backward"),
-                when(col("count_construction").isNull(), lit(0).cast("int"))
-                .otherwise(col("count_construction"))
-                .alias("count_construction"),
-                when(col("default_forward").isNull(), lit(True))
-                .otherwise(col("default_forward"))
-                .alias("default_forward"),
-                when(col("default_backward").isNull(), lit(True))
-                .otherwise(col("default_backward"))
-                .alias("default_backward"),
-                when(col("default_construction").isNull(), lit(True))
-                .otherwise(col("default_construction"))
-                .alias("default_construction"),
+                *(f"mc.{name}" for name in mc_cols),
+                *mc_additional_cols,
             )
         )
+        # Fill null additional columns value with default value.
+        manual_construction_df = manual_construction_df.fillna(fill_values_mc)
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
@@ -841,12 +820,12 @@ def impute(
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
         df = stage(df).localCheckpoint(eager=False)
-        if df.filter(col("output").isNull()).count() == 0:
-            if not manual_construction_col:
-                break
-            elif manual_construction_col and stage == forward_impute_from_construction:
-                break
 
+        if df.filter(col("output").isNull()).count() == 0:
+            if (not manual_construction_col) or (
+                manual_construction_col and stage == construct_values
+            ):
+                break
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
