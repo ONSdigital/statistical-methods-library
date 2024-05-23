@@ -1,9 +1,10 @@
 import pytest
-from pyspark.sql.functions import lit
-from pyspark.sql.types import DecimalType, LongType, StringType
+from pyspark.sql.functions import lit, col
+from pyspark.sql.types import DecimalType, LongType, StringType, BooleanType
 
 from statistical_methods_library.imputation import impute, ratio_of_means
 from statistical_methods_library.utilities.exceptions import ValidationError
+from tests.helpers import check_df_equality
 
 auxiliary_col = "other"
 backward_col = "backward"
@@ -18,6 +19,10 @@ construction_col = "construction"
 count_forward_col = "count_forward"
 count_backward_col = "count_backward"
 count_construction_col = "count_construction"
+manual_construction_col = "manual_construction"
+default_forward_col = "default_forward"
+default_backward_col = "default_backward"
+default_construction_col = "default_construction"
 
 decimal_type = DecimalType(15, 6)
 
@@ -34,6 +39,10 @@ construction_type = decimal_type
 count_forward_type = LongType()
 count_backward_type = LongType()
 count_construction_type = LongType()
+manual_construction_type = decimal_type
+default_forward_type = BooleanType()
+default_backward_type = BooleanType()
+default_construction_type = BooleanType()
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -51,6 +60,10 @@ dataframe_columns = (
     count_forward_col,
     count_backward_col,
     count_construction_col,
+    manual_construction_col,
+    default_forward_col,
+    default_backward_col,
+    default_construction_col,
 )
 
 dataframe_types = {
@@ -67,6 +80,10 @@ dataframe_types = {
     count_forward_col: count_forward_type,
     count_backward_col: count_backward_type,
     count_construction_col: count_construction_type,
+    manual_construction_col: manual_construction_type,
+    default_forward_col: default_forward_type,
+    default_backward_col: default_backward_type,
+    default_construction_col: default_construction_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
@@ -338,7 +355,6 @@ def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_ses
     )
 
     ret_val = impute(input_df=test_dataframe, **params, back_data_df=back_data)
-
     assert ret_val.count() == 1
 
 
@@ -407,3 +423,53 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
 
     with pytest.raises(ValidationError):
         impute(input_df=test_dataframe, **params)
+
+
+def test_back_data_fimc(fxt_load_test_csv, fxt_spark_session):
+    test_dataframe = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "engine",
+        "unit",
+        "manual_construction_input",
+    )
+
+    back_data = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "engine",
+        "unit",
+        "manual_construction_back_data",
+    )
+
+    expected_data = fxt_load_test_csv(
+        dataframe_columns,
+        dataframe_types,
+        "imputation",
+        "engine",
+        "unit",
+        "manual_construction_output",
+    )
+    params.update({"manual_construction_col": manual_construction_col})
+
+    scenario_actual_output = impute(
+        input_df=test_dataframe, **params, back_data_df=back_data
+    )
+    for field_name, field_type in scenario_actual_output.dtypes:
+        if field_type.startswith("decimal"):
+            scenario_actual_output = scenario_actual_output.withColumn(
+                field_name, col(field_name).cast("decimal(15, 6)")
+            )
+
+    sort_cols = [
+        params["reference_col"],
+        params["period_col"],
+        params["grouping_col"],
+    ]
+    check_df_equality(
+        actual=scenario_actual_output.sort(sort_cols),
+        expected=expected_data.sort(sort_cols),
+        keep_cols=sort_cols,
+    )

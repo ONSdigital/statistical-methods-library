@@ -195,3 +195,38 @@ weight_periodicity_multiplier = 12
 [scenarios.70_C_FI_FI_65_weight]
 weight = "0.65"
 weight_periodicity_multiplier = 12
+
+[scenarios.71_MC_R_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.72_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.73_R_R_MC_FIMC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.74_C_FIC_FIC_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.75_C_FIC_MC_R]
+manual_construction_col = "manual_construction"
+
+[scenarios.76_C_MC]
+manual_construction_col = "manual_construction"
+
+[scenarios.77_R_FIR_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.78_C_FIC_MC_FIMC]
+manual_construction_col = "manual_construction"
+
+[scenarios.79_MC_BI_R]
+manual_construction_col = "manual_construction"
+
+[scenarios.80_MC_R_FIR]
+manual_construction_col = "manual_construction"
+
+
+[scenarios.81_R_MC_FIMC_filtered]
+link_filter = "identifier != '140005'"
+manual_construction_col = "manual_construction"

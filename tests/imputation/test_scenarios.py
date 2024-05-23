@@ -78,7 +78,12 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     field_types = default_config["field_types"]
     field_types.update(test_config.get("field_types", {}))
     field_types.update(scenario_config.get("field_types", {}))
+
     imputation_kwargs.update(scenario_config)
+    if "manual_construction_col" in imputation_kwargs:
+        field_types.update({"manual_construction_col": "decimal(15,6)"})
+        fields.update({"manual_construction_col": "manual_construction"})
+
     types = {fields[k]: v for k, v in field_types.items()}
     scenario_file_type = scenario_type.replace("back_data_", "")
     scenario_input = fxt_load_test_csv(
@@ -112,7 +117,6 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
     scenario_expected_output = scenario_expected_output.filter(
         col(fields["period_col"]) >= starting_period
     )
-
     scenario_actual_output = imputation.impute(
         input_df=scenario_input, **imputation_kwargs
     )
@@ -121,7 +125,6 @@ def test_calculations(fxt_load_test_csv, ratio_calculator, scenario_type, scenar
             scenario_actual_output = scenario_actual_output.withColumn(
                 field_name, col(field_name).cast("decimal(15, 6)")
             )
-
     sort_cols = [
         fields["reference_col"],
         fields["period_col"],
