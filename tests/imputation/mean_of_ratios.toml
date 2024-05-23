@@ -225,3 +225,8 @@ manual_construction_col = "manual_construction"
 
 [scenarios.80_MC_R_FIR]
 manual_construction_col = "manual_construction"
+
+
+[scenarios.81_R_MC_FIMC_filtered]
+link_filter = "identifier != '140005'"
+manual_construction_col = "manual_construction"
