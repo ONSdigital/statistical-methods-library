@@ -579,7 +579,6 @@ def impute(
     if manual_construction_col:
         # populate link, count, default information
         # for manual_construction data
-        unique_grp_prd = prepared_df.dropDuplicates(["period", "grouping"])
         # Get the required additional output columns
         mc_cols = manual_construction_df.columns
         mc_additional_cols = []
@@ -592,7 +591,11 @@ def impute(
                 mc_additional_cols.append(key)
         manual_construction_df = (
             manual_construction_df.alias("mc")
-            .join(unique_grp_prd, ["period", "grouping"], "leftouter")
+            .join(
+                prepared_df.dropDuplicates(["period", "grouping"]),
+                ["period", "grouping"],
+                "leftouter",
+            )
             .select(
                 *(f"mc.{name}" for name in mc_cols),
                 *mc_additional_cols,
