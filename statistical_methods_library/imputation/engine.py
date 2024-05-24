@@ -244,6 +244,16 @@ def impute(
     if manual_construction_col:
         input_params["manual_const"] = manual_construction_col
         fill_values_mc = {}
+        # These col values should be null for non-responder i.e MC.
+        exclude_cols = [
+            "growth_forward",
+            "growth_backward",
+            "link_inclusion_current",
+            "link_inclusion_previous",
+            "link_inclusion_next",
+            "trim_inclusion_forward",
+            "trim_inclusion_backward",
+        ]
 
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
@@ -371,7 +381,7 @@ def impute(
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
-        nonlocal fill_values_mc
+
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -471,7 +481,9 @@ def impute(
 
         prepared_df = prepared_df.fillna(fill_values)
 
-        fill_values_mc = fill_values
+        if manual_construction_col:
+            nonlocal fill_values_mc
+            fill_values_mc = fill_values
 
         if link_filter:
             prepared_df = prepared_df.join(
@@ -577,18 +589,16 @@ def impute(
     calculate_ratios()
 
     if manual_construction_col:
-        # populate link, count, default information
-        # for manual_construction data
-        # Get the required additional output columns
         mc_cols = manual_construction_df.columns
+
+        # Get the required additional output columns
         mc_additional_cols = []
         for key in output_col_mapping.keys():
-            # Remove growth_forward and growth_backward
-            # as it should be null for non responder
-            if (key not in mc_cols) and (
-                key not in ["growth_forward", "growth_backward"]
-            ):
+            if (key not in mc_cols) and (key not in exclude_cols):
                 mc_additional_cols.append(key)
+
+        # populate link, count, default information
+        # for mc data
         manual_construction_df = (
             manual_construction_df.alias("mc")
             .join(
