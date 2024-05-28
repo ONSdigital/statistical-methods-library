@@ -21,3 +21,8 @@ link_filter = "identifier != '10003'"
 
 [scenarios.35_BI_BI_R_FI_FI_R_FI_alternating_filtered]
 link_filter = "NOT(identifier = '70001' AND date IN ('202003', '202005'))"
+
+[scenarios.36_R_MC_FIMC_weighted]
+weight = "0.5"
+weight_periodicity_multiplier = 12
+manual_construction_col = "manual_construction"
