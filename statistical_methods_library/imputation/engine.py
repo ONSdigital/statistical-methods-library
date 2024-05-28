@@ -245,7 +245,7 @@ def impute(
         input_params["manual_const"] = manual_construction_col
         fill_values_mc = {}
         # These col values should be null for non-responder i.e MC.
-        exclude_cols = [
+        nonresponder_null_cols = [
             "growth_forward",
             "growth_backward",
             "link_inclusion_current",
@@ -594,7 +594,9 @@ def impute(
         # Get the required additional output columns
         mc_additional_cols = []
         for key in output_col_mapping.keys():
-            if (key not in mc_cols) and (key not in exclude_cols):
+            # nonresponder_null_cols will be populated with null value just before the
+            # stage forward_impute_from_manual_construction via unionByName
+            if (key not in mc_cols) and (key not in nonresponder_null_cols):
                 mc_additional_cols.append(key)
 
         # populate link, count, default information
