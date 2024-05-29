@@ -244,7 +244,7 @@ def impute(
     if manual_construction_col:
         input_params["manual_const"] = manual_construction_col
         fill_values_mc = {}
-        # These col values should be null for non-responder i.e MC.
+        # These cols value should be null for non-responder i.e MC.
         nonresponder_null_cols = [
             "growth_forward",
             "growth_backward",
