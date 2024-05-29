@@ -343,15 +343,20 @@ def impute(
                 col("manual_const"),
             ).otherwise(col("output")),
         )
+
+        # Filter out MC data to prevent it from being used in link calculations.
+        # It maintains a gap in the imputation pattern,which prevents
+        # the FIR for the identifier but allows the BIR.
+        # This MC data will be merged with the main df before
+        # the forward_impute_from_manual_construction stage.
         manual_construction_df = mc_df.filter(
             (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
         )
-        #  Filter out the MC data so
-        #  it will be not inculded in the link calculations
         prepared_df = mc_df.filter(
             col("marker").isNull()
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
+
     if back_data_df:
         validated_back_data_df = validate_dataframe(
             back_data_df, back_input_params, type_mapping, ["ref", "period", "grouping"]
