@@ -772,10 +772,10 @@ def impute(
             ).otherwise(col("output")),
         )
 
-        # Filter out MC data so it miantain a gap in the imputation pattern,
-        # which prevents the FIR for the identifier expected to be FIMC
-        # but allows the BIR. This MC data will be merged with the main df
-        # before the forward_impute_from_manual_construction stage.
+        # Filter out MC data, which leaves a gap in the imputation pattern for
+        # identifiers with MC values. As a result, it prevents the FIR from
+        # being issued against the targeted FIMC. This MC data will be merged with
+        # the main df prior to the forward_impute_from_manual_construction stage.
         manual_construction_df = mc_df.filter(
             (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
         )
