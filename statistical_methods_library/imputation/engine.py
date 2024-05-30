@@ -754,6 +754,7 @@ def impute(
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
+
     if manual_construction_col:
         # Set manual construction value as output
         # and marker as MC
