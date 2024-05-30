@@ -158,6 +158,8 @@ def impute(
         weight_periodicity_multiplier: Multiplied by the periodicity of the
           dataset to calculate the previous period when finding the previous
           links for weighting.
+        manual_construction_col: The name of the column containing the
+          construction value.
         ratio_calculator_params: Any extra keyword arguments to the engine are
           passed to the specified ratio calculators as keyword args and are
           otherwise ignored by this function. Please see the specified ratio
