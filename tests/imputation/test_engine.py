@@ -425,7 +425,7 @@ def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
         impute(input_df=test_dataframe, **params)
 
 
-def test_back_data_mc_fimc_back_data(fxt_load_test_csv, fxt_spark_session):
+def test_back_data_mc_fimc(fxt_load_test_csv, fxt_spark_session):
     test_dataframe = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
