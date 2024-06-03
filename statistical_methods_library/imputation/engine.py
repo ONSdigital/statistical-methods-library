@@ -158,6 +158,8 @@ def impute(
         weight_periodicity_multiplier: Multiplied by the periodicity of the
           dataset to calculate the previous period when finding the previous
           links for weighting.
+        manual_construction_col: The name of the column containing the
+          construction value.
         ratio_calculator_params: Any extra keyword arguments to the engine are
           passed to the specified ratio calculators as keyword args and are
           otherwise ignored by this function. Please see the specified ratio
@@ -243,7 +245,6 @@ def impute(
     # only if manual_construction_col is not None.
     if manual_construction_col:
         input_params["manual_const"] = manual_construction_col
-        fill_values_mc = {}
 
     if back_data_df:
         if not isinstance(back_data_df, DataFrame):
@@ -317,31 +318,7 @@ def impute(
     prior_period_df = prepared_df.selectExpr(
         "min(previous_period) AS prior_period"
     ).localCheckpoint(eager=False)
-    if manual_construction_col:
-        # Set manual construction value as output
-        # and set marker as MC
-        mc_df = prepared_df.withColumn(
-            "marker",
-            when(
-                (col("manual_const").isNotNull()) & (col("output").isNull()),
-                lit(Marker.MANUAL_CONSTRUCTION.value),
-            ).otherwise(col("marker")),
-        ).withColumn(
-            "output",
-            when(
-                (col("manual_const").isNotNull()) & (col("output").isNull()),
-                col("manual_const"),
-            ).otherwise(col("output")),
-        )
-        manual_construction_df = mc_df.filter(
-            (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-        )
-        #  Filter out the MC data so
-        #  it will be not inculded in the link calculations
-        prepared_df = mc_df.filter(
-            col("marker").isNull()
-            | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
-        )
+
     if back_data_df:
         validated_back_data_df = validate_dataframe(
             back_data_df, back_input_params, type_mapping, ["ref", "period", "grouping"]
@@ -371,7 +348,7 @@ def impute(
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
-        nonlocal fill_values_mc
+
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -470,8 +447,6 @@ def impute(
             output_col_mapping.update(result.additional_outputs)
 
         prepared_df = prepared_df.fillna(fill_values)
-
-        fill_values_mc = fill_values
 
         if link_filter:
             prepared_df = prepared_df.join(
@@ -575,34 +550,6 @@ def impute(
             )
 
     calculate_ratios()
-
-    if manual_construction_col:
-        # populate link, count, default information
-        # for manual_construction data
-        # Get the required additional output columns
-        mc_cols = manual_construction_df.columns
-        mc_additional_cols = []
-        for key in output_col_mapping.keys():
-            # Remove growth_forward and growth_backward
-            # as it should be null for non responder
-            if (key not in mc_cols) and (
-                key not in ["growth_forward", "growth_backward"]
-            ):
-                mc_additional_cols.append(key)
-        manual_construction_df = (
-            manual_construction_df.alias("mc")
-            .join(
-                prepared_df.dropDuplicates(["period", "grouping"]),
-                ["period", "grouping"],
-                "leftouter",
-            )
-            .select(
-                *(f"mc.{name}" for name in mc_cols),
-                *mc_additional_cols,
-            )
-        )
-        # Fill null additional columns value with default value.
-        manual_construction_df = manual_construction_df.fillna(fill_values_mc)
 
     # Caching for both imputed and unimputed data.
     imputed_df = None
@@ -808,6 +755,34 @@ def impute(
         null_response_df = None
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
+        )
+
+    if manual_construction_col:
+        # Set manual construction value as output
+        # and marker as MC
+        mc_df = prepared_df.withColumn(
+            "marker",
+            when(
+                (col("manual_const").isNotNull()) & (col("output").isNull()),
+                lit(Marker.MANUAL_CONSTRUCTION.value),
+            ).otherwise(col("marker")),
+        ).withColumn(
+            "output",
+            when(
+                (col("manual_const").isNotNull()) & (col("output").isNull()),
+                col("manual_const"),
+            ).otherwise(col("output")),
+        )
+
+        # Filter out identifiers with a MC value.So it prevents the FIR from
+        # being issued against the targeted FIMC. This MC data will be merged with
+        # the main df prior to the forward_impute_from_manual_construction stage.
+        manual_construction_df = mc_df.filter(
+            (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
+        )
+        prepared_df = mc_df.filter(
+            col("marker").isNull()
+            | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
 
     df = prepared_df
