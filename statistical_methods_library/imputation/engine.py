@@ -774,7 +774,7 @@ def impute(
             ).otherwise(col("output")),
         )
 
-        # Filter out identifiers with MC values.So it prevents the FIR from
+        # Filter out identifiers with a MC value.So it prevents the FIR from
         # being issued against the targeted FIMC. This MC data will be merged with
         # the main df prior to the forward_impute_from_manual_construction stage.
         manual_construction_df = mc_df.filter(
