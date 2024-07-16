@@ -14,6 +14,7 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
+        poetry-version: ["1.2.2", "1.7.1"]
         java-version: ['8']
       fail-fast: false 
     steps:
@@ -29,7 +30,7 @@ jobs:
       - name: Run image ${{matrix.python-version}}
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.2.1
+          poetry-version: ${{ matrix.poetry-version }}
       - name: Test ${{matrix.python-version}}
         run: |-
           set -e
@@ -63,7 +64,7 @@ jobs:
       - name: Run image
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.2.1
+          poetry-version: ${{ matrix.poetry-version }}
       - name: Run flake8
         run: |-
           poetry install
@@ -84,7 +85,7 @@ jobs:
       - name: Run image
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.2.1
+          poetry-version: ${{ matrix.poetry-version }}
       - name: Run Black
         run: |-
           poetry install
