@@ -10,3 +10,5 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: abatilo/actions-poetry
