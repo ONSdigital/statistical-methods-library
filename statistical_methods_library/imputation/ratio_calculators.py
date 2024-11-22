@@ -146,7 +146,10 @@ def mean_of_ratios(
             & (lit(include_zeros) | (col("next_output") != lit(0))),
             col("next_output"),
         ).alias("next_output"),
-    ).selectExpr(
+    )
+    print("Inside ration_calculator::mean_of_ratios ::df :: before growth caluclation")
+    df.show(500)
+    df =df.selectExpr(
         "period",
         "grouping",
         "ref",
@@ -176,7 +179,9 @@ def mean_of_ratios(
                 END
             END AS growth_backward""",
     )
-
+    print("Inside ration_calculator::mean_of_ratios ::df :: after growth caluclation")
+    df.show(500)
+    
     if lower_trim is not None:
 
         def lower_bound(c):

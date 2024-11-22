@@ -193,7 +193,8 @@ def impute(
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
         raise TypeError("Input is not a DataFrame")
-
+    input_df.show(100)
+    back_data_df.show(100)
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
@@ -375,6 +376,9 @@ def impute(
         # Since we're going to join on to the main df filtering here
         # won't cause us to lose grouping as they'll just be filled with
         # default ratios.
+        print("Inside engine::calculate_ratios : filtered_refs :: ")
+        filtered_refs.show(500)
+
         if link_filter:
             ratio_filter_df = prepared_df.join(
                 filtered_refs, ["ref", "period", "grouping"]
@@ -392,6 +396,8 @@ def impute(
             "next_period",
             "match",
         )
+        print("Inside engine::calculate_ratios : ratio_filter_df :: just before the actual ratio call::")
+        ratio_filter_df.show(500)
 
         # Put the values from the current and previous periods for a
         # contributor on the same row.
@@ -431,7 +437,8 @@ def impute(
                 "link_inclusion_previous",
             )
         )
-
+        print("Inside engine::calculate_ratios : ratio_calculation_df :: just before the actual ratio call::")
+        ratio_calculation_df.show(500)
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         fill_values = {}
@@ -447,7 +454,8 @@ def impute(
             output_col_mapping.update(result.additional_outputs)
 
         prepared_df = prepared_df.fillna(fill_values)
-
+        print("Inside engine::calculate_ratios : prepared_df :: after the actual ratio call::")
+        prepared_df.show(500)
         if link_filter:
             prepared_df = prepared_df.join(
                 ratio_calculation_df.select(
@@ -804,9 +812,12 @@ def impute(
                 manual_construction_col and stage == construct_values
             ):
                 break
-    return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
+    df.sort("ref","period").show(500)
+    
+    df = df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
             for k in sorted(output_col_mapping.keys() & set(df.columns))
         ]
     )
+    return df

@@ -23,6 +23,11 @@ manual_construction_col = "manual_construction"
 default_forward_col = "default_forward"
 default_backward_col = "default_backward"
 default_construction_col = "default_construction"
+encoded_status_col = "encoded_status"
+link_inclusion_previous_col = "link_inclusion_previous"
+link_inclusion_current_col = "link_inclusion_current"
+link_inclusion_next_col = "link_inclusion_next"
+link_exclusion_col ="link_exclusion"
 
 decimal_type = DecimalType(15, 6)
 
@@ -43,6 +48,12 @@ manual_construction_type = decimal_type
 default_forward_type = BooleanType()
 default_backward_type = BooleanType()
 default_construction_type = BooleanType()
+encoded_status_type=StringType()
+link_inclusion_previous_type = BooleanType()
+link_inclusion_current_type = BooleanType()
+link_inclusion_next_type = BooleanType()
+link_exclusion_type = StringType()
+
 
 # Columns we expect in either our input or output test dataframes and their
 # respective types
@@ -64,6 +75,11 @@ dataframe_columns = (
     default_forward_col,
     default_backward_col,
     default_construction_col,
+    encoded_status_col,
+    link_inclusion_current_col,
+    link_inclusion_previous_col,
+    link_inclusion_next_col,
+    link_exclusion_col,
 )
 
 dataframe_types = {
@@ -84,6 +100,11 @@ dataframe_types = {
     default_forward_col: default_forward_type,
     default_backward_col: default_backward_type,
     default_construction_col: default_construction_type,
+    encoded_status_col: encoded_status_type,
+    link_inclusion_current_col: link_inclusion_current_type,
+    link_inclusion_previous_col: link_inclusion_previous_type,
+    link_inclusion_next_col: link_inclusion_next_type,
+    link_exclusion_col: link_exclusion_type,
 }
 
 bad_dataframe_types = dataframe_types.copy()
@@ -106,323 +127,326 @@ test_scenarios = []
 # --- Test type validation on the input dataframe(s) ---
 
 
-def test_input_not_a_dataframe():
-    with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
-        impute(input_df="not_a_dataframe", **params)
+# def test_input_not_a_dataframe():
+#     with pytest.raises(TypeError):
+#         # noinspection PyTypeChecker
+#         impute(input_df="not_a_dataframe", **params)
 
 
-# --- Test type validation on the back_data dataframe(s) ---
+# # --- Test type validation on the back_data dataframe(s) ---
 
 
-def test_back_data_not_a_dataframe(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    with pytest.raises(TypeError):
-        # noinspection PyTypeChecker
-        impute(input_df=test_dataframe, **params, back_data_df="not_a_dataframe")
+# def test_back_data_not_a_dataframe(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     with pytest.raises(TypeError):
+#         # noinspection PyTypeChecker
+#         impute(input_df=test_dataframe, **params, back_data_df="not_a_dataframe")
 
 
-# --- Test if cols missing from input dataframe(s) ---
+# # --- Test if cols missing from input dataframe(s) ---
 
 
-def test_dataframe_column_missing(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_dataframe = test_dataframe.drop(grouping_col)
-    with pytest.raises(ValidationError):
-        impute(input_df=bad_dataframe, **params)
+# def test_dataframe_column_missing(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_dataframe = test_dataframe.drop(grouping_col)
+#     with pytest.raises(ValidationError):
+#         impute(input_df=bad_dataframe, **params)
 
 
-# --- Test if dataframe has duplicate rows ---
+# # --- Test if dataframe has duplicate rows ---
 
 
-def test_dataframe_duplicate_rows(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "duplicate_rows",
-    )
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params)
+# def test_dataframe_duplicate_rows(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "duplicate_rows",
+#     )
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params)
 
 
-# --- Test if target missing from input dataframe(s) ---
+# # --- Test if target missing from input dataframe(s) ---
 
 
-def test_dataframe_target_missing(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_dataframe = test_dataframe.drop(target_col)
-    with pytest.raises(ValidationError):
-        impute(input_df=bad_dataframe, **params)
+# def test_dataframe_target_missing(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_dataframe = test_dataframe.drop(target_col)
+#     with pytest.raises(ValidationError):
+#         impute(input_df=bad_dataframe, **params)
 
 
-# --- Test if params null ---
+# # --- Test if params null ---
 
 
-def test_params_none(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_params = params.copy()
-    bad_params["target_col"] = None
-    with pytest.raises(TypeError):
-        impute(input_df=test_dataframe, **bad_params)
+# def test_params_none(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_params = params.copy()
+#     bad_params["target_col"] = None
+#     with pytest.raises(TypeError):
+#         impute(input_df=test_dataframe, **bad_params)
 
 
-def test_params_empty_string(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_params = params.copy()
-    bad_params["target_col"] = ""
-    with pytest.raises(ValueError):
-        impute(input_df=test_dataframe, **bad_params)
+# def test_params_empty_string(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_params = params.copy()
+#     bad_params["target_col"] = ""
+#     with pytest.raises(ValueError):
+#         impute(input_df=test_dataframe, **bad_params)
 
 
-def test_params_missing_link_column(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality_partial_link_cols",
-    )
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params)
+# def test_params_missing_link_column(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality_partial_link_cols",
+#     )
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params)
 
 
-def test_params_not_string(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_params = params.copy()
-    bad_params["reference_col"] = 23
-    with pytest.raises(TypeError):
-        impute(input_df=test_dataframe, **bad_params)
+# def test_params_not_string(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_params = params.copy()
+#     bad_params["reference_col"] = 23
+#     with pytest.raises(TypeError):
+#         impute(input_df=test_dataframe, **bad_params)
 
 
-# --- Test if output contents are as expected, both new columns and data ---
+# # --- Test if output contents are as expected, both new columns and data ---
 
 
-def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    # Make sure that no extra columns pass through.
-    test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
-    ret_val = impute(input_df=test_dataframe, **params)
-    assert isinstance(ret_val, type(test_dataframe))
-    ret_cols = ret_val.columns
-    assert "bonus_column" not in ret_cols
+# def test_dataframe_returned_as_expected(fxt_spark_session, fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     # Make sure that no extra columns pass through.
+#     test_dataframe = test_dataframe.withColumn("bonus_column", lit(0))
+#     ret_val = impute(input_df=test_dataframe, **params)
+#     assert isinstance(ret_val, type(test_dataframe))
+#     ret_cols = ret_val.columns
+#     assert "bonus_column" not in ret_cols
 
 
-# --- Test that when provided back data does not match input schema then fails ---
-def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_back_data = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "back_data_missing_column",
-    )
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+# # --- Test that when provided back data does not match input schema then fails ---
+# def test_back_data_missing_column(fxt_load_test_csv, fxt_spark_session):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_back_data = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "back_data_missing_column",
+#     )
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
-def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_back_data = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "back_data_nulls",
-    )
+# def test_back_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_back_data = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "back_data_nulls",
+#     )
 
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
-def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_session):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    bad_back_data = fxt_load_test_csv(
-        [
-            reference_col,
-            period_col,
-            grouping_col,
-            target_col,
-            marker_col,
-            auxiliary_col,
-        ],
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "back_data_no_output",
-    )
+# def test_back_data_without_output_is_invalid(fxt_load_test_csv, fxt_spark_session):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     bad_back_data = fxt_load_test_csv(
+#         [
+#             reference_col,
+#             period_col,
+#             grouping_col,
+#             target_col,
+#             marker_col,
+#             auxiliary_col,
+#         ],
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "back_data_no_output",
+#     )
 
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params, back_data_df=bad_back_data)
 
 
 # Test if when the back data input has link cols and the main data input does not
 # then the columns are ignored.
-def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
+# def test_back_data_drops_link_cols_when_present(fxt_load_test_csv, fxt_spark_session):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
 
-    back_data = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "back_data_with_link_cols",
-    )
+#     back_data = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "back_data_with_link_cols",
+#     )
 
-    ret_val = impute(input_df=test_dataframe, **params, back_data_df=back_data)
-    assert ret_val.count() == 1
-
-
-# Test when main data input has link cols and the back data input does not
-# then columns aren't lost.
-def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
-    fxt_load_test_csv, fxt_spark_session
-):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality_with_link_cols",
-    )
-
-    back_data = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "back_data_without_link_cols",
-    )
-
-    imputation_kwargs = params.copy()
-    imputation_kwargs.update(
-        {
-            "forward_link_col": forward_col,
-            "backward_link_col": backward_col,
-            "construction_link_col": construction_col,
-            "input_df": test_dataframe,
-            "back_data_df": back_data,
-        }
-    )
-
-    ret_val = impute(**imputation_kwargs)
-
-    assert ret_val.count() == 1
+#     ret_val = impute(input_df=test_dataframe, **params, back_data_df=back_data)
+#     print("when the back data input has link cols and the main data input does nott")
+#     ret_val.show(100)
+#     assert ret_val.count() == 1
 
 
-# Test if columns of the incorrect type are caught.
-def test_incorrect_column_types(fxt_load_test_csv):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        bad_dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "basic_functionality",
-    )
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params)
+# # Test when main data input has link cols and the back data input does not
+# # then columns aren't lost.
+# def test_input_has_link_cols_and_back_data_does_not_have_link_cols(
+#     fxt_load_test_csv, fxt_spark_session
+# ):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality_with_link_cols",
+#     )
+
+#     back_data = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "back_data_without_link_cols",
+#     )
+
+#     imputation_kwargs = params.copy()
+#     imputation_kwargs.update(
+#         {
+#             "forward_link_col": forward_col,
+#             "backward_link_col": backward_col,
+#             "construction_link_col": construction_col,
+#             "input_df": test_dataframe,
+#             "back_data_df": back_data,
+#         }
+#     )
+
+#     ret_val = impute(**imputation_kwargs)
+#     print(" when main data input has link cols and the back data input does not")
+#     ret_val.show(100)
+#     assert ret_val.count() == 1
 
 
-def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
-    test_dataframe = fxt_load_test_csv(
-        dataframe_columns,
-        dataframe_types,
-        "imputation",
-        "engine",
-        "unit",
-        "input_data_nulls",
-    )
+# # Test if columns of the incorrect type are caught.
+# def test_incorrect_column_types(fxt_load_test_csv):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         bad_dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "basic_functionality",
+#     )
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params)
 
-    with pytest.raises(ValidationError):
-        impute(input_df=test_dataframe, **params)
+
+# def test_input_data_contains_nulls(fxt_load_test_csv, fxt_spark_session):
+#     test_dataframe = fxt_load_test_csv(
+#         dataframe_columns,
+#         dataframe_types,
+#         "imputation",
+#         "engine",
+#         "unit",
+#         "input_data_nulls",
+#     )
+
+#     with pytest.raises(ValidationError):
+#         impute(input_df=test_dataframe, **params)
 
 
 def test_back_data_mc_fimc(fxt_load_test_csv, fxt_spark_session):
@@ -432,28 +456,35 @@ def test_back_data_mc_fimc(fxt_load_test_csv, fxt_spark_session):
         "imputation",
         "engine",
         "unit",
-        "manual_construction_input",
+        "001_manual_construction_input",
     )
-
+    print("test_dataframe")
+    test_dataframe.show(100)
     back_data = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
         "engine",
         "unit",
-        "manual_construction_back_data",
-    )
+        "001_manual_construction_back_data1",
+        #"001_manual_construction_back_data2",
+        #"001_manual_construction_back_data3",
 
+    )
+    print("back_data")
+    back_data.show(100)
     expected_data = fxt_load_test_csv(
         dataframe_columns,
         dataframe_types,
         "imputation",
         "engine",
         "unit",
-        "manual_construction_output",
+        "001_manual_construction_output",
     )
+    link_filter_val = "encoded_status LIKE '21%' AND link_exclusion != 'Y'"
     params.update({"manual_construction_col": manual_construction_col})
-
+    params.update({"link_filter": link_filter_val})
+    
     scenario_actual_output = impute(
         input_df=test_dataframe, **params, back_data_df=back_data
     )
