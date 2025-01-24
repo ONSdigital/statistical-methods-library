@@ -670,6 +670,8 @@ def impute(
 
     # --- Forward impute from manual construction ---
     def forward_impute_from_manual_construction(df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame) -> DataFrame:
+        imputed_df=None
+        null_response_df=None
         if back_data_df:
             # Add the MC and FIMC from the back data
             df = df.unionByName(
@@ -747,7 +749,8 @@ def impute(
     def forward_impute_from_construction(df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame) -> DataFrame:
         # We need to recalculate our imputed and null response data frames to
         # account for construction.
-
+        imputed_df=None
+        null_response_df=None
         return impute_helper(
             df, imputed_df, null_response_df,"forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
