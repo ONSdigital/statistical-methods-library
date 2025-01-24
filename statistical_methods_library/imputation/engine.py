@@ -607,6 +607,10 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             )
+            print("other_df")
+            other_df.show()
+            print("null_response_df")
+            null_response_df.show()
             calculation_df = (
                 null_response_df.join(
                     other_df,
@@ -628,6 +632,7 @@ def impute(
                     "backward",
                 )
             ).localCheckpoint(eager=True)
+            print(calculation_df.count())
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if calculation_df.count() == 0:
