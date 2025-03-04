@@ -392,30 +392,29 @@ def impute(
             "next_period",
             "match",
         )
-        ratio_filter_previous_df = ratio_filter_df.selectExpr(
+        ratio_filter_df.show()
+        # Put the values from the current and previous periods for a
+        # contributor on the same row.
+        ratio_calculation_df = (
+            ratio_filter_df.join(
+                ratio_filter_df.selectExpr(
                     "ref",
                     "period AS previous_period",
                     "output AS previous_output",
                     "grouping",
                     "match AS link_inclusion_previous",
-                ).localCheckpoint(eager=True)
-        ratio_filter_next_df = ratio_filter_df.selectExpr(
+                ),
+                ["ref", "grouping", "previous_period"],
+                "leftouter",
+            )
+            .join(
+                ratio_filter_df.selectExpr(
                     "ref",
                     "period AS next_period",
                     "output AS next_output",
                     "grouping",
                     "match AS link_inclusion_next",
-                ).localCheckpoint(eager=True)
-        # Put the values from the current and previous periods for a
-        # contributor on the same row.
-        ratio_calculation_df = (
-            ratio_filter_df.join(
-                ratio_filter_previous_df,
-                ["ref", "grouping", "previous_period"],
-                "leftouter",
-            )
-            .join(
-                ratio_filter_next_df,
+                ),
                 ["ref", "next_period", "grouping"],
                 "leftouter",
             )
