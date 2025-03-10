@@ -248,13 +248,16 @@ def mean_of_ratios(
                         upper_bound(
                             col("count_backward"),
                         ).alias("upper_backward"),
-                    )
+                    ).localCheckpoint(eager=True) # TODO: Check if this is necessary
                 
 
         df = (
             df.join(
                 df_lwr_upr_bound,
-                df["period"] == df_lwr_upr_bound["period"] & df["grouping"] == df_lwr_upr_bound["grouping"]
+                [
+                    df["period"] == df_lwr_upr_bound["period"],
+                    df["grouping"] == df_lwr_upr_bound["grouping"]
+                ]
                 # (
                 #     df.groupBy("period", "grouping")
                 #     .agg(
