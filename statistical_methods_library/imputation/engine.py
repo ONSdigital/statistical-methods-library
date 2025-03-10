@@ -406,10 +406,10 @@ def impute(
                     "grouping",
                     "match AS link_inclusion_next",
                 ).localCheckpoint(eager=True)
-        ratio_filter_previous_df.show()
-        ratio_filter_next_df.show()
-        print(ratio_filter_df.count())
-        ratio_filter_df.show(1000)
+        # ratio_filter_previous_df.show()
+        # ratio_filter_next_df.show()
+        # print(ratio_filter_df.count())
+        # ratio_filter_df.show(1000)
         # Put the values from the current and previous periods for a
         # contributor on the same row.
         ratio_calculation_df = (

@@ -251,12 +251,12 @@ def mean_of_ratios(
                     ).localCheckpoint(eager=True) # TODO: Check if this is necessary
                 
 
-        df = (
-            df.join(
+        df = df.join(
                 df_lwr_upr_bound,
                 [
-                    df["period"] == df_lwr_upr_bound["period"],
-                    df["grouping"] == df_lwr_upr_bound["grouping"]
+                    # df["period"] == df_lwr_upr_bound["period"],
+                    # df["grouping"] == df_lwr_upr_bound["grouping"]
+                    "period", "grouping"
                 ]
                 # (
                 #     df.groupBy("period", "grouping")
@@ -331,7 +331,9 @@ def mean_of_ratios(
             # When calculating row numbers we put the null values last to avoid
             # them impacting the trimmed mean. This works because the upper
             # bound is calculated based on the count of non-null growth ratios.
-            .withColumn(
+        df.printSchema()
+        df.show(2)
+        df = df.withColumn(
                 "num_forward",
                 expr(
                     """
@@ -341,8 +343,7 @@ def mean_of_ratios(
                     )
                 """
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "num_backward",
                 expr(
                     """
@@ -352,8 +353,7 @@ def mean_of_ratios(
                     )
                 """
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "trim_inclusion_forward",
                 (
                     when(col("growth_forward").isNull(), None).otherwise(
@@ -366,8 +366,7 @@ def mean_of_ratios(
                         )
                     )
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "trim_inclusion_backward",
                 (
                     when(col("growth_backward").isNull(), None).otherwise(
@@ -381,7 +380,7 @@ def mean_of_ratios(
                     )
                 ),
             )
-        )
+        
 
     else:
         df = df.withColumn("trim_inclusion_forward", lit(True)).withColumn(
