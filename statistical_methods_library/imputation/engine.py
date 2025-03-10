@@ -448,7 +448,23 @@ def impute(
             ),
             [],
         ):
-            prepared_df = prepared_df.join(result.data, result.join_columns, "left")
+            # Use aliases to make the join operation explicit
+            result_data = result.data.alias("result_data")
+            prepared_df = prepared_df.alias("prepared_df")
+            
+            # Join the result data to the prepared_df on the specified join columns
+            # This join ensures that each contributor has a set of ratios
+            prepared_df = prepared_df.join(
+                result_data,
+                [
+                    prepared_df[col] == result_data[col]
+                    for col in result.join_columns
+                ],
+                "left"
+            ).select(
+                "prepared_df.*",  # Select all columns from prepared_df
+                *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
+            )
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
 
