@@ -122,7 +122,6 @@ def mean_of_ratios(
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
         trim_threshold = Decimal(trim_threshold)
-
     df = df.select(
         "period",
         "grouping",
@@ -332,7 +331,7 @@ def mean_of_ratios(
             # them impacting the trimmed mean. This works because the upper
             # bound is calculated based on the count of non-null growth ratios.
         df.printSchema()
-        df.show(2)
+        # df.show(2)
         df = df.withColumn(
                 "num_forward",
                 expr(
@@ -412,7 +411,7 @@ def mean_of_ratios(
             ),
         )
         .withColumn("default_forward", expr("forward IS NULL"))
-        .withColumn("default_backward", expr("backward IS NULL"))
+        .withColumn("default_backward", expr("backward IS NULL")).localCheckpoint(eager=False)
     )
 
     growth_additional_outputs = {
@@ -431,7 +430,10 @@ def mean_of_ratios(
     growth_df = df.select(
         "ref", "period", "grouping", *growth_additional_outputs.keys()
     )
-
+    print("growth_df")
+    growth_df.printSchema()
+    print("ratio_df")
+    ratio_df.printSchema()
     return [
         RatioCalculationResult(
             data=growth_df,

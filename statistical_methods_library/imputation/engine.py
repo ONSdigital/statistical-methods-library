@@ -436,7 +436,8 @@ def impute(
                 "link_inclusion_previous",
             )
         )
-
+        # Repartition DataFrame by multiple columns
+        ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping")
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         fill_values = {}
