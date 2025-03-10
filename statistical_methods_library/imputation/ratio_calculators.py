@@ -184,12 +184,8 @@ def mean_of_ratios(
 
         def upper_bound(c):
             return 1 + sql_floor(c * (100 - upper_trim) / 100)
-
-        df = (
-            df.join(
-                (
-                    df.groupBy("period", "grouping")
-                    .agg(
+        
+        df_lwr_upr_bound = df.groupBy("period", "grouping").agg(
                         expr(
                             """
                             sum(
@@ -233,8 +229,7 @@ def mean_of_ratios(
                             AS count_exclusion_backward
                             """
                         ),
-                    )
-                    .select(
+                    ).select(
                         col("period"),
                         col("grouping"),
                         col("count_exclusion_forward"),
@@ -254,8 +249,81 @@ def mean_of_ratios(
                             col("count_backward"),
                         ).alias("upper_backward"),
                     )
-                ),
-                ["period", "grouping"],
+                
+
+        df = (
+            df.join(
+                df_lwr_upr_bound,
+                df["period"] == df_lwr_upr_bound["period"] & df["grouping"] == df_lwr_upr_bound["grouping"]
+                # (
+                #     df.groupBy("period", "grouping")
+                #     .agg(
+                #         expr(
+                #             """
+                #             sum(
+                #                 cast(growth_forward IS NOT NULL AS integer)
+                #             ) AS count_forward
+                #             """
+                #         ),
+                #         expr(
+                #             """
+                #             sum(
+                #                 cast(growth_backward IS NOT NULL AS integer)
+                #             ) AS count_backward
+                #             """
+                #         ),
+                #         expr(
+                #             """
+                #             sum(
+                #                 cast(
+                #                     not (
+                #                         (link_inclusion_previous OR
+                #                         link_inclusion_previous IS NULL)
+                #                         AND link_inclusion_current
+                #                     )
+                #                 AS integer)
+                #             )
+                #             AS count_exclusion_forward
+                #             """
+                #         ),
+                #         expr(
+                #             """
+                #             sum(
+                #                 cast(
+                #                     not (
+                #                         (link_inclusion_next OR
+                #                         link_inclusion_next IS NULL)
+                #                         AND link_inclusion_current
+                #                     )
+                #                     AS integer
+                #                 )
+                #             )
+                #             AS count_exclusion_backward
+                #             """
+                #         ),
+                #     )
+                #     .select(
+                #         col("period"),
+                #         col("grouping"),
+                #         col("count_exclusion_forward"),
+                #         col("count_exclusion_backward"),
+                #         col("count_forward"),
+                #         col("count_backward"),
+                #         lower_bound(
+                #             col("count_forward"),
+                #         ).alias("lower_forward"),
+                #         upper_bound(
+                #             col("count_forward"),
+                #         ).alias("upper_forward"),
+                #         lower_bound(
+                #             col("count_backward"),
+                #         ).alias("lower_backward"),
+                #         upper_bound(
+                #             col("count_backward"),
+                #         ).alias("upper_backward"),
+                #     )
+                # ),
+                # ["period", "grouping"],
             )
             # When calculating row numbers we put the null values last to avoid
             # them impacting the trimmed mean. This works because the upper
