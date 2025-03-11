@@ -432,8 +432,10 @@ def mean_of_ratios(
     )
     print("growth_df")
     growth_df.printSchema()
+    growth_df.show(2)
     print("ratio_df")
     ratio_df.printSchema()
+    ratio_df.show(2)
     return [
         RatioCalculationResult(
             data=growth_df,

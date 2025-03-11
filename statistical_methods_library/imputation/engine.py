@@ -441,35 +441,74 @@ def impute(
         prepared_df = prepared_df.repartition("period", "grouping","ref")
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
-        
-        fill_values = {}
-        for result in sum(
-            (
-                calculator(df=ratio_calculation_df, **ratio_calculator_params)
-                for calculator in ratio_calculators
-            ),
-            [],
-        ):
-            # Use aliases to make the join operation explicit
-            result_data = result.data.alias("result_data")
-            prepared_df = prepared_df.alias("prepared_df")
+      
+            # # NOTE :: Explicit join on columns not resloving the issue  try 1
             
-            # Join the result data to the prepared_df on the specified join columns
-            # This join ensures that each contributor has a set of ratios
-            join_condition = [
-                        prepared_df[col] == result_data[col]
-                        for col in result.join_columns
-                    ]
-            prepared_df = prepared_df.join(
-                result_data,
-                join_condition,
-                "left"
-            ).select(
-                "prepared_df.*",  # Select all columns from prepared_df
-                *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
-            )
-            fill_values.update(result.fill_values)
-            output_col_mapping.update(result.additional_outputs)
+            # # Join the result data to the prepared_df on the specified join columns
+            # # This join ensures that each contributor has a set of ratios
+            # join_condition = [
+            #             prepared_df[col] == result_data[col]
+            #             for col in result.join_columns
+            #         ]
+            # prepared_df = prepared_df.join(
+            #     result_data,
+            #     join_condition,
+            #     "left"
+            # ).select(
+            #     "prepared_df.*",  # Select all columns from prepared_df
+            #     *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
+            # )
+        # # Refactor the code without sum function    
+        
+        # for result in sum(
+        #     (
+        #         calculator(df=ratio_calculation_df, **ratio_calculator_params)
+        #         for calculator in ratio_calculators
+        #     ),
+        #     [],
+        # ):
+        fill_values = {}
+        for calculator in ratio_calculators:
+            results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
+            for result in results:
+                print("result df")
+                result.data.printSchema()
+                result.data.show(2)
+                print("before prepared df join")
+                prepared_df.printSchema()
+                prepared_df.show(2)
+                # Use aliases to make the join operation explicit
+                result_data = result.data.alias("result_data")
+                prepared_df = prepared_df.alias("prepared_df")
+                
+                # Rename columns in result_data by adding a constant value
+                constant_value = "_constant"
+                for col_name in result.join_columns:
+                    result_data = result_data.withColumnRenamed(col_name, col_name + constant_value)
+                print("After column :: result df")
+                result_data.printSchema()
+                result_data.show(2)
+                # Join the result data to the prepared_df on the specified join columns
+                join_condition = [
+                    prepared_df[col] == result_data[col + constant_value]
+                    for col in result.join_columns
+                ]
+                print("join condition")
+                print(join_condition)
+                prepared_df = prepared_df.join(
+                    result_data,
+                    join_condition,
+                    "left"
+                ).select(
+                    "prepared_df.*",  # Select all columns from prepared_df
+                    *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
+                )
+                fill_values.update(result.fill_values)
+                output_col_mapping.update(result.additional_outputs)
+                print("after prepared df")
+                prepared_df.printSchema()
+                prepared_df.show(2)
+                print("-----------------")
 
         prepared_df = prepared_df.fillna(fill_values)
 
