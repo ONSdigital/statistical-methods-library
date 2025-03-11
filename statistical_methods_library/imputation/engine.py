@@ -891,8 +891,11 @@ def impute(
             col("marker").isNull()
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
-
+    prepared_df.localCheckpoint(eager=True)
     df = prepared_df
+    print("before the different stages")
+    df.printSchema()
+    df.show(3)
     for stage in (
         forward_impute_from_response,
         backward_impute,
@@ -903,14 +906,23 @@ def impute(
         if manual_construction_col and stage == forward_impute_from_manual_construction:
             # Add the mc data
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
-
+            print("manual_construction_df")
+            df.printSchema()
+            df.show(3)
         df = stage(df).localCheckpoint(eager=False)
+
 
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
                 manual_construction_col and stage == construct_values
             ):
                 break
+        print("after each stages.......")    
+        df.printSchema()
+        df.show(5)
+    print("after the different stages")
+    df.printSchema()
+    df.show(10)
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
