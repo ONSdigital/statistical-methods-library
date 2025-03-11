@@ -348,7 +348,7 @@ def impute(
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
-        prepared_df.localCheckpoint(eager=False)
+        # prepared_df.localCheckpoint(eager=False)
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -435,9 +435,10 @@ def impute(
                 "previous_output",
                 "link_inclusion_previous",
             )
-        ).localCheckpoint(eager=False)
+        )
         # Repartition DataFrame by multiple columns
-        ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping")
+        ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping","ref")
+        prepared_df = prepared_df.repartition("period", "grouping","ref")
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         
@@ -466,7 +467,7 @@ def impute(
             ).select(
                 "prepared_df.*",  # Select all columns from prepared_df
                 *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
-            ).localCheckpoint(eager=False)
+            )
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
 
