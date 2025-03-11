@@ -531,7 +531,7 @@ def impute(
                 fill_values.update(result.fill_values)
                 output_col_mapping.update(result.additional_outputs)
                 print("after prepared df")
-                prepared_df.printSchema()
+                # prepared_df.printSchema()
                 # prepared_df.show(2)
                 print("-----------------")
 
@@ -564,8 +564,8 @@ def impute(
                     *selected_columns # Select non-duplicated columns from result_data
                 )
             print("link_filter :: prepared_df111111 :: after join")
-            prepared_df.printSchema()
-            prepared_df.show(1)  
+            # prepared_df.printSchema()
+            # prepared_df.show(1)  
             output_col_mapping.update(
                 {
                     "link_inclusion_current": link_inclusion_current_col,
@@ -894,8 +894,8 @@ def impute(
     prepared_df.localCheckpoint(eager=True)
     df = prepared_df
     print("before the different stages")
-    df.printSchema()
-    df.show(3)
+    # df.printSchema()
+    # df.show(3)
     for stage in (
         forward_impute_from_response,
         backward_impute,
@@ -907,8 +907,8 @@ def impute(
             # Add the mc data
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
             print("manual_construction_df")
-            df.printSchema()
-            df.show(3)
+            # df.printSchema()
+            # df.show(3)
         df = stage(df).localCheckpoint(eager=False)
 
 
@@ -918,8 +918,8 @@ def impute(
             ):
                 break
         print("after each stages.......")    
-        df.printSchema()
-        df.show(5)
+        # df.printSchema()
+        # df.show(5)
     print("after the different stages")
     df.printSchema()
     df.show(10)
