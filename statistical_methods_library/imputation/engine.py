@@ -398,14 +398,14 @@ def impute(
                     "output AS previous_output",
                     "grouping",
                     "match AS link_inclusion_previous",
-                )#.localCheckpoint(eager=True)
+                ).localCheckpoint(eager=True)
         ratio_filter_next_df = ratio_filter_df.selectExpr(
                     "ref",
                     "period AS next_period",
                     "output AS next_output",
                     "grouping",
                     "match AS link_inclusion_next",
-                )#.localCheckpoint(eager=True)
+                ).localCheckpoint(eager=True)
         # ratio_filter_previous_df.show()
         # ratio_filter_next_df.show()
         # print(ratio_filter_df.count())
@@ -420,7 +420,7 @@ def impute(
             )
             .join(
                 ratio_filter_next_df,
-                ["ref", "next_period", "grouping"],
+                ["ref","grouping", "next_period"],
                 "leftouter",
             )
             .selectExpr(
