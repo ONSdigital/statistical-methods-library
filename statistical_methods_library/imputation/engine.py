@@ -344,7 +344,29 @@ def impute(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
+    
+    def rename_columns_and_generate_join_condition(df, join_columns, constant_value):
+        """
+        Rename columns in the DataFrame by adding a constant value and generate join conditions.
 
+        Args:
+            df: The input DataFrame.
+            join_columns: List of columns to be renamed and used for join conditions.
+            constant_value: The constant value to be added to the column names.
+
+        Returns:
+            A tuple containing the renamed DataFrame and the join condition.
+        """
+        for col_name in join_columns:
+            df = df.withColumnRenamed(col_name, col_name + constant_value)
+        
+        join_condition = [
+            col(col_name) == col(col_name + constant_value)
+            for col_name in join_columns
+        ]
+        
+        return df, join_condition
+        
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
@@ -467,64 +489,83 @@ def impute(
         #     ),
         #     [],
         # ):
+        #:: Explicit join on columns resolved the issue  try 2
         fill_values = {}
         for calculator in ratio_calculators:
             results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
             for result in results:
                 print("result df")
                 result.data.printSchema()
-                result.data.show(2)
+                # result.data.show(2)
                 print("before prepared df join")
                 prepared_df.printSchema()
-                prepared_df.show(2)
+                # prepared_df.show(2)
                 # Use aliases to make the join operation explicit
                 result_data = result.data.alias("result_data")
                 prepared_df = prepared_df.alias("prepared_df")
                 
                 # Rename columns in result_data by adding a constant value
                 constant_value = "_constant"
-                for col_name in result.join_columns:
-                    result_data = result_data.withColumnRenamed(col_name, col_name + constant_value)
-                print("After column :: result df")
-                result_data.printSchema()
-                result_data.show(2)
-                # Join the result data to the prepared_df on the specified join columns
-                join_condition = [
-                    prepared_df[col] == result_data[col + constant_value]
-                    for col in result.join_columns
-                ]
-                print("join condition")
-                print(join_condition)
+                result_data, join_condition = rename_columns_and_generate_join_condition(result_data, result.join_columns, constant_value)
+
+                # for col_name in result.join_columns:
+                #     result_data = result_data.withColumnRenamed(col_name, col_name + constant_value)
+                # print("After column :: result df")
+                # result_data.printSchema()
+                # result_data.show(2)
+                # # Join the result data to the prepared_df on the specified join columns
+                # join_condition = [
+                #     prepared_df[col] == result_data[col + constant_value]
+                #     for col in result.join_columns
+                # ]
+                # print("join condition")
+                # print(join_condition)
                 prepared_df = prepared_df.join(
                     result_data,
                     join_condition,
                     "left"
                 ).select(
-                    "prepared_df.*",  # Select all columns from prepared_df
+                    *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
                     *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
                 )
                 fill_values.update(result.fill_values)
                 output_col_mapping.update(result.additional_outputs)
                 print("after prepared df")
                 prepared_df.printSchema()
-                prepared_df.show(2)
+                # prepared_df.show(2)
                 print("-----------------")
 
         prepared_df = prepared_df.fillna(fill_values)
 
         if link_filter:
-            prepared_df = prepared_df.join(
-                ratio_calculation_df.select(
-                    "ref",
-                    "period",
-                    "grouping",
+            # # Explicit join on columns 
+            constant_value = "_2"
+            join_columns = ["ref", "period", "grouping"]
+            selected_columns = [ 
                     "link_inclusion_previous",
                     "link_inclusion_current",
-                    "link_inclusion_next",
+                    "link_inclusion_next"]
+            # print("link_filter :: ratio_calculation_df")
+            # ratio_calculation_df.printSchema()
+            ratio_calc_link_df, join_condition = rename_columns_and_generate_join_condition(ratio_calculation_df, join_columns, constant_value)
+            # print("link_filter :: ratio_calc_link_df :: rename")
+            # ratio_calc_link_df.printSchema()
+            print("link_filter :: prepared_df :: before join")
+            prepared_df.printSchema()
+            prepared_df = prepared_df.join(
+                ratio_calc_link_df.select(
+                    *[c + constant_value for c in join_columns],
+                   *selected_columns
                 ),
-                ["ref", "period", "grouping"],
+                join_condition,
                 "left",
-            )
+            ).select(
+                    *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
+                    *selected_columns # Select non-duplicated columns from result_data
+                )
+            print("link_filter :: prepared_df111111 :: after join")
+            prepared_df.printSchema()
+            prepared_df.show(1)  
             output_col_mapping.update(
                 {
                     "link_inclusion_current": link_inclusion_current_col,
@@ -532,6 +573,8 @@ def impute(
                     "link_inclusion_next": link_inclusion_next_col,
                 }
             )
+        
+        
 
         if weight is not None:
 
