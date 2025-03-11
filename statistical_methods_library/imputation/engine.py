@@ -348,7 +348,7 @@ def impute(
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
-
+        prepared_df.localCheckpoint(eager=False)
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -398,14 +398,14 @@ def impute(
                     "output AS previous_output",
                     "grouping",
                     "match AS link_inclusion_previous",
-                ).localCheckpoint(eager=True)
+                )#.localCheckpoint(eager=True)
         ratio_filter_next_df = ratio_filter_df.selectExpr(
                     "ref",
                     "period AS next_period",
                     "output AS next_output",
                     "grouping",
                     "match AS link_inclusion_next",
-                ).localCheckpoint(eager=True)
+                )#.localCheckpoint(eager=True)
         # ratio_filter_previous_df.show()
         # ratio_filter_next_df.show()
         # print(ratio_filter_df.count())
@@ -435,11 +435,12 @@ def impute(
                 "previous_output",
                 "link_inclusion_previous",
             )
-        )
+        ).localCheckpoint(eager=False)
         # Repartition DataFrame by multiple columns
         ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping")
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
+        
         fill_values = {}
         for result in sum(
             (
@@ -454,17 +455,18 @@ def impute(
             
             # Join the result data to the prepared_df on the specified join columns
             # This join ensures that each contributor has a set of ratios
+            join_condition = [
+                        prepared_df[col] == result_data[col]
+                        for col in result.join_columns
+                    ]
             prepared_df = prepared_df.join(
                 result_data,
-                [
-                    prepared_df[col] == result_data[col]
-                    for col in result.join_columns
-                ],
+                join_condition,
                 "left"
             ).select(
                 "prepared_df.*",  # Select all columns from prepared_df
                 *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
-            )
+            ).localCheckpoint(eager=False)
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
 

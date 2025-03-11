@@ -411,7 +411,7 @@ def mean_of_ratios(
             ),
         )
         .withColumn("default_forward", expr("forward IS NULL"))
-        .withColumn("default_backward", expr("backward IS NULL")).localCheckpoint(eager=False)
+        .withColumn("default_backward", expr("backward IS NULL"))
     )
 
     growth_additional_outputs = {
