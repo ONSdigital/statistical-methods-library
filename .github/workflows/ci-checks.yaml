@@ -36,7 +36,7 @@ jobs:
           poetry install
           poetry run pytest --tap-stream --cov-report=lcov:lcov-${{matrix.python-version}}.info --junitxml=junit-${{matrix.python-version}}.xml
       - name: Upload Test report ${{matrix.python-version}}
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         if: success() || failure()
         with:
           name: test-results-${{matrix.python-version}}
