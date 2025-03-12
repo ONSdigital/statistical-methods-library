@@ -771,9 +771,11 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
+        print("forward_impute_from_response.......")   
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
+        print("backward_impute.......")    
         return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
 
     # --- Forward impute from manual construction ---
@@ -794,7 +796,7 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-
+        print("forward_impute_from_manual_construction.......")    
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
         )
@@ -835,7 +837,8 @@ def impute(
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         )
-
+        print("construct_values.......")    
+        construction_df.printSchema()
         return (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
@@ -863,6 +866,8 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
+        print("forward_impute_from_construction.......")    
+        df.printSchema()
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
