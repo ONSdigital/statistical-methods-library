@@ -693,12 +693,15 @@ def impute(
             # and thus it can never attempt to backward impute from a forward
             # imputation since there will never be a null value directly prior to
             # one.
-            imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
+            # TODO  check repartition helped to improve the frozen job
+            imputed_df = working_df.filter(~col("output").isNull()).repartition("ref", "grouping", "period").localCheckpoint(
                 eager=True
             )
+            
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
+            # TODO  check repartition helped to improve the frozen job
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
@@ -815,8 +818,8 @@ def impute(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "grouping").alias("other")
-        construction_df = construction_df.alias("construction")
+        other_df = df.select("ref", "period", "grouping").alias("other").repartition("ref", "grouping", "period")
+        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period")
         construction_df = construction_df.join(
             other_df,
             [
@@ -891,8 +894,10 @@ def impute(
             col("marker").isNull()
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
-    prepared_df.localCheckpoint(eager=True)
-    df = prepared_df
+    # prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+    # TODO check
+    df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+    
     print("before the different stages")
     # df.printSchema()
     # df.show(3)
@@ -918,7 +923,7 @@ def impute(
             ):
                 break
         print("after each stages.......")    
-        # df.printSchema()
+        df.printSchema()
         # df.show(5)
     print("after the different stages")
     df.printSchema()
