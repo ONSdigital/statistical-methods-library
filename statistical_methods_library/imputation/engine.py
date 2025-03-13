@@ -736,7 +736,7 @@ def impute(
                     "forward",
                     "backward",
                 )
-                .localCheckpoint(eager=False) # TODO check is it good to use eager=True ??
+                .localCheckpoint(eager=True) # TODO check is it good to use eager=True ??
             )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
@@ -745,7 +745,7 @@ def impute(
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
-            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            imputed_df = imputed_df.union(calculation_df).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
                 calculation_df.select("ref", "period", "grouping"),
@@ -755,11 +755,13 @@ def impute(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        return df.drop("output", "marker").join(
+        df = df.drop("output", "marker").repartition("ref", "grouping", "period").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
-        )
+        ).localCheckpoint(eager=False)
+        
+        return df
 
     # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
