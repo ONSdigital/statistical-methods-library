@@ -755,11 +755,11 @@ def impute(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        df = df.drop("output", "marker").repartition("ref", "grouping", "period").join(
+        df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
-        ).localCheckpoint(eager=False)
+        ).localCheckpoint(eager=True)
         
         return df
 
@@ -841,7 +841,8 @@ def impute(
         ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
         print("after the localCheckpoint eager = true construct_values.......")    
         construction_df.printSchema()
-        return (
+        
+        df = (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
             .join(
@@ -860,6 +861,7 @@ def impute(
             )
             .drop("existing_output", "constructed_output", "constructed_marker")
         )
+        return df
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
         # We need to recalculate our imputed and null response data frames to
