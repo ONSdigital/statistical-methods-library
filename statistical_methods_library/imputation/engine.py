@@ -736,7 +736,7 @@ def impute(
                     "forward",
                     "backward",
                 )
-                .localCheckpoint(eager=False)
+                .localCheckpoint(eager=False) # TODO check is it good to use eager=True ??
             )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
@@ -836,8 +836,8 @@ def impute(
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-        )
-        print("construct_values.......")    
+        ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+        print("after the localCheckpoint eager = true construct_values.......")    
         construction_df.printSchema()
         return (
             df.withColumnRenamed("output", "existing_output")
