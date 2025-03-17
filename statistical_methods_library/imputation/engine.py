@@ -12,7 +12,7 @@ from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, first, lit, when
+from pyspark.sql.functions import col, expr, first, lit, when, broadcast
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -687,7 +687,7 @@ def impute(
                 "next_period",
                 "forward",
                 "backward",
-            )
+            ).repartition("ref", "grouping", "period")
             print("inside impute_helper: 11 : working_df")
             # Anything which isn't null is already imputed or a response and thus
             # can be imputed from. Note that in the case of backward imputation
@@ -703,11 +703,13 @@ def impute(
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
+            ref_df = broadcast(ref_df)
             # TODO  check repartition helped to improve the frozen job
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
                 .join(ref_df, ["ref", "grouping"])
+                .repartition("ref", "grouping", "period")
                 .localCheckpoint(eager=True)
             )
             print("inside impute_helper: 11 : null_response_df")
@@ -718,9 +720,8 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-            )
-            calculation_df = (
-                null_response_df.join(
+            ).repartition("ref", "grouping", "period")
+            imputed_null_df = null_response_df.join(
                     other_df,
                     [
                         col(other_period_col) == col("other_period"),
@@ -728,7 +729,8 @@ def impute(
                         col("grouping") == col("other_grouping"),
                     ],
                 )
-                .select(
+            print("inside impute_helper: 22::: imputed_null_df")
+            calculation_df =  imputed_null_df.select(
                     "ref",
                     "period",
                     "grouping",
@@ -738,9 +740,8 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                )
-                .localCheckpoint(eager=True) # TODO check is it good to use eager=True ??
-            )
+                ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)# TODO check is it good to use eager=True ??
+            
             print("inside impute_helper: 22::: calculation_df")
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
@@ -756,7 +757,7 @@ def impute(
                 calculation_df.select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
-            ).localCheckpoint(eager=True)
+            ).repartition("ref", "grouping", "period")
             print("inside impute_helper: 22::: leftanti join :: null_response_df")
 
         # We should now have an output column which is as fully populated as
