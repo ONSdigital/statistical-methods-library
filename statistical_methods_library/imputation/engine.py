@@ -903,40 +903,131 @@ def impute(
             col("marker").isNull()
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
-    # prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+    prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
     # TODO check
     df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
     
     print("before the different stages")
     # df.printSchema()
     # df.show(3)
-    for stage in (
-        forward_impute_from_response,
-        backward_impute,
-        forward_impute_from_manual_construction,
-        construct_values,
-        forward_impute_from_construction,
-    ):
-        if manual_construction_col and stage == forward_impute_from_manual_construction:
-            # Add the mc data
-            df = df.unionByName(manual_construction_df, allowMissingColumns=True)
-            print("manual_construction_df")
-            # df.printSchema()
-            # df.show(3)
-        df = stage(df).localCheckpoint(eager=False)
+    # for stage in (
+    #     forward_impute_from_response,
+    #     backward_impute,
+    #     forward_impute_from_manual_construction,
+    #     construct_values,
+    #     forward_impute_from_construction,
+    # ):
+    #     if manual_construction_col and stage == forward_impute_from_manual_construction:
+    #         # Add the mc data
+    #         df = df.unionByName(manual_construction_df, allowMissingColumns=True)
+    #         print("manual_construction_df")
+    #         # df.printSchema()
+    #         # df.show(3)
+    #     df = stage(df).localCheckpoint(eager=False)
 
 
+    def check_all_imputed(df: DataFrame,stage: str) -> bool:
+        """
+        Check if all outputs are imputed.
+
+        Args:
+            df: The input DataFrame.
+
+        Returns:
+            bool: True if all outputs are imputed, False otherwise.
+        """
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
-                manual_construction_col and stage == construct_values
+                manual_construction_col and stage == "construct_values"
             ):
-                break
-        print("after each stages.......")    
+                print("All outputs are imputed.")
+                # df.printSchema()
+                # df.show(10)
+                return True
+        return False
+    
+    # df = prepared_df
+    # for stage in (
+    #     forward_impute_from_response,
+    #     backward_impute,
+    #     forward_impute_from_manual_construction,
+    #     construct_values,
+    #     forward_impute_from_construction,
+    # ):
+    #     if manual_construction_col and stage == forward_impute_from_manual_construction:
+    #         # Add the mc data
+    #         df = df.unionByName(manual_construction_df, allowMissingColumns=True)
+
+    #     df = stage(df).localCheckpoint(eager=False)
+
+    #     if df.filter(col("output").isNull()).count() == 0:
+    #         if (not manual_construction_col) or (
+    #             manual_construction_col and stage == construct_values
+    #         ):
+    #             break
+
+
+    #     for stage in (
+    #         forward_impute_from_response,
+    #         backward_impute,
+    #         forward_impute_from_manual_construction,
+    #         construct_values,
+    #         forward_impute_from_construction,
+    #     ):
+    #         if manual_construction_col and stage == forward_impute_from_manual_construction:
+    #             # Add the mc data
+    #             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
+    #             print("manual_construction_df")
+    #             # df.printSchema()
+    #             # df.show(3)
+    #         df = stage(df).localCheckpoint(eager=False)
+    #         if check_all_imputed(df):
+    #             break
+    #         print("after each stages.......")    
+    #         df.printSchema()
+    #     # df.show(5)
+    # print("after the different stages")
+    # df.printSchema()
+    # df.show(10)
+    
+
+    # df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+
+    # print("before the different stages")
+
+    # Individual calls to each stage function
+    df = forward_impute_from_response(df).localCheckpoint(eager=False)
+    print("after forward_impute_from_response stage")
+    df.printSchema()
+    if not check_all_imputed(df,"forward_impute_from_response"):
+        df = backward_impute(df).localCheckpoint(eager=False)
+        print("after backward_impute stage")
         df.printSchema()
-        # df.show(5)
-    print("after the different stages")
+        if not check_all_imputed(df,"backward_impute"):
+            if manual_construction_col:
+                # Add the mc data
+                df = df.unionByName(manual_construction_df, allowMissingColumns=True)
+                print("manual_construction_df")
+                df.printSchema()
+
+            df = forward_impute_from_manual_construction(df).localCheckpoint(eager=False)
+            print("after forward_impute_from_manual_construction stage")
+            df.printSchema()
+            if not check_all_imputed(df,"forward_impute_from_manual_construction"):
+                df = construct_values(df).localCheckpoint(eager=False)
+                print("after construct_values stage")
+                df.printSchema()
+                if not check_all_imputed(df,"construct_values"):
+                    df = forward_impute_from_construction(df).localCheckpoint(eager=False)
+                    print("after forward_impute_from_construction stage")
+                    df.printSchema()
+
+
+
+    print("after all stages")
     df.printSchema()
     df.show(10)
+
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
