@@ -730,18 +730,17 @@ def impute(
                     ],
                 )
             print("inside impute_helper: 22::: imputed_null_df")
-            calculation_df =  imputed_null_df.select(
-                    "ref",
-                    "period",
-                    "grouping",
-                    (col(link_col) * col("other_output")).alias("output"),
-                    lit(marker.value).alias("marker"),
-                    "previous_period",
-                    "next_period",
-                    "forward",
-                    "backward",
-                ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)# TODO check is it good to use eager=True ??
-            
+            calculation_df = imputed_null_df.selectExpr(
+                "ref",
+                "period",
+                "grouping",
+                f"{link_col} * other_output AS output",
+                f"'{marker.value}' AS marker",
+                "previous_period",
+                "next_period",
+                "forward",
+                "backward"
+            ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)
             print("inside impute_helper: 22::: calculation_df")
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
