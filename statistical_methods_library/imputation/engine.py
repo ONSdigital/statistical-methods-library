@@ -771,12 +771,16 @@ def impute(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        
+        imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
+
         df = df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "grouping", "output", "marker"),
-            ["ref", "period", "grouping"],
+            imputed_df_tmp,
+            join_condition,
             "leftouter",
+        ).select(
+            *[col(c) for c in df.columns if c not in ["ref_imp_helper","period_imp_helper","grouping_imp_helper"] ]  # Select all columns from df
         )
+        df.printSchema()
         print("inside impute_helper: 3333::: final df :: leftouter join")
 
         return df
