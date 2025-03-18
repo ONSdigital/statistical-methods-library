@@ -715,12 +715,16 @@ def impute(
             print("inside impute_helper: 11 : null_response_df")
         while True:
             print("inside impute_helper: 22")
+            print("inside impute_helper: 22::: imputed_df::count")
+            print(imputed_df.count())
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref",
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
             ).repartition("ref", "grouping", "period")
+            print("inside impute_helper: 22::: null_response_df::count")
+            print(null_response_df.count())
             imputed_null_df = null_response_df.join(
                     other_df,
                     [
@@ -742,9 +746,12 @@ def impute(
                     "backward",
                 ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)
             print("inside impute_helper: 22::: calculation_df")
+            cal_df_count = calculation_df.count()
+            print("inside impute_helper: 22::: calculation_df :: count")
+            print(cal_df_count)
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
-            if calculation_df.count() == 0:
+            if cal_df_count == 0:
                 break
 
             # Store this set of imputed values in our main set for the next
@@ -758,7 +765,8 @@ def impute(
                 "leftanti",
             ).repartition("ref", "grouping", "period")
             print("inside impute_helper: 22::: leftanti join :: null_response_df")
-
+            print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
+            print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
