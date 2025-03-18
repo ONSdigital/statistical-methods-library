@@ -732,7 +732,7 @@ def impute(
                         col("ref") == col("other_ref"),
                         col("grouping") == col("other_grouping"),
                     ],
-                ).localCheckpoint(eager=True)
+                )
             print("inside impute_helper: 22::: imputed_null_df")
             calculation_df = imputed_null_df.select(
                     "ref",
@@ -744,7 +744,7 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)
+                ).repartition("ref", "grouping", "period")
             print("inside impute_helper: 22::: calculation_df")
             cal_df_count = calculation_df.count()
             print("inside impute_helper: 22::: calculation_df :: count")
@@ -756,7 +756,7 @@ def impute(
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
-            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            imputed_df = imputed_df.union(calculation_df)
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
