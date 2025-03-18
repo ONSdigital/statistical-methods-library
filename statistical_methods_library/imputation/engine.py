@@ -713,6 +713,7 @@ def impute(
                 .localCheckpoint(eager=True)
             )
             print("inside impute_helper: 11 : null_response_df")
+            null_response_df.printSchema()
         while True:
             print("inside impute_helper: 22")
             print("inside impute_helper: 22::: imputed_df::count")
@@ -770,11 +771,12 @@ def impute(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
+        
         df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
-        ).localCheckpoint(eager=True)
+        )
         print("inside impute_helper: 3333::: final df :: leftouter join")
 
         return df
