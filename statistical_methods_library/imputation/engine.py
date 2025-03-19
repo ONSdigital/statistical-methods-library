@@ -762,13 +762,13 @@ def impute(
             # Remove the newly imputed rows from our filtered set.
             if cal_df_count > 4500:
                 null_response_df = null_response_df.join(
-                    calculation_df.select("ref", "period", "grouping"),
+                    broadcast(calculation_df).select("ref", "period", "grouping"),
                     ["ref", "period", "grouping"],
                     "leftanti",
                 ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             else:
                 null_response_df = null_response_df.join(
-                broadcast(calculation_df).select("ref", "period", "grouping"),
+                calculation_df.select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
             ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
@@ -934,9 +934,9 @@ def impute(
         )
     # prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
     # TODO check
-    df = prepared_df.localCheckpoint(eager=True)
+    # df = prepared_df.localCheckpoint(eager=True)
     
-    print("before the different stages")
+    # print("before the different stages")
     # df.printSchema()
     # df.show(3)
     # for stage in (
