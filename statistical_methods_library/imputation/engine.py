@@ -733,7 +733,7 @@ def impute(
                         col("ref") == col("other_ref"),
                         col("grouping") == col("other_grouping"),
                     ],
-                )
+                ).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: imputed_null_df")
             calculation_df = imputed_null_df.select(
                     "ref",
@@ -745,7 +745,7 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                ).repartition("ref", "grouping", "period")
+                ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)
             print("inside impute_helper: 22::: calculation_df")
             cal_df_count = calculation_df.count()
             print("inside impute_helper: 22::: calculation_df :: count")
@@ -757,14 +757,21 @@ def impute(
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
-            imputed_df = imputed_df.union(calculation_df)
+            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
-            null_response_df = null_response_df.join(
-                calculation_df.select("ref", "period", "grouping"),
+            if cal_df_count > 4500:
+                null_response_df = null_response_df.join(
+                    calculation_df.select("ref", "period", "grouping"),
+                    ["ref", "period", "grouping"],
+                    "leftanti",
+                ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+            else:
+                null_response_df = null_response_df.join(
+                broadcast(calculation_df).select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
-            ).repartition("ref", "grouping", "period")
+            ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: leftanti join :: null_response_df")
             print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
             print(null_response_df.count())
@@ -774,12 +781,11 @@ def impute(
         imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
 
         df = df.drop("output", "marker").join(
-            imputed_df_tmp,
-            join_condition,
+            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            ["ref", "period", "grouping"],
             "leftouter",
-        ).select(
-            *[col(c) for c in df.columns if c not in ["ref_imp_helper","period_imp_helper","grouping_imp_helper"] ]  # Select all columns from df
-        )
+        ).localCheckpoint(eager=True)
+
         df.printSchema()
         print("inside impute_helper: 3333::: final df :: leftouter join")
 
