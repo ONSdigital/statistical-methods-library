@@ -760,25 +760,25 @@ def impute(
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
-            if cal_df_count > 4500:
-                null_response_df = null_response_df.join(
-                    broadcast(calculation_df).select("ref", "period", "grouping"),
-                    ["ref", "period", "grouping"],
-                    "leftanti",
-                ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
-            else:
-                null_response_df = null_response_df.join(
-                calculation_df.select("ref", "period", "grouping"),
-                ["ref", "period", "grouping"],
-                "leftanti",
+            # if cal_df_count > 4500:
+            #     null_response_df = null_response_df.join(
+            #         calculation_df.select("ref", "period", "grouping"),
+            #         ["ref", "period", "grouping"],
+            #         "leftanti",
+            #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+            # else:
+            null_response_df = null_response_df.join(
+            broadcast(calculation_df).select("ref", "period", "grouping"),
+            ["ref", "period", "grouping"],
+            "leftanti",
             ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: leftanti join :: null_response_df")
-            print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
-            print(null_response_df.count())
+            # print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
+            # print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
+        #imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
 
         df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
