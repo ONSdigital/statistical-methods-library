@@ -724,17 +724,38 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             )
-            print("inside impute_helper: 22::: null_response_df::count")
+            print("inside impute_helper: 22::: null_response_df::count:: testing the size of 2 dfs")
             print(null_response_df.count())
+           
+            # refactor filterring small and large dataframes
+            # Add salting to both dataframes
+         
+            # Add salting to both dataframes
+            salt_col = "salt"
+            num_salts = 10  # Adjust this number based on your data skewness
+
+            # Add salt column to null_response_df
+            null_response_df = null_response_df.withColumn(
+                salt_col, (col("ref").cast("int") % num_salts).cast("int")
+            )
+
+            # Add salt column to other_df
+            other_df = other_df.withColumn(
+                "other_salt", (col("other_ref").cast("int") % num_salts).cast("int")
+            )
+
+            # Join the salted dataframes
             imputed_null_df = null_response_df.join(
-                    other_df,
-                    [
-                        col(other_period_col) == col("other_period"),
-                        col("ref") == col("other_ref"),
-                        col("grouping") == col("other_grouping"),
-                    ],
-                ).localCheckpoint(eager=True)
+                other_df,
+                [
+                    col(other_period_col) == col("other_period"),
+                    col("ref") == col("other_ref"),
+                    col("grouping") == col("other_grouping"),
+                    col(salt_col) == col("other_salt"),
+                ],
+            ).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: imputed_null_df")
+            imputed_null_df.show(1000)
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -767,7 +788,7 @@ def impute(
             #         "leftanti",
             #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # else:
-            null_response_df = null_response_df.join(
+            null_response_df = null_response_df.drop("salt").join(
             broadcast(calculation_df).select("ref", "period", "grouping"),
             ["ref", "period", "grouping"],
             "leftanti",
