@@ -687,7 +687,7 @@ def impute(
                 "next_period",
                 "forward",
                 "backward",
-            ).repartition("ref", "grouping", "period")
+            )
             print("inside impute_helper: 11 : working_df")
             # Anything which isn't null is already imputed or a response and thus
             # can be imputed from. Note that in the case of backward imputation
@@ -723,7 +723,7 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-            ).repartition("ref", "grouping", "period")
+            )
             print("inside impute_helper: 22::: null_response_df::count")
             print(null_response_df.count())
             imputed_null_df = null_response_df.join(
@@ -735,7 +735,7 @@ def impute(
                     ],
                 ).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: imputed_null_df")
-            calculation_df = imputed_null_df.select(
+            calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
                     "grouping",
@@ -745,7 +745,7 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                ).repartition("ref", "grouping", "period").localCheckpoint(eager=False)
+                ).localCheckpoint(eager=False)
             print("inside impute_helper: 22::: calculation_df")
             cal_df_count = calculation_df.count()
             print("inside impute_helper: 22::: calculation_df :: count")
@@ -771,7 +771,7 @@ def impute(
             broadcast(calculation_df).select("ref", "period", "grouping"),
             ["ref", "period", "grouping"],
             "leftanti",
-            ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+            ).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: leftanti join :: null_response_df")
             # print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
             # print(null_response_df.count())
@@ -779,14 +779,14 @@ def impute(
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         #imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
-
+        print("inside impute_helper: 3333::: final df :: before leftouter join")
+        df.printSchema()
+        imputed_df.printSchema()
         df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
         ).localCheckpoint(eager=True)
-
-        df.printSchema()
         print("inside impute_helper: 3333::: final df :: leftouter join")
 
         return df
