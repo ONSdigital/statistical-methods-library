@@ -688,7 +688,6 @@ def impute(
                 "forward",
                 "backward",
             )
-            print("inside impute_helper: 11 : working_df")
             # Anything which isn't null is already imputed or a response and thus
             # can be imputed from. Note that in the case of backward imputation
             # this still holds since it always happens after forward imputation
@@ -699,7 +698,6 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
-            print("inside impute_helper: 11 : imputed_df")
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
@@ -715,7 +713,6 @@ def impute(
             print("inside impute_helper: 11 : null_response_df")
             null_response_df.printSchema()
         while True:
-            print("inside impute_helper: 22")
             print("inside impute_helper: 22::: imputed_df::count")
             print(imputed_df.count())
             other_df = imputed_df.selectExpr(
@@ -738,12 +735,16 @@ def impute(
             null_response_df = null_response_df.withColumn(
                 salt_col, (col("ref").cast("int") % num_salts).cast("int")
             )
-
+            print("inside impute_helper: 22::: null_response_df: after adding salt column")
+            null_response_df.printSchema()
+            null_response_df.show(10)
             # Add salt column to other_df
             other_df = other_df.withColumn(
                 "other_salt", (col("other_ref").cast("int") % num_salts).cast("int")
             )
-
+            print("inside impute_helper: 22::: other_df: after adding salt column")
+            other_df.printSchema()
+            other_df.show(10)
             # Join the salted dataframes
             imputed_null_df = null_response_df.join(
                 other_df,
@@ -754,7 +755,6 @@ def impute(
                     col(salt_col) == col("other_salt"),
                 ],
             ).localCheckpoint(eager=True)
-            print("inside impute_helper: 22::: imputed_null_df")
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -788,11 +788,10 @@ def impute(
             #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # else:
             null_response_df = null_response_df.drop("salt").join(
-            broadcast(calculation_df).select("ref", "period", "grouping"),
+            calculation_df.select("ref", "period", "grouping"),
             ["ref", "period", "grouping"],
             "leftanti",
             ).localCheckpoint(eager=True)
-            print("inside impute_helper: 22::: leftanti join :: null_response_df")
             # print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
             # print(null_response_df.count())
         # We should now have an output column which is as fully populated as
@@ -801,14 +800,14 @@ def impute(
         #imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
         print("inside impute_helper: 3333::: final df :: before leftouter join")
         df.printSchema()
-        imputed_df.printSchema()
         df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
         ).localCheckpoint(eager=True)
         print("inside impute_helper: 3333::: final df :: leftouter join")
-
+        print("inside impute_helper: 44444:::  null count")
+        df.filter(col("output").isNull()).count()
         return df
 
     # --- Imputation functions ---
