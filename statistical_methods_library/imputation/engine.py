@@ -12,7 +12,7 @@ from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, first, lit, when, broadcast
+from pyspark.sql.functions import col, expr, first, lit, when, broadcast, spark_partition_id
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -663,7 +663,7 @@ def impute(
     null_response_df = None
     def check_partition_skew(df):
         partition_sizes_df = df.withColumn(
-            "partitionId", F.spark_partition_id()
+            "partitionId", spark_partition_id()
         ).groupBy("partitionId").count()
         partition_sizes_df.show()
 
