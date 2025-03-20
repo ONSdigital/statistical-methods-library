@@ -12,7 +12,7 @@ from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, first, lit, when, broadcast
+from pyspark.sql.functions import col, expr, first, lit, when, broadcast, desc
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -726,10 +726,12 @@ def impute(
            
             # refactor filterring small and large dataframes
             # Add salting to both dataframes
-         
+            print("identify the data sknewness :: before salting::")
+            large_data = other_df.groupBy("other_ref", "other_period", "other_grouping").count()
+            large_data.orderBy(desc("count")).show(100)
             # Add salting to both dataframes
             salt_col = "salt"
-            num_salts = 10  # Adjust this number based on your data skewness
+            num_salts = 100  # Adjust this number based on your data skewness
 
             # Add salt column to null_response_df
             null_response_df = null_response_df.withColumn(
@@ -746,6 +748,23 @@ def impute(
             print("inside impute_helper: 22::: other_df: after adding salt column")
             other_df.printSchema()
             other_df.show(10)
+            print("identify the data sknewness :: after salting:: number of salts")
+            print(num_salts)
+            large_data = other_df.groupBy("other_ref", "other_period", "other_grouping","other_salt").count()
+            large_data.orderBy(desc("count")).show(100)
+            
+            num_salts = 10
+            other_df1 = other_df.withColumn(
+                "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
+            )
+            print("inside impute_helper: 22::: other_df: after adding salt column")
+            other_df1.printSchema()
+            other_df1.show(10)
+            print("identify the data sknewness :: after salting:: number of salts")
+            print(num_salts)
+            large_data = other_df1.groupBy("other_ref", "other_period", "other_grouping","other_salt").count()
+            large_data.orderBy(desc("count")).show(100)
+            
             # Join the salted dataframes
             imputed_null_df = null_response_df.join(
                 other_df,
