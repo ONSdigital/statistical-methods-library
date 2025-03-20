@@ -12,7 +12,7 @@ from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, first, lit, when, broadcast, desc
+from pyspark.sql.functions import col, expr, first, lit, when, broadcast
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -661,7 +661,19 @@ def impute(
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
+    def check_partition_skew(df):
+        partition_sizes_df = df.withColumn(
+            "partitionId", F.spark_partition_id()
+        ).groupBy("partitionId").count()
+        partition_sizes_df.show()
 
+        #Optional, calculate average and standard deviation.
+        avg_size = partition_sizes_df.agg({"count": "avg"}).collect()[0][0]
+        std_dev_size = partition_sizes_df.agg({"count": "stddev"}).collect()[0][0]
+
+        print(f"Average partition size: {avg_size}")
+        print(f"Standard deviation of partition sizes: {std_dev_size}")
+        
     # --- Impute helper ---
     def impute_helper(
         df: DataFrame, link_col: str, marker: str, direction: bool
@@ -721,49 +733,39 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             )
-            print("inside impute_helper: 22::: null_response_df::count:: testing the size of 2 dfs")
+            print("inside impute_helper: 22::: null_response_df::count::")
             print(null_response_df.count())
-           
+            
+            print("inside impute_helper: 22::: check_partition_skew: other_df")
+            check_partition_skew(other_df)
+            
             # refactor filterring small and large dataframes
             # Add salting to both dataframes
-            print("identify the data sknewness :: before salting::")
-            large_data = other_df.groupBy("other_ref", "other_period", "other_grouping").count()
-            large_data.orderBy(desc("count")).show(100)
+        
             # Add salting to both dataframes
             salt_col = "salt"
-            num_salts = 100  # Adjust this number based on your data skewness
+            num_salts = 10  # Adjust this number based on your data skewness
 
             # Add salt column to null_response_df
             null_response_df = null_response_df.withColumn(
                 salt_col, (col("ref").cast("long") % num_salts).cast("int")
             )
-            print("inside impute_helper: 22::: null_response_df: after adding salt column")
-            null_response_df.printSchema()
-            null_response_df.show(10)
+            # print("inside impute_helper: 22::: null_response_df: after adding salt column")
+            # null_response_df.show(10)
+            print("inside impute_helper: 22::: check_partition_skew: null_response_df")
+            check_partition_skew(null_response_df)
             # Add salt column to other_df
             # 12000070002
             other_df = other_df.withColumn(
                 "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
             )
             print("inside impute_helper: 22::: other_df: after adding salt column")
-            other_df.printSchema()
-            other_df.show(10)
-            print("identify the data sknewness :: after salting:: number of salts")
-            print(num_salts)
-            large_data = other_df.groupBy("other_ref", "other_period", "other_grouping","other_salt").count()
-            large_data.orderBy(desc("count")).show(100)
+            other_df.show(5)
+            print("inside impute_helper: 22::: check_partition_skew: other_df")
+            check_partition_skew(other_df)
             
-            num_salts = 10
-            other_df1 = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
-            )
-            print("inside impute_helper: 22::: other_df: after adding salt column")
-            other_df1.printSchema()
-            other_df1.show(10)
-            print("identify the data sknewness :: after salting:: number of salts")
-            print(num_salts)
-            large_data = other_df1.groupBy("other_ref", "other_period", "other_grouping","other_salt").count()
-            large_data.orderBy(desc("count")).show(100)
+            # Example usage:
+            # check_partition_skew(your_dataframe)
             
             # Join the salted dataframes
             imputed_null_df = null_response_df.join(
