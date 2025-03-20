@@ -755,7 +755,6 @@ def impute(
                 ],
             ).localCheckpoint(eager=True)
             print("inside impute_helper: 22::: imputed_null_df")
-            imputed_null_df.show(1000)
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -1045,10 +1044,28 @@ def impute(
     print("after the different stages")
     df.printSchema()
     df.show(10)
-    
-
- 
-
+    df.filter(
+            (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
+        ).show(10)
+    df.filter(
+            (col("marker") == Marker.CONSTRUCTED.value)
+        ).show(10)
+    df.filter(
+            (col("marker") == Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
+        ).show(10)
+    df.filter(
+            (col("marker") == Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+        ).show(10)
+    df.filter(
+            (col("marker") == Marker.BACKWARD_IMPUTE.value)
+        ).show(10)
+    null_output_col = df.filter(
+        col("output").isNull()
+    ).count()
+    print(f"final df with output column is null{null_output_col}")
+    df.filter(
+        col("output").isNull()
+    ).show(10)
     # try :: Individual calls to each stage function - improve a bit but not helped to resolve the issue
     # df = forward_impute_from_response(df).localCheckpoint(eager=True)
     # print("after forward_impute_from_response stage")
