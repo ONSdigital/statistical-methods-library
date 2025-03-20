@@ -733,14 +733,15 @@ def impute(
 
             # Add salt column to null_response_df
             null_response_df = null_response_df.withColumn(
-                salt_col, (col("ref").cast("int") % num_salts).cast("int")
+                salt_col, (col("ref").cast("long") % num_salts).cast("int")
             )
             print("inside impute_helper: 22::: null_response_df: after adding salt column")
             null_response_df.printSchema()
             null_response_df.show(10)
             # Add salt column to other_df
+            # 12000070002
             other_df = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("int") % num_salts).cast("int")
+                "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
             )
             print("inside impute_helper: 22::: other_df: after adding salt column")
             other_df.printSchema()
