@@ -808,7 +808,7 @@ def impute(
             #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # else:
             null_response_df = null_response_df.drop("salt").join(
-            calculation_df.select("ref", "period", "grouping"),
+            broadcast(calculation_df).select("ref", "period", "grouping"),
             ["ref", "period", "grouping"],
             "leftanti",
             ).localCheckpoint(eager=True)
