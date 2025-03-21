@@ -665,7 +665,7 @@ def impute(
         partition_sizes_df = df.withColumn(
             "partitionId", spark_partition_id()
         ).groupBy("partitionId").count()
-        partition_sizes_df.show()
+        # partition_sizes_df.show()
 
         #Optional, calculate average and standard deviation.
         avg_size = partition_sizes_df.agg({"count": "avg"}).collect()[0][0]
@@ -738,12 +738,12 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-            )
+            ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: null_response_df::count::")
             print(null_response_df.count())
             
-            print("inside impute_helper: 22::: skew other_df:: before")
-            check_partition_skew(other_df)
+            # print("inside impute_helper: 22::: skew other_df:: before")
+            # check_partition_skew(other_df)
             
             # refactor filterring small and large dataframes
             # Add salting to both dataframes
@@ -753,13 +753,13 @@ def impute(
             num_salts = 10  # Adjust this number based on your data skewness
 
             # Add salt column to null_response_df
-            null_response_df = null_response_df.withColumn(
+            null_response_df_10 = null_response_df.withColumn(
                 salt_col, (col("ref").cast("long") % num_salts).cast("int")
             )
-            # print("inside impute_helper: 22::: null_response_df: after adding salt column")
-            # null_response_df.show(10)
-            print("inside impute_helper: 22::: check_partition_skew: null_response_df")
-            check_partition_skew(null_response_df)
+
+
+            print("inside impute_helper: 22:: null_response_df_10")
+            check_partition_skew(null_response_df_10)
             # Add salt column to other_df
             # 12000070002
             other_df_100 = other_df.withColumn(
@@ -777,31 +777,27 @@ def impute(
             print("inside impute_helper: 22:: skew other_df_1000 :: after")
             check_partition_skew(other_df_1000)
             
-            other_df = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
+            other_df_10 = other_df.withColumn(
+                "other_salt", (col("other_ref").cast("long") % 10).cast("int")
             )
             # print("inside impute_helper: 22::: other_df: after adding salt column")
             # other_df.show(5)
             print("inside impute_helper: 22: : skew other_df :: after")
-            check_partition_skew(other_df)
+            check_partition_skew(other_df_10)
             
             
             # Example usage:
             # check_partition_skew(your_dataframe)
-            null_response_df.orderBy("period", "ref").show(1000)
-            other_df.orderBy("other_period", "other_ref").show(1000)
-            print("TESTING:: TESTING ::null_response_df,other_df")
-            null_response_df.select(col(other_period_col), "ref", "grouping").distinct().orderBy("period", "ref").show(1000)
-            other_df.select("other_period","other_ref", "other_grouping").orderBy("other_period", "other_ref").distinct().show(1000)
             
+        
             # Join the salted dataframes
             imputed_null_df = null_response_df.join(
                 other_df,
                 [
                     col(other_period_col) == col("other_period"),
                     col("ref") == col("other_ref"),
-                    col("grouping") == col("other_grouping"),
-                    col(salt_col) == col("other_salt"),
+                    col("grouping") == col("other_grouping")
+                    # col(salt_col) == col("other_salt"),
                 ],
             ).localCheckpoint(eager=True)
             print("TESTING:: TESTING :: after JOIN :: imputed_null_df")
@@ -838,7 +834,7 @@ def impute(
             #         "leftanti",
             #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # else:
-            null_response_df = null_response_df.drop("salt").join(
+            null_response_df = null_response_df.join(
             broadcast(calculation_df).select("ref", "period", "grouping"),
             ["ref", "period", "grouping"],
             "leftanti",
