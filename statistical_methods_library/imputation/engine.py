@@ -494,11 +494,11 @@ def impute(
         for calculator in ratio_calculators:
             results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
             for result in results:
-                print("result df")
-                result.data.printSchema()
+                # print("result df")
+                # result.data.printSchema()
                 # result.data.show(2)
-                print("before prepared df join")
-                prepared_df.printSchema()
+                # print("before prepared df join")
+                # prepared_df.printSchema()
                 # prepared_df.show(2)
                 # Use aliases to make the join operation explicit
                 result_data = result.data.alias("result_data")
@@ -530,10 +530,10 @@ def impute(
                 )
                 fill_values.update(result.fill_values)
                 output_col_mapping.update(result.additional_outputs)
-                print("after prepared df")
+                # print("after prepared df")
                 # prepared_df.printSchema()
                 # prepared_df.show(2)
-                print("-----------------")
+                # print("-----------------")
 
         prepared_df = prepared_df.fillna(fill_values)
 
@@ -550,8 +550,8 @@ def impute(
             ratio_calc_link_df, join_condition = rename_columns_and_generate_join_condition(ratio_calculation_df, join_columns, constant_value)
             # print("link_filter :: ratio_calc_link_df :: rename")
             # ratio_calc_link_df.printSchema()
-            print("link_filter :: prepared_df :: before join")
-            prepared_df.printSchema()
+            # print("link_filter :: prepared_df :: before join")
+            # prepared_df.printSchema()
             prepared_df = prepared_df.join(
                 ratio_calc_link_df.select(
                     *[c + constant_value for c in join_columns],
@@ -563,7 +563,7 @@ def impute(
                     *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
                     *selected_columns # Select non-duplicated columns from result_data
                 )
-            print("link_filter :: prepared_df111111 :: after join")
+            # print("link_filter :: prepared_df111111 :: after join")
             # prepared_df.printSchema()
             # prepared_df.show(1)  
             output_col_mapping.update(
@@ -657,7 +657,7 @@ def impute(
             )
 
     calculate_ratios()
-
+    print("calculate_ratios completed")
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
@@ -680,6 +680,9 @@ def impute(
     ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
+        if imputed_df is not None:
+            print("inside impute_helper: 00::: skew imputed_df")
+            check_partition_skew(imputed_df)
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -710,6 +713,9 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
+            if imputed_df is not None:
+                print("inside impute_helper:11 ::: skew imputed_df")
+                check_partition_skew(imputed_df)
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
@@ -723,7 +729,7 @@ def impute(
                 .localCheckpoint(eager=True)
             )
             print("inside impute_helper: 11 : null_response_df")
-            null_response_df.printSchema()
+            # null_response_df.printSchema()
         while True:
             print("inside impute_helper: 22::: imputed_df::count")
             print(imputed_df.count())
@@ -736,7 +742,7 @@ def impute(
             print("inside impute_helper: 22::: null_response_df::count::")
             print(null_response_df.count())
             
-            print("inside impute_helper: 22::: check_partition_skew: other_df")
+            print("inside impute_helper: 22::: skew other_df:: before")
             check_partition_skew(other_df)
             
             # refactor filterring small and large dataframes
@@ -756,16 +762,37 @@ def impute(
             check_partition_skew(null_response_df)
             # Add salt column to other_df
             # 12000070002
+            other_df_100 = other_df.withColumn(
+                "other_salt", (col("other_ref").cast("long") % 100).cast("int")
+            )
+            # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # other_df.show(5)
+            print("inside impute_helper: 22:: skew other_df_100 :: after")
+            check_partition_skew(other_df_100)
+            other_df_1000 = other_df.withColumn(
+                "other_salt", (col("other_ref").cast("long") % 1000).cast("int")
+            )
+            # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # other_df.show(5)
+            print("inside impute_helper: 22:: skew other_df_1000 :: after")
+            check_partition_skew(other_df_1000)
+            
             other_df = other_df.withColumn(
                 "other_salt", (col("other_ref").cast("long") % num_salts).cast("int")
             )
-            print("inside impute_helper: 22::: other_df: after adding salt column")
-            other_df.show(5)
-            print("inside impute_helper: 22::: check_partition_skew: other_df")
+            # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # other_df.show(5)
+            print("inside impute_helper: 22: : skew other_df :: after")
             check_partition_skew(other_df)
+            
             
             # Example usage:
             # check_partition_skew(your_dataframe)
+            null_response_df.orderBy("period", "ref").show(1000)
+            other_df.orderBy("other_period", "other_ref").show(1000)
+            print("TESTING:: TESTING ::null_response_df,other_df")
+            null_response_df.select(col(other_period_col), "ref", "grouping").distinct().orderBy("period", "ref").show(1000)
+            other_df.select("other_period","other_ref", "other_grouping").orderBy("other_period", "other_ref").distinct().show(1000)
             
             # Join the salted dataframes
             imputed_null_df = null_response_df.join(
@@ -777,6 +804,8 @@ def impute(
                     col(salt_col) == col("other_salt"),
                 ],
             ).localCheckpoint(eager=True)
+            print("TESTING:: TESTING :: after JOIN :: imputed_null_df")
+            imputed_null_df.orderBy("period", "ref").show(1000)
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -821,7 +850,7 @@ def impute(
         # output column with our one. Same goes for the marker column.
         #imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
         print("inside impute_helper: 3333::: final df :: before leftouter join")
-        df.printSchema()
+        # df.printSchema()
         df = df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
@@ -910,7 +939,7 @@ def impute(
         #.repartition("ref", "grouping", "period")
         ).localCheckpoint(eager=True)
         print("after the localCheckpoint eager = true construct_values.......")    
-        construction_df.printSchema()
+        # construction_df.printSchema()
         
         df = (
             df.withColumnRenamed("output", "existing_output")
@@ -941,7 +970,7 @@ def impute(
         imputed_df = None
         null_response_df = None
         print("forward_impute_from_construction.......")    
-        df.printSchema()
+        # df.printSchema()
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value, True
         )
@@ -1060,26 +1089,26 @@ def impute(
             ):
                 break
         print("after each stages.......")    
-        df.printSchema()
+        # df.printSchema()
     # df.show(5)
-    print("after the different stages")
-    df.printSchema()
+    print("after all stages")
+    # df.printSchema()
     df.show(10)
-    df.filter(
-            (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-        ).show(10)
-    df.filter(
-            (col("marker") == Marker.CONSTRUCTED.value)
-        ).show(10)
-    df.filter(
-            (col("marker") == Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
-        ).show(10)
-    df.filter(
-            (col("marker") == Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
-        ).show(10)
-    df.filter(
-            (col("marker") == Marker.BACKWARD_IMPUTE.value)
-        ).show(10)
+    # df.filter(
+    #         (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
+    #     ).show(10)
+    # df.filter(
+    #         (col("marker") == Marker.CONSTRUCTED.value)
+    #     ).show(10)
+    # df.filter(
+    #         (col("marker") == Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
+    #     ).show(10)
+    # df.filter(
+    #         (col("marker") == Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
+    #     ).show(10)
+    # df.filter(
+    #         (col("marker") == Marker.BACKWARD_IMPUTE.value)
+    #     ).show(10)
     null_output_col = df.filter(
         col("output").isNull()
     ).count()
