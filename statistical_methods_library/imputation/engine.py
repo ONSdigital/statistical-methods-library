@@ -800,8 +800,6 @@ def impute(
                     # col(salt_col) == col("other_salt"),
                 ],
             ).localCheckpoint(eager=True)
-            print("TESTING:: TESTING :: after JOIN :: imputed_null_df")
-            imputed_null_df.orderBy("period", "ref").show(1000)
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -824,7 +822,11 @@ def impute(
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
+            print("before the union")
+            imputed_df.printSchema()
+            calculation_df.printSchema()
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
             # if cal_df_count > 4500:
