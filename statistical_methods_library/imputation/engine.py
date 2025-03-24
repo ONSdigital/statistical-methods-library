@@ -680,9 +680,6 @@ def impute(
     ) -> DataFrame:
         nonlocal imputed_df
         nonlocal null_response_df
-        if imputed_df is not None:
-            print("inside impute_helper: 00::: skew imputed_df")
-            check_partition_skew(imputed_df)
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -758,32 +755,32 @@ def impute(
             )
 
 
-            print("inside impute_helper: 22:: null_response_df_10")
-            check_partition_skew(null_response_df_10)
-            # Add salt column to other_df
-            # 12000070002
-            other_df_100 = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("long") % 100).cast("int")
-            )
-            # print("inside impute_helper: 22::: other_df: after adding salt column")
-            # other_df.show(5)
-            print("inside impute_helper: 22:: skew other_df_100 :: after")
-            check_partition_skew(other_df_100)
-            other_df_1000 = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("long") % 1000).cast("int")
-            )
-            # print("inside impute_helper: 22::: other_df: after adding salt column")
-            # other_df.show(5)
-            print("inside impute_helper: 22:: skew other_df_1000 :: after")
-            check_partition_skew(other_df_1000)
+            # print("inside impute_helper: 22:: null_response_df_10")
+            # check_partition_skew(null_response_df_10)
+            # # Add salt column to other_df
+            # # 12000070002
+            # other_df_100 = other_df.withColumn(
+            #     "other_salt", (col("other_ref").cast("long") % 100).cast("int")
+            # )
+            # # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # # other_df.show(5)
+            # print("inside impute_helper: 22:: skew other_df_100 :: after")
+            # check_partition_skew(other_df_100)
+            # other_df_1000 = other_df.withColumn(
+            #     "other_salt", (col("other_ref").cast("long") % 1000).cast("int")
+            # )
+            # # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # # other_df.show(5)
+            # print("inside impute_helper: 22:: skew other_df_1000 :: after")
+            # check_partition_skew(other_df_1000)
             
-            other_df_10 = other_df.withColumn(
-                "other_salt", (col("other_ref").cast("long") % 10).cast("int")
-            )
-            # print("inside impute_helper: 22::: other_df: after adding salt column")
-            # other_df.show(5)
-            print("inside impute_helper: 22: : skew other_df :: after")
-            check_partition_skew(other_df_10)
+            # other_df_10 = other_df.withColumn(
+            #     "other_salt", (col("other_ref").cast("long") % 10).cast("int")
+            # )
+            # # print("inside impute_helper: 22::: other_df: after adding salt column")
+            # # other_df.show(5)
+            # print("inside impute_helper: 22: : skew other_df :: after")
+            # check_partition_skew(other_df_10)
             
             
             # Example usage:
@@ -825,7 +822,7 @@ def impute(
             print("before the union")
             imputed_df.printSchema()
             calculation_df.printSchema()
-            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            imputed_df = imputed_df.unionByName(calculation_df,allowMissingColumns=True).localCheckpoint(eager=False)
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
