@@ -748,7 +748,8 @@ def impute(
             ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: null_response_df::count::")
             print(null_response_df.count())
-            
+            # CHECK CHECK is this helping timing
+            print(other_df.count())
             # print("inside impute_helper: 22::: skew other_df:: before")
             # check_partition_skew(other_df)
             
@@ -798,29 +799,38 @@ def impute(
             
         
             # Join the salted dataframes
-            if other_df.count() < 20000:
-                imputed_null_df = null_response_df.join(
-                broadcast(other_df),
-                [
-                    col(other_period_col) == col("other_period"),
-                    col("ref") == col("other_ref"),
-                    col("grouping") == col("other_grouping")
-                    # col(salt_col) == col("other_salt"),
-                ],
-            ).localCheckpoint(eager=True)
-                print("inside impute_helper: 22::: imputed_null_df :: small")
-            else:    
-                imputed_null_df = null_response_df.join(
-                    other_df,
-                    [
-                        col(other_period_col) == col("other_period"),
-                        col("ref") == col("other_ref"),
-                        col("grouping") == col("other_grouping")
-                        # col(salt_col) == col("other_salt"),
-                    ],
-                ).localCheckpoint(eager=True)
-                print("inside impute_helper: 22::: imputed_null_df :: big")
+            # if other_df.count() < 20000:
+            #     imputed_null_df = null_response_df.join(
+            #     broadcast(other_df),
+            #     [
+            #         col(other_period_col) == col("other_period"),
+            #         col("ref") == col("other_ref"),
+            #         col("grouping") == col("other_grouping")
+            #         # col(salt_col) == col("other_salt"),
+            #     ],
+            # ).localCheckpoint(eager=True)
+            #     print("inside impute_helper: 22::: imputed_null_df :: small")
+            # else:    
+            #     imputed_null_df = null_response_df.join(
+            #         other_df,
+            #         [
+            #             col(other_period_col) == col("other_period"),
+            #             col("ref") == col("other_ref"),
+            #             col("grouping") == col("other_grouping")
+            #             # col(salt_col) == col("other_salt"),
+            #         ],
+            #     ).localCheckpoint(eager=True)
+            #     print("inside impute_helper: 22::: imputed_null_df :: big")
 
+            imputed_null_df = null_response_df.join(
+                        other_df,
+                        [
+                            col(other_period_col) == col("other_period"),
+                            col("ref") == col("other_ref"),
+                            col("grouping") == col("other_grouping")
+                            # col(salt_col) == col("other_salt"),
+                        ],
+                    ).localCheckpoint(eager=True)
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
