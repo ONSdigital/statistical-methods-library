@@ -739,7 +739,7 @@ def impute(
             # null_response_df.printSchema()
         while True:
             print("inside impute_helper: 22::: imputed_df::count")
-            print(imputed_df.count())
+            #print(imputed_df.count())
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref",
                 "period AS other_period",
@@ -747,9 +747,9 @@ def impute(
                 "grouping AS other_grouping",
             ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: null_response_df::count::")
-            print(null_response_df.count())
-            # CHECK CHECK is this helping timing
-            print(other_df.count())
+            #print(null_response_df.count())
+
+            #print(other_df.count())
             # print("inside impute_helper: 22::: skew other_df:: before")
             # check_partition_skew(other_df)
             
@@ -886,8 +886,8 @@ def impute(
             "leftouter",
         ).localCheckpoint(eager=True)
         print("inside impute_helper: 3333::: final df :: leftouter join")
-        print("inside impute_helper: 44444:::  null count")
-        df.filter(col("output").isNull()).count()
+        # print("inside impute_helper: 44444:::  null count")
+        # df.filter(col("output").isNull()).count()
         return df
 
     # --- Imputation functions ---
@@ -1138,10 +1138,10 @@ def impute(
     # df.filter(
     #         (col("marker") == Marker.BACKWARD_IMPUTE.value)
     #     ).show(10)
-    null_output_col = df.filter(
-        col("output").isNull()
-    ).count()
-    print(f"final df with output column is null{null_output_col}")
+    # null_output_col = df.filter(
+    #     col("output").isNull()
+    # ).count()
+    # print(f"final df with output column is null{null_output_col}")
     # df.filter(
     #     col("output").isNull()
     # ).show(10)

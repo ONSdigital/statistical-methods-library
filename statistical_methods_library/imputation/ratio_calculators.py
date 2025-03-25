@@ -330,7 +330,7 @@ def mean_of_ratios(
             # When calculating row numbers we put the null values last to avoid
             # them impacting the trimmed mean. This works because the upper
             # bound is calculated based on the count of non-null growth ratios.
-        df.printSchema()
+        # df.printSchema()
         # df.show(2)
         df = df.withColumn(
                 "num_forward",
