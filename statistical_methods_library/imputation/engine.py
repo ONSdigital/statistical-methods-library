@@ -379,17 +379,20 @@ def impute(
                 .withColumn("count_forward", lit(0).cast("long"))
                 .withColumn("count_backward", lit(0).cast("long"))
             )
-
+            print("calculate_ratios:: 11: forward exists")
         else:
             ratio_calculators.append(forward_backward_ratio_calculator)
+            print("calculate_ratios:: 11: not forward exists")
 
         if "construction" in prepared_df.columns:
+            
             prepared_df = prepared_df.withColumn(
                 "default_construction", expr("construction IS NULL")
             ).withColumn("count_construction", lit(0).cast("long"))
-
+            print("calculate_ratios:: 11: construction exists")
         else:
             ratio_calculators.append(construction_ratio_calculator)
+            print("calculate_ratios:: 11: not forward exists")
 
         if not ratio_calculators:
             return
@@ -430,7 +433,7 @@ def impute(
                 ).localCheckpoint(eager=True)
         # ratio_filter_previous_df.show()
         # ratio_filter_next_df.show()
-        # print(ratio_filter_df.count())
+        print("calculate_ratios:: 11:: ratio_filter_df after")
         # ratio_filter_df.show(1000)
         # Put the values from the current and previous periods for a
         # contributor on the same row.
@@ -459,6 +462,7 @@ def impute(
             )
         )
         # Repartition DataFrame by multiple columns
+        print("calculate_ratios:: 11:: ratio_calculation_df after")
         ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping","ref")
         prepared_df = prepared_df.repartition("period", "grouping","ref")
         # Join the grouping ratios onto the input such that each contributor has
@@ -497,7 +501,7 @@ def impute(
                 # print("result df")
                 # result.data.printSchema()
                 # result.data.show(2)
-                # print("before prepared df join")
+                print("calculate_ratios:: 22:: before prepared df join")
                 # prepared_df.printSchema()
                 # prepared_df.show(2)
                 # Use aliases to make the join operation explicit
@@ -530,10 +534,10 @@ def impute(
                 )
                 fill_values.update(result.fill_values)
                 output_col_mapping.update(result.additional_outputs)
-                # print("after prepared df")
+                print("calculate_ratios:: 22:: after prepared df")
                 # prepared_df.printSchema()
                 # prepared_df.show(2)
-                # print("-----------------")
+                print("-----------------")
 
         prepared_df = prepared_df.fillna(fill_values)
 
@@ -545,12 +549,12 @@ def impute(
                     "link_inclusion_previous",
                     "link_inclusion_current",
                     "link_inclusion_next"]
-            # print("link_filter :: ratio_calculation_df")
+            print("calculate_ratios:: 33::link_filter :: ratio_calculation_df")
             # ratio_calculation_df.printSchema()
             ratio_calc_link_df, join_condition = rename_columns_and_generate_join_condition(ratio_calculation_df, join_columns, constant_value)
             # print("link_filter :: ratio_calc_link_df :: rename")
             # ratio_calc_link_df.printSchema()
-            # print("link_filter :: prepared_df :: before join")
+            print("calculate_ratios:: 33::link_filter :: prepared_df :: before join")
             # prepared_df.printSchema()
             prepared_df = prepared_df.join(
                 ratio_calc_link_df.select(
@@ -563,7 +567,7 @@ def impute(
                     *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
                     *selected_columns # Select non-duplicated columns from result_data
                 )
-            # print("link_filter :: prepared_df111111 :: after join")
+            print("calculate_ratios:: 33::link_filter :: prepared_df111111 :: after join")
             # prepared_df.printSchema()
             # prepared_df.show(1)  
             output_col_mapping.update(
@@ -577,6 +581,7 @@ def impute(
         
 
         if weight is not None:
+            print("calculate_ratios:: 44::Inside weight calculation")
 
             def calculate_weighted_link(link_name):
                 prev_link = col(f"prev.{link_name}")
@@ -624,6 +629,7 @@ def impute(
                     )
                 )
             )
+            print("calculate_ratios:: 44::Inside weight calculation :: weighting_df :: join")
 
             curr_df = weighting_df.alias("curr")
             prev_df = weighting_df.alias("prev")
@@ -655,6 +661,8 @@ def impute(
                     ["period", "grouping"],
                 )
             )
+            print("calculate_ratios:: 44::Inside weight calculation :: prepared_df :: join")
+
 
     calculate_ratios()
     print("calculate_ratios completed")
@@ -746,13 +754,13 @@ def impute(
             # Add salting to both dataframes
         
             # Add salting to both dataframes
-            salt_col = "salt"
-            num_salts = 10  # Adjust this number based on your data skewness
+            # salt_col = "salt"
+            # num_salts = 10  # Adjust this number based on your data skewness
 
-            # Add salt column to null_response_df
-            null_response_df_10 = null_response_df.withColumn(
-                salt_col, (col("ref").cast("long") % num_salts).cast("int")
-            )
+            # # Add salt column to null_response_df
+            # null_response_df_10 = null_response_df.withColumn(
+            #     salt_col, (col("ref").cast("long") % num_salts).cast("int")
+            # )
 
 
             # print("inside impute_helper: 22:: null_response_df_10")
@@ -822,7 +830,7 @@ def impute(
             print("before the union")
             imputed_df.printSchema()
             calculation_df.printSchema()
-            imputed_df = imputed_df.unionByName(calculation_df,allowMissingColumns=True).localCheckpoint(eager=False)
+            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
