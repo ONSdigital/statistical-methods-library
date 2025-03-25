@@ -720,9 +720,9 @@ def impute(
             imputed_df = working_df.filter(~col("output").isNull()).localCheckpoint(
                 eager=True
             )
-            if imputed_df is not None:
-                print("inside impute_helper:11 ::: skew imputed_df")
-                check_partition_skew(imputed_df)
+            # if imputed_df is not None:
+            #     print("inside impute_helper:11 ::: skew imputed_df")
+            #     check_partition_skew(imputed_df)
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
@@ -798,8 +798,9 @@ def impute(
             
         
             # Join the salted dataframes
-            imputed_null_df = null_response_df.join(
-                other_df,
+            if other_df.count() < 20000:
+                imputed_null_df = null_response_df.join(
+                broadcast(other_df),
                 [
                     col(other_period_col) == col("other_period"),
                     col("ref") == col("other_ref"),
@@ -807,6 +808,19 @@ def impute(
                     # col(salt_col) == col("other_salt"),
                 ],
             ).localCheckpoint(eager=True)
+                print("inside impute_helper: 22::: imputed_null_df :: small")
+            else:    
+                imputed_null_df = null_response_df.join(
+                    other_df,
+                    [
+                        col(other_period_col) == col("other_period"),
+                        col("ref") == col("other_ref"),
+                        col("grouping") == col("other_grouping")
+                        # col(salt_col) == col("other_salt"),
+                    ],
+                ).localCheckpoint(eager=True)
+                print("inside impute_helper: 22::: imputed_null_df :: big")
+
             calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
                     "ref",
                     "period",
@@ -857,7 +871,7 @@ def impute(
         print("inside impute_helper: 3333::: final df :: before leftouter join")
         # df.printSchema()
         df = df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            broadcast(imputed_df.select("ref", "period", "grouping", "output", "marker")),
             ["ref", "period", "grouping"],
             "leftouter",
         ).localCheckpoint(eager=True)
@@ -1118,9 +1132,9 @@ def impute(
         col("output").isNull()
     ).count()
     print(f"final df with output column is null{null_output_col}")
-    df.filter(
-        col("output").isNull()
-    ).show(10)
+    # df.filter(
+    #     col("output").isNull()
+    # ).show(10)
     # try :: Individual calls to each stage function - improve a bit but not helped to resolve the issue
     # df = forward_impute_from_response(df).localCheckpoint(eager=True)
     # print("after forward_impute_from_response stage")
