@@ -431,11 +431,11 @@ def mean_of_ratios(
         "ref", "period", "grouping", *growth_additional_outputs.keys()
     )
     print("growth_df")
-    growth_df.printSchema()
-    growth_df.show(2)
+    # growth_df.printSchema()
+    # growth_df.show(2)
     print("ratio_df")
-    ratio_df.printSchema()
-    ratio_df.show(2)
+    # ratio_df.printSchema()
+    # ratio_df.show(2)
     return [
         RatioCalculationResult(
             data=growth_df,
@@ -537,6 +537,7 @@ def ratio_of_means_construction(
     links were defaulted. The data frame contains a row for each period and
     grouping combination in the input data.
     """
+    print("inside ratio_of_means_construction")
     return [
         RatioCalculationResult(
             data=(

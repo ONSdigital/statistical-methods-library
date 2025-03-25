@@ -392,7 +392,7 @@ def impute(
             print("calculate_ratios:: 11: construction exists")
         else:
             ratio_calculators.append(construction_ratio_calculator)
-            print("calculate_ratios:: 11: not forward exists")
+            print("calculate_ratios:: 11: not construction exists")
 
         if not ratio_calculators:
             return
@@ -496,6 +496,7 @@ def impute(
         #:: Explicit join on columns resolved the issue  try 2
         fill_values = {}
         for calculator in ratio_calculators:
+            print("calculate_ratios:: 22:: call calculator...")
             results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
             for result in results:
                 # print("result df")
@@ -538,7 +539,8 @@ def impute(
                 # prepared_df.printSchema()
                 # prepared_df.show(2)
                 print("-----------------")
-
+            
+            
         prepared_df = prepared_df.fillna(fill_values)
 
         if link_filter:
