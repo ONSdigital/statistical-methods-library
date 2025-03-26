@@ -176,6 +176,9 @@ def estimate(
 
     def count_conditional(cond):
         return sum(when(cond, 1).otherwise(0))
+    
+    print("sml htratio 11: before expansion estimation...")
+    working_df.printSchema()
 
     # --- Expansion estimation ---
     # If we've got an adjustment marker and h value then we'll use these, otherwise
@@ -204,7 +207,8 @@ def estimate(
             col("sample_count") / col("sample_sum"),
         )
     )
-
+    print("sml htratio 22: design_df ..")
+    design_df.show(2)
     if out_of_scope_full is True or out_of_scope_full is None:
         design_df = design_df.withColumn(
             "out_of_scope_marker_numerator", col("out_of_scope_marker")
@@ -217,7 +221,7 @@ def estimate(
         design_df = design_df.withColumn(
             "out_of_scope_marker_denominator", col("out_of_scope_marker")
         )
-
+    print("sml htratio 33: design_df :: design_weight calc before..")
     design_df = design_df.withColumn(
         "design_weight",
         (
@@ -243,7 +247,8 @@ def estimate(
         "out_of_scope_marker_denominator",
         "sample_count",
     )
-
+    print("sml htratio 44: design_df :: design_weight calc after..")
+    design_df.show(2)
     # --- Ratio estimation ---
     # Note: if we don't have the columns for this then only Expansion
     # estimation is performed.
@@ -252,6 +257,8 @@ def estimate(
     # and Combined estimation except for the grouping.
     def calibration_calculation(df: DataFrame, group_col: str) -> DataFrame:
         group_cols = ["period", group_col]
+        print("sml htratio 0000: inside calibration_calculation")
+
         return (
             df.withColumn(
                 "aux_design",
@@ -274,6 +281,7 @@ def estimate(
         # We can perform some sort of ratio estimation since we have an
         # auxiliary value.
         working_df = working_df.join(design_df, ["period", "strata"])
+        print("sml htratio 44: calibration :: ")
         if calibration_group_col is not None:
             # We have a calibration group so perform Combined Ratio estimation.
             return_col_list.append(
@@ -293,12 +301,15 @@ def estimate(
                     ["period", "calibration_group"],
                 )
             )
-
+            print("sml htratio 55 : calibration_group_col is not none : after the join ")
+            estimated_df.show(2)
         else:
             # No calibration group so perform Separate Ratio estimation.
             estimated_df = design_df.join(
                 calibration_calculation(working_df, "strata"), ["period", "strata"]
             )
+            print("sml htratio 66 : calibration_group_col is not none : after the join ")
+            estimated_df.show(2)
 
         return_col_list += [
             col("design_weight").alias(design_weight_col),
@@ -309,10 +320,14 @@ def estimate(
         # No auxiliary values so return the results of Expansion estimation.
         return_col_list.append(col("design_weight").alias(design_weight_col))
         estimated_df = design_df
+        print("sml htratio 777777 : auxiliary_col is none : NOO calibration_calculation")
+        estimated_df.show(2)
 
     if unadjusted_design_weight_col is not None:
         return_col_list.append(
             col("unadjusted_design_weight").alias(unadjusted_design_weight_col)
         )
-
+        
+    print("sml htratio 888 : final : estimated_df")
+    estimated_df.show(2)
     return estimated_df.select(return_col_list)
