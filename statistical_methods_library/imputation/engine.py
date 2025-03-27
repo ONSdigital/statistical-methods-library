@@ -747,9 +747,9 @@ def impute(
                 "grouping AS other_grouping",
             ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
             print("inside impute_helper: 22::: null_response_df::count::")
-            #print(null_response_df.count())
-
-            #print(other_df.count())
+            print(null_response_df.count())
+            print("inside impute_helper: 22::: other_df::count::")
+            print(other_df.count())
             # print("inside impute_helper: 22::: skew other_df:: before")
             # check_partition_skew(other_df)
             
@@ -821,8 +821,10 @@ def impute(
             #         ],
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
-
-            imputed_null_df = broadcast(null_response_df).join(
+            if (null_response_df.count() > 0 ):
+                broadcast(null_response_df)
+                print("inside the impute_helper: 22::: null_response_df :: broadcast")
+            imputed_null_df = null_response_df.join(
                         other_df,
                         [
                             col(other_period_col) == col("other_period"),
@@ -856,7 +858,7 @@ def impute(
             print("before the union")
             imputed_df.printSchema()
             calculation_df.printSchema()
-            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            imputed_df = imputed_df.union(calculation_df).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
@@ -881,7 +883,7 @@ def impute(
         print("inside impute_helper: 3333::: final df :: before leftouter join")
         # df.printSchema()
         df = df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            broadcast(imputed_df.select("ref", "period", "grouping", "output", "marker")),
             ["ref", "period", "grouping"],
             "leftouter",
         ).localCheckpoint(eager=True)
@@ -1113,6 +1115,7 @@ def impute(
         df = stage(df).localCheckpoint(eager=True)
         
         if df.filter(col("output").isNull()).count() == 0:
+            print("There isn't any null output colum in the df")
             if (not manual_construction_col) or (
                 manual_construction_col and stage == construct_values
             ):
