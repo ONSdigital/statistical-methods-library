@@ -951,8 +951,8 @@ def impute(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "grouping").alias("other")
-        construction_df = construction_df.alias("construction")#.repartition("ref", "grouping", "period")
+        other_df = df.select("ref", "period", "grouping").alias("other").localCheckpoint(eager=True)
+        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period").localCheckpoint(eager=True)
         construction_df = construction_df.join(
             other_df,
             [
@@ -961,7 +961,8 @@ def impute(
                 col("construction.grouping") == col("other.grouping"),
             ],
             "leftanti",
-        ).select(
+        ).localCheckpoint(eager=True)
+        construction_df = construction_df.select(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
             col("construction.grouping").alias("grouping"),
@@ -990,7 +991,7 @@ def impute(
                 .alias("marker"),
             )
             .drop("existing_output", "constructed_output", "constructed_marker")
-        )
+        ).localCheckpoint(eager=True)
         return df
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
