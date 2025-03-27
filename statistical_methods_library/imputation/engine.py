@@ -822,7 +822,7 @@ def impute(
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
 
-            imputed_null_df = null_response_df.join(
+            imputed_null_df = broadcast(null_response_df).join(
                         other_df,
                         [
                             col(other_period_col) == col("other_period"),
@@ -881,7 +881,7 @@ def impute(
         print("inside impute_helper: 3333::: final df :: before leftouter join")
         # df.printSchema()
         df = df.drop("output", "marker").join(
-            broadcast(imputed_df.select("ref", "period", "grouping", "output", "marker")),
+            imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
         ).localCheckpoint(eager=True)
