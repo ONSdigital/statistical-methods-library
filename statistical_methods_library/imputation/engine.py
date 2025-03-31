@@ -821,9 +821,13 @@ def impute(
             #         ],
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
-            if (null_response_df.count() > 0 ):
+            null_respose_count = null_response_df.count()
+            if null_respose_count > 0 :
                 broadcast(null_response_df)
                 print("inside the impute_helper: 22::: null_response_df :: broadcast")
+            elif null_respose_count == 0:
+                break
+            
             imputed_null_df = null_response_df.join(
                         other_df,
                         [
@@ -850,8 +854,9 @@ def impute(
             print(cal_df_count)
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
-            if cal_df_count == 0:
-                break
+            # Break even before to avoid the union unnessary join & filter
+            # if cal_df_count == 0:
+            #     break
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
