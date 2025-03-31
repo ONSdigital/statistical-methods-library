@@ -823,11 +823,11 @@ def impute(
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
             null_respose_count = null_response_df.count()
             print(f"inside impute_helper: 22::: null_response_df::count:: {null_respose_count}")
-            if null_respose_count > 0 :
-                broadcast(null_response_df)
-                print("inside the impute_helper: 22::: null_response_df :: broadcast")
-            elif null_respose_count == 0:
-                break
+            # if null_respose_count > 0 :
+            #     broadcast(null_response_df)
+            #     print("inside the impute_helper: 22::: null_response_df :: broadcast")
+            # elif null_respose_count == 0:
+            #     break
             
             imputed_null_df = null_response_df.join(
                         other_df,
@@ -864,7 +864,7 @@ def impute(
             print("before the union")
             # imputed_df.printSchema()
             # calculation_df.printSchema()
-            imputed_df = imputed_df.union(calculation_df).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
@@ -957,8 +957,8 @@ def impute(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "grouping").alias("other").localCheckpoint(eager=True)
-        construction_df = construction_df.alias("construction")#.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+        other_df = df.select("ref", "period", "grouping").alias("other")
+        construction_df = construction_df.alias("construction")#.repartition("ref", "grouping", "period")
         construction_df = construction_df.join(
             other_df,
             [
