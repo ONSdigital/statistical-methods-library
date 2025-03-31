@@ -746,10 +746,10 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
-            print("inside impute_helper: 22::: null_response_df::count::")
-            print(null_response_df.count())
-            print("inside impute_helper: 22::: other_df::count::")
-            print(other_df.count())
+            # print("inside impute_helper: 22::: null_response_df::count::")
+            # print(null_response_df.count())
+            # print("inside impute_helper: 22::: other_df::count::")
+            # print(other_df.count())
             # print("inside impute_helper: 22::: skew other_df:: before")
             # check_partition_skew(other_df)
             
@@ -822,6 +822,7 @@ def impute(
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
             null_respose_count = null_response_df.count()
+            print(f"inside impute_helper: 22::: null_response_df::count:: {null_respose_count}")
             if null_respose_count > 0 :
                 broadcast(null_response_df)
                 print("inside the impute_helper: 22::: null_response_df :: broadcast")
@@ -855,14 +856,14 @@ def impute(
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             # Break even before to avoid the union unnessary join & filter
-            # if cal_df_count == 0:
-            #     break
+            if cal_df_count == 0:
+                break
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
             print("before the union")
-            imputed_df.printSchema()
-            calculation_df.printSchema()
+            # imputed_df.printSchema()
+            # calculation_df.printSchema()
             imputed_df = imputed_df.union(calculation_df).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
@@ -957,7 +958,7 @@ def impute(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
         other_df = df.select("ref", "period", "grouping").alias("other").localCheckpoint(eager=True)
-        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+        construction_df = construction_df.alias("construction")#.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
         construction_df = construction_df.join(
             other_df,
             [
