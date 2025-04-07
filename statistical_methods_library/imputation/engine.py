@@ -541,7 +541,7 @@ def impute(
         #         print("-----------------")
         ## Worning code end  
             
-        prepared_df = prepared_df.fillna(fill_values).localCheckpoint(eagar=True)
+        prepared_df = prepared_df.fillna(fill_values).localCheckpoint(eager=True)
 
         if link_filter:
             print("calculate_ratios:: 11::link_filter :: ratio_calculation_df::count")
