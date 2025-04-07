@@ -459,7 +459,7 @@ def impute(
                 "link_inclusion_next",
                 "previous_output",
                 "link_inclusion_previous",
-            )
+            ).localCheckpoint(eager=True)
         )
         # Repartition DataFrame by multiple columns
         print("calculate_ratios:: 11:: ratio_calculation_df after")
@@ -495,83 +495,101 @@ def impute(
         # ):
         #:: Explicit join on columns resolved the issue  try 2
         fill_values = {}
-        for calculator in ratio_calculators:
-            print("calculate_ratios:: 22:: call calculator...")
-            results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
-            for result in results:
-                # print("result df")
-                # result.data.printSchema()
-                # result.data.show(2)
-                print("calculate_ratios:: 22:: before prepared df join")
-                # prepared_df.printSchema()
-                # prepared_df.show(2)
-                # Use aliases to make the join operation explicit
-                result_data = result.data.alias("result_data")
-                prepared_df = prepared_df.alias("prepared_df")
-                
-                # Rename columns in result_data by adding a constant value
-                constant_value = "_constant"
-                result_data, join_condition = rename_columns_and_generate_join_condition(result_data, result.join_columns, constant_value)
+        # Existing code 
+        print("calculate_ratios:: 22:: before the actual ratio calculation")
+        for result in sum(
+            (
+                calculator(df=ratio_calculation_df, **ratio_calculator_params)
+                for calculator in ratio_calculators
+            ),
+            [],
+        ):
+            print("calculate_ratios:: 333:: after the actual ratio calculation :: in the for loop 11")
+            prepared_df = prepared_df.join(result.data, result.join_columns, "left")
+            print("calculate_ratios:: 333:: after the actual ratio calculation :: in the for loop22")
 
-                # for col_name in result.join_columns:
-                #     result_data = result_data.withColumnRenamed(col_name, col_name + constant_value)
-                # print("After column :: result df")
-                # result_data.printSchema()
-                # result_data.show(2)
-                # # Join the result data to the prepared_df on the specified join columns
-                # join_condition = [
-                #     prepared_df[col] == result_data[col + constant_value]
-                #     for col in result.join_columns
-                # ]
-                # print("join condition")
-                # print(join_condition)
-                prepared_df = prepared_df.join(
-                    result_data,
-                    join_condition,
-                    "left"
-                ).select(
-                    *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
-                    *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
-                )
-                fill_values.update(result.fill_values)
-                output_col_mapping.update(result.additional_outputs)
-                print("calculate_ratios:: 22:: after prepared df")
-                # prepared_df.printSchema()
-                # prepared_df.show(2)
-                print("-----------------")
+            fill_values.update(result.fill_values)
+            output_col_mapping.update(result.additional_outputs)
+            print("calculate_ratios:: 333:: after the actual ratio calculation :: in the for loop33")
+        ## Worning code start
+        # for calculator in ratio_calculators:
+        #     print("calculate_ratios:: 22:: call calculator...")
+        #     results = calculator(df=ratio_calculation_df, **ratio_calculator_params)
+        #     for result in results:
+             
+        #         result_data = result.data.alias("result_data")
+        #         prepared_df = prepared_df.alias("prepared_df")
+                
+        #         # Rename columns in result_data by adding a constant value
+        #         constant_value = "_constant"
+        #         result_data, join_condition = rename_columns_and_generate_join_condition(result_data, result.join_columns, constant_value)
+        #         # Join the result data to the prepared_df on the specified join columns
+        #         prepared_df = prepared_df.join(
+        #             result_data,
+        #             join_condition,
+        #             "left"
+        #         ).select(
+        #             *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
+        #             *[col(f"result_data.{c}").alias(c) for c in result.data.columns if c not in prepared_df.columns]  # Select non-duplicated columns from result_data
+        #         )
+                
+        #         fill_values.update(result.fill_values)
+        #         output_col_mapping.update(result.additional_outputs)
+        #         print("calculate_ratios:: 22:: after prepared df")
+        #         # prepared_df.printSchema()
+        #         # prepared_df.show(2)
+        #         print("-----------------")
+        ## Worning code end  
             
-            
-        prepared_df = prepared_df.fillna(fill_values)
+        prepared_df = prepared_df.fillna(fill_values).localCheckpoint(eagar=True)
 
         if link_filter:
-            # # Explicit join on columns 
-            constant_value = "_2"
-            join_columns = ["ref", "period", "grouping"]
-            selected_columns = [ 
+            print("calculate_ratios:: 11::link_filter :: ratio_calculation_df::count")
+            ratio_calculation_df.count()
+            print("calculate_ratios:: 11::link_filter :: prepared_df::count")
+            prepared_df.count()
+            ## exiting code
+            prepared_df = prepared_df.join(
+                ratio_calculation_df.select(
+                    "ref",
+                    "period",
+                    "grouping",
                     "link_inclusion_previous",
                     "link_inclusion_current",
-                    "link_inclusion_next"]
-            print("calculate_ratios:: 33::link_filter :: ratio_calculation_df")
-            # ratio_calculation_df.printSchema()
-            ratio_calc_link_df, join_condition = rename_columns_and_generate_join_condition(ratio_calculation_df, join_columns, constant_value)
-            # print("link_filter :: ratio_calc_link_df :: rename")
-            # ratio_calc_link_df.printSchema()
-            print("calculate_ratios:: 33::link_filter :: prepared_df :: before join")
-            # prepared_df.printSchema()
-            prepared_df = prepared_df.join(
-                ratio_calc_link_df.select(
-                    *[c + constant_value for c in join_columns],
-                   *selected_columns
+                    "link_inclusion_next",
                 ),
-                join_condition,
-                "left",
-            ).select(
-                    *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
-                    *selected_columns # Select non-duplicated columns from result_data
-                )
-            print("calculate_ratios:: 33::link_filter :: prepared_df111111 :: after join")
+                ["ref", "period", "grouping"],
+                "left", 
+            )
+            # # WORKING code with Explicit join on columns  start
+            # constant_value = "_2"
+            # join_columns = ["ref", "period", "grouping"]
+            # selected_columns = [ 
+            #         "link_inclusion_previous",
+            #         "link_inclusion_current",
+            #         "link_inclusion_next"]
+            # print("calculate_ratios:: 33::link_filter :: ratio_calculation_df")
+            # # ratio_calculation_df.printSchema()
+            # ratio_calc_link_df, join_condition = rename_columns_and_generate_join_condition(ratio_calculation_df, join_columns, constant_value)
+            # # print("link_filter :: ratio_calc_link_df :: rename")
+            # # ratio_calc_link_df.printSchema()
+            # print("calculate_ratios:: 33::link_filter :: prepared_df :: before join")
+            # # prepared_df.printSchema()
+            # prepared_df = prepared_df.join(
+            #     ratio_calc_link_df.select(
+            #         *[c + constant_value for c in join_columns],
+            #        *selected_columns
+            #     ),
+            #     join_condition,
+            #     "left",
+            # ).select(
+            #         *[col(c) for c in prepared_df.columns],  # Select all columns from prepared_df
+            #         *selected_columns # Select non-duplicated columns from result_data
+            #     )
+            # print("calculate_ratios:: 33::link_filter :: prepared_df111111 :: after join")
             # prepared_df.printSchema()
             # prepared_df.show(1)  
+            # # WORKING code with Explicit join on columns  end
             output_col_mapping.update(
                 {
                     "link_inclusion_current": link_inclusion_current_col,
