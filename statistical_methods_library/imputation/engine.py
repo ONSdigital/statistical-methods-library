@@ -393,19 +393,19 @@ def impute(
             "match",
         )
         ratio_filter_previous_df = ratio_filter_df.selectExpr(
-                    "ref",
-                    "period AS previous_period",
-                    "output AS previous_output",
-                    "grouping",
-                    "match AS link_inclusion_previous",
-                ).localCheckpoint(eager=True)
+            "ref",
+            "period AS previous_period",
+            "output AS previous_output",
+            "grouping",
+            "match AS link_inclusion_previous",
+        ).localCheckpoint(eager=True)
         ratio_filter_next_df = ratio_filter_df.selectExpr(
-                    "ref",
-                    "period AS next_period",
-                    "output AS next_output",
-                    "grouping",
-                    "match AS link_inclusion_next",
-                ).localCheckpoint(eager=True)
+            "ref",
+            "period AS next_period",
+            "output AS next_output",
+            "grouping",
+            "match AS link_inclusion_next",
+        ).localCheckpoint(eager=True)
         # Put the values from the current and previous periods for a
         # contributor on the same row.
         ratio_calculation_df = (
@@ -416,7 +416,7 @@ def impute(
             )
             .join(
                 ratio_filter_next_df,
-                ["ref","grouping", "next_period"],
+                ["ref", "grouping", "next_period"],
                 "leftouter",
             )
             .selectExpr(
@@ -430,7 +430,8 @@ def impute(
                 "link_inclusion_next",
                 "previous_output",
                 "link_inclusion_previous",
-            ).localCheckpoint(eager=True)
+            )
+            .localCheckpoint(eager=True)
         )
         # Repartition DataFrame by multiple columns ??
         # ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping","ref")
@@ -448,7 +449,7 @@ def impute(
             prepared_df = prepared_df.join(result.data, result.join_columns, "left")
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
-                      
+
         prepared_df = prepared_df.fillna(fill_values).localCheckpoint(eager=True)
 
         if link_filter:
@@ -609,18 +610,20 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-            # ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True) 
-            ).localCheckpoint(eager=True) 
+                # ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
+            ).localCheckpoint(eager=True)
 
             imputed_null_df = null_response_df.join(
-                        other_df,
-                        [
-                            col(other_period_col) == col("other_period"),
-                            col("ref") == col("other_ref"),
-                            col("grouping") == col("other_grouping"),
-                        ],
-                    ).localCheckpoint(eager=True)
-            calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
+                other_df,
+                [
+                    col(other_period_col) == col("other_period"),
+                    col("ref") == col("other_ref"),
+                    col("grouping") == col("other_grouping"),
+                ],
+            ).localCheckpoint(eager=True)
+            calculation_df = (
+                imputed_null_df.drop("other_period", "other_ref", "other_grouping")
+                .select(
                     "ref",
                     "period",
                     "grouping",
@@ -630,7 +633,9 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                ).localCheckpoint(eager=False)
+                )
+                .localCheckpoint(eager=False)
+            )
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if calculation_df.count() == 0:
@@ -641,19 +646,25 @@ def impute(
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
             null_response_df = null_response_df.join(
-            broadcast(calculation_df).select("ref", "period", "grouping"),
-            ["ref", "period", "grouping"],
-            "leftanti",
+                broadcast(calculation_df).select("ref", "period", "grouping"),
+                ["ref", "period", "grouping"],
+                "leftanti",
             ).localCheckpoint(eager=True)
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
-        # output column with our one. Same goes for the marker column.        
-        df = df.drop("output", "marker").join(
-            broadcast(imputed_df.select("ref", "period", "grouping", "output", "marker")),
-            ["ref", "period", "grouping"],
-            "leftouter",
-        ).localCheckpoint(eager=True)
-       
+        # output column with our one. Same goes for the marker column.
+        df = (
+            df.drop("output", "marker")
+            .join(
+                broadcast(
+                    imputed_df.select("ref", "period", "grouping", "output", "marker")
+                ),
+                ["ref", "period", "grouping"],
+                "leftouter",
+            )
+            .localCheckpoint(eager=True)
+        )
+
         return df
 
     # --- Imputation functions ---
@@ -731,7 +742,7 @@ def impute(
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         ).localCheckpoint(eager=True)
-        
+
         df = (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
@@ -805,9 +816,9 @@ def impute(
         if manual_construction_col and stage == forward_impute_from_manual_construction:
             # Add the mc data
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
-           
+
         df = stage(df).localCheckpoint(eager=True)
-        
+
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
                 manual_construction_col and stage == construct_values
