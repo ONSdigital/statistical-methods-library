@@ -247,91 +247,18 @@ def mean_of_ratios(
                         upper_bound(
                             col("count_backward"),
                         ).alias("upper_backward"),
-                    ).localCheckpoint(eager=True) # TODO: Check if this is necessary
+                    ).localCheckpoint(eager=True) 
                 
 
         df = df.join(
                 df_lwr_upr_bound,
                 [
-                    # df["period"] == df_lwr_upr_bound["period"],
-                    # df["grouping"] == df_lwr_upr_bound["grouping"]
                     "period", "grouping"
-                ]
-                # (
-                #     df.groupBy("period", "grouping")
-                #     .agg(
-                #         expr(
-                #             """
-                #             sum(
-                #                 cast(growth_forward IS NOT NULL AS integer)
-                #             ) AS count_forward
-                #             """
-                #         ),
-                #         expr(
-                #             """
-                #             sum(
-                #                 cast(growth_backward IS NOT NULL AS integer)
-                #             ) AS count_backward
-                #             """
-                #         ),
-                #         expr(
-                #             """
-                #             sum(
-                #                 cast(
-                #                     not (
-                #                         (link_inclusion_previous OR
-                #                         link_inclusion_previous IS NULL)
-                #                         AND link_inclusion_current
-                #                     )
-                #                 AS integer)
-                #             )
-                #             AS count_exclusion_forward
-                #             """
-                #         ),
-                #         expr(
-                #             """
-                #             sum(
-                #                 cast(
-                #                     not (
-                #                         (link_inclusion_next OR
-                #                         link_inclusion_next IS NULL)
-                #                         AND link_inclusion_current
-                #                     )
-                #                     AS integer
-                #                 )
-                #             )
-                #             AS count_exclusion_backward
-                #             """
-                #         ),
-                #     )
-                #     .select(
-                #         col("period"),
-                #         col("grouping"),
-                #         col("count_exclusion_forward"),
-                #         col("count_exclusion_backward"),
-                #         col("count_forward"),
-                #         col("count_backward"),
-                #         lower_bound(
-                #             col("count_forward"),
-                #         ).alias("lower_forward"),
-                #         upper_bound(
-                #             col("count_forward"),
-                #         ).alias("upper_forward"),
-                #         lower_bound(
-                #             col("count_backward"),
-                #         ).alias("lower_backward"),
-                #         upper_bound(
-                #             col("count_backward"),
-                #         ).alias("upper_backward"),
-                #     )
-                # ),
-                # ["period", "grouping"],
+                ] 
             )
             # When calculating row numbers we put the null values last to avoid
             # them impacting the trimmed mean. This works because the upper
             # bound is calculated based on the count of non-null growth ratios.
-        # df.printSchema()
-        # df.show(2)
         df = df.withColumn(
                 "num_forward",
                 expr(
@@ -430,12 +357,7 @@ def mean_of_ratios(
     growth_df = df.select(
         "ref", "period", "grouping", *growth_additional_outputs.keys()
     )
-    print("growth_df")
-    # growth_df.printSchema()
-    # growth_df.show(2)
-    print("ratio_df")
-    # ratio_df.printSchema()
-    # ratio_df.show(2)
+    
     return [
         RatioCalculationResult(
             data=growth_df,
@@ -537,7 +459,6 @@ def ratio_of_means_construction(
     links were defaulted. The data frame contains a row for each period and
     grouping combination in the input data.
     """
-    print("inside ratio_of_means_construction")
     return [
         RatioCalculationResult(
             data=(
