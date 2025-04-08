@@ -122,7 +122,6 @@ def mean_of_ratios(
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
         trim_threshold = Decimal(trim_threshold)
-
     df = df.select(
         "period",
         "grouping",
@@ -184,12 +183,8 @@ def mean_of_ratios(
 
         def upper_bound(c):
             return 1 + sql_floor(c * (100 - upper_trim) / 100)
-
-        df = (
-            df.join(
-                (
-                    df.groupBy("period", "grouping")
-                    .agg(
+        
+        df_lwr_upr_bound = df.groupBy("period", "grouping").agg(
                         expr(
                             """
                             sum(
@@ -233,8 +228,7 @@ def mean_of_ratios(
                             AS count_exclusion_backward
                             """
                         ),
-                    )
-                    .select(
+                    ).select(
                         col("period"),
                         col("grouping"),
                         col("count_exclusion_forward"),
@@ -253,14 +247,19 @@ def mean_of_ratios(
                         upper_bound(
                             col("count_backward"),
                         ).alias("upper_backward"),
-                    )
-                ),
-                ["period", "grouping"],
+                    ).localCheckpoint(eager=True) 
+                
+
+        df = df.join(
+                df_lwr_upr_bound,
+                [
+                    "period", "grouping"
+                ] 
             )
             # When calculating row numbers we put the null values last to avoid
             # them impacting the trimmed mean. This works because the upper
             # bound is calculated based on the count of non-null growth ratios.
-            .withColumn(
+        df = df.withColumn(
                 "num_forward",
                 expr(
                     """
@@ -270,8 +269,7 @@ def mean_of_ratios(
                     )
                 """
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "num_backward",
                 expr(
                     """
@@ -281,8 +279,7 @@ def mean_of_ratios(
                     )
                 """
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "trim_inclusion_forward",
                 (
                     when(col("growth_forward").isNull(), None).otherwise(
@@ -295,8 +292,7 @@ def mean_of_ratios(
                         )
                     )
                 ),
-            )
-            .withColumn(
+            ).withColumn(
                 "trim_inclusion_backward",
                 (
                     when(col("growth_backward").isNull(), None).otherwise(
@@ -310,7 +306,7 @@ def mean_of_ratios(
                     )
                 ),
             )
-        )
+        
 
     else:
         df = df.withColumn("trim_inclusion_forward", lit(True)).withColumn(
@@ -361,7 +357,7 @@ def mean_of_ratios(
     growth_df = df.select(
         "ref", "period", "grouping", *growth_additional_outputs.keys()
     )
-
+    
     return [
         RatioCalculationResult(
             data=growth_df,
