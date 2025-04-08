@@ -434,7 +434,8 @@ def impute(
             .localCheckpoint(eager=True)
         )
         # Repartition DataFrame by multiple columns ??
-        # ratio_calculation_df = ratio_calculation_df.repartition("period", "grouping","ref")
+        # ratio_calculation_df = ratio_calculation_df
+        # .repartition("period", "grouping","ref")
         # prepared_df = prepared_df.repartition("period", "grouping","ref")
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
@@ -610,7 +611,8 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-                # ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
+                # ).repartition("other_ref", "other_grouping","other_period")
+                # .localCheckpoint(eager=True)
             ).localCheckpoint(eager=True)
 
             imputed_null_df = null_response_df.join(
@@ -803,7 +805,8 @@ def impute(
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
 
-    # df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+    # df = prepared_df.repartition("ref", "grouping", "period")
+    # .localCheckpoint(eager=True)
     df = prepared_df.localCheckpoint(eager=True)
 
     for stage in (
