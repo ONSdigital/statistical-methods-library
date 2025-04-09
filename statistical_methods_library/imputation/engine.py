@@ -1164,7 +1164,7 @@ def impute(
         print("forward_impute_from_construction.......")
         # df.printSchema()
         return impute_helper(
-            df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value, True
+            df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
 
     if manual_construction_col:
