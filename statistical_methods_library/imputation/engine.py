@@ -729,7 +729,7 @@ def impute(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
         other_df = df.select("ref", "period", "grouping").alias("other")
-        construction_df = construction_df.alias("construction")
+        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period")
         construction_df = construction_df.join(
             other_df,
             [
@@ -745,7 +745,7 @@ def impute(
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-        ).localCheckpoint(eager=True)
+        ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
 
         df = (
             df.withColumnRenamed("output", "existing_output")
@@ -809,7 +809,7 @@ def impute(
 
     # df = prepared_df.repartition("ref", "grouping", "period")
     # .localCheckpoint(eager=True)
-    df = prepared_df.localCheckpoint(eager=True)
+    df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
 
     for stage in (
         forward_impute_from_response,
