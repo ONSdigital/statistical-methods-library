@@ -1146,20 +1146,17 @@ def impute(
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
             # .repartition("ref", "grouping", "period")
-        ).localCheckpoint(eager=True)
+        ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
         print("after the localCheckpoint eager = true construct_values.......")
         # construction_df.printSchema()
 
-        df = (
-            df.withColumnRenamed("output", "existing_output")
-            .withColumnRenamed("marker", "existing_marker")
-            .join(
+        df = df.withColumnRenamed("output", "existing_output").withColumnRenamed("marker", "existing_marker")
+        df = df.join(
                 construction_df,
                 ["ref", "period", "grouping"],
                 "leftouter",
-            )
-            .localCheckpoint(eager=True)
-        )
+            ).localCheckpoint(eager=True)
+        
         print(" construct_values....... 22")
 
         df = df.select(
