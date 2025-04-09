@@ -1151,8 +1151,9 @@ def impute(
         # construction_df.printSchema()
 
         df = df.withColumnRenamed("output", "existing_output").withColumnRenamed("marker", "existing_marker")
+        print(" construct_values....... 111")
         df = df.join(
-                construction_df,
+                broadcast(construction_df),
                 ["ref", "period", "grouping"],
                 "leftouter",
             ).localCheckpoint(eager=True)
