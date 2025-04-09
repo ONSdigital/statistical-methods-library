@@ -255,9 +255,7 @@ def mean_of_ratios(
             .localCheckpoint(eager=True)
         )
 
-        df = df.join(df_lwr_upr_bound, ["period", "grouping"]).localCheckpoint(
-            eager=True
-        )
+        df = df.join(df_lwr_upr_bound, ["period", "grouping"])
         # When calculating row numbers we put the null values last to avoid
         # them impacting the trimmed mean. This works because the upper
         # bound is calculated based on the count of non-null growth ratios.
