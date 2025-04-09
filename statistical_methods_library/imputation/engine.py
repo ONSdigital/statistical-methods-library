@@ -337,7 +337,7 @@ def impute(
             .withColumn(
                 "next_period", calculate_next_period(col("period"), periodicity)
             )
-            .localCheckpoint(eager=False)
+            .localCheckpoint(eager=True)
         )
 
         prepared_df = prepared_df.unionByName(
@@ -981,9 +981,13 @@ def impute(
             #         ],
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
-            if (null_response_df.count() > 0 ):
+            null_respose_count = null_response_df.count()
+            print(f"inside impute_helper: 22::: null_response_df::count:: {null_respose_count}")
+            if null_respose_count > 0 :
                 broadcast(null_response_df)
                 print("inside the impute_helper: 22::: null_response_df :: broadcast")
+            elif null_respose_count == 0:
+                break
             imputed_null_df = null_response_df.join(
                         other_df,
                         [
@@ -1111,8 +1115,8 @@ def impute(
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
-        other_df = df.select("ref", "period", "grouping").alias("other").localCheckpoint(eager=True)
-        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+        other_df = df.select("ref", "period", "grouping").alias("other")
+        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period")
         construction_df = construction_df.join(
             other_df,
             [
