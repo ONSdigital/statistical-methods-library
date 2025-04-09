@@ -899,23 +899,27 @@ def impute(
             # null_response_df.printSchema()
         while True:
             print("inside impute_helper: 22::: imputed_df::count")
-            #print(imputed_df.count())
-            other_df = imputed_df.selectExpr(
-                "ref AS other_ref",
-                "period AS other_period",
-                "output AS other_output",
-                "grouping AS other_grouping",
-            ).repartition("other_ref", "other_grouping","other_period").localCheckpoint(eager=True)
-            print("inside impute_helper: 22::: null_response_df::count::")
-            print(null_response_df.count())
-            print("inside impute_helper: 22::: other_df::count::")
-            print(other_df.count())
+            # print(imputed_df.count())
+            other_df = (
+                imputed_df.selectExpr(
+                    "ref AS other_ref",
+                    "period AS other_period",
+                    "output AS other_output",
+                    "grouping AS other_grouping",
+                )
+                .repartition("other_ref", "other_grouping", "other_period")
+                .localCheckpoint(eager=True)
+            )
+            # print("inside impute_helper: 22::: null_response_df::count::")
+            # print(null_response_df.count())
+            # print("inside impute_helper: 22::: other_df::count::")
+            # print(other_df.count())
             # print("inside impute_helper: 22::: skew other_df:: before")
             # check_partition_skew(other_df)
-            
+
             # refactor filterring small and large dataframes
             # Add salting to both dataframes
-        
+
             # Add salting to both dataframes
             # salt_col = "salt"
             # num_salts = 10  # Adjust this number based on your data skewness
@@ -924,7 +928,6 @@ def impute(
             # null_response_df_10 = null_response_df.withColumn(
             #     salt_col, (col("ref").cast("long") % num_salts).cast("int")
             # )
-
 
             # print("inside impute_helper: 22:: null_response_df_10")
             # check_partition_skew(null_response_df_10)
@@ -944,7 +947,7 @@ def impute(
             # # other_df.show(5)
             # print("inside impute_helper: 22:: skew other_df_1000 :: after")
             # check_partition_skew(other_df_1000)
-            
+
             # other_df_10 = other_df.withColumn(
             #     "other_salt", (col("other_ref").cast("long") % 10).cast("int")
             # )
@@ -952,12 +955,10 @@ def impute(
             # # other_df.show(5)
             # print("inside impute_helper: 22: : skew other_df :: after")
             # check_partition_skew(other_df_10)
-            
-            
+
             # Example usage:
             # check_partition_skew(your_dataframe)
-            
-        
+
             # Join the salted dataframes
             # if other_df.count() < 20000:
             #     imputed_null_df = null_response_df.join(
@@ -970,7 +971,7 @@ def impute(
             #     ],
             # ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: small")
-            # else:    
+            # else:
             #     imputed_null_df = null_response_df.join(
             #         other_df,
             #         [
@@ -982,22 +983,23 @@ def impute(
             #     ).localCheckpoint(eager=True)
             #     print("inside impute_helper: 22::: imputed_null_df :: big")
             null_respose_count = null_response_df.count()
-            print(f"inside impute_helper: 22::: null_response_df::count:: {null_respose_count}")
-            if null_respose_count > 0 :
+            if null_respose_count > 0:
                 broadcast(null_response_df)
                 print("inside the impute_helper: 22::: null_response_df :: broadcast")
             elif null_respose_count == 0:
                 break
             imputed_null_df = null_response_df.join(
-                        other_df,
-                        [
-                            col(other_period_col) == col("other_period"),
-                            col("ref") == col("other_ref"),
-                            col("grouping") == col("other_grouping")
-                            # col(salt_col) == col("other_salt"),
-                        ],
-                    ).localCheckpoint(eager=True)
-            calculation_df = imputed_null_df.drop("other_period","other_ref","other_grouping").select(
+                other_df,
+                [
+                    col(other_period_col) == col("other_period"),
+                    col("ref") == col("other_ref"),
+                    col("grouping") == col("other_grouping")
+                    # col(salt_col) == col("other_salt"),
+                ],
+            ).localCheckpoint(eager=True)
+            calculation_df = (
+                imputed_null_df.drop("other_period", "other_ref", "other_grouping")
+                .select(
                     "ref",
                     "period",
                     "grouping",
@@ -1007,7 +1009,9 @@ def impute(
                     "next_period",
                     "forward",
                     "backward",
-                ).localCheckpoint(eager=False)
+                )
+                .localCheckpoint(eager=False)
+            )
             print("inside impute_helper: 22::: calculation_df")
             cal_df_count = calculation_df.count()
             print("inside impute_helper: 22::: calculation_df :: count")
@@ -1022,7 +1026,11 @@ def impute(
             print("before the union")
             imputed_df.printSchema()
             calculation_df.printSchema()
-            imputed_df = imputed_df.union(calculation_df).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+            imputed_df = (
+                imputed_df.union(calculation_df)
+                .repartition("ref", "grouping", "period")
+                .localCheckpoint(eager=True)
+            )
             print("after the union")
             print("inside impute_helper: 22::: union :: imputed_df")
             # Remove the newly imputed rows from our filtered set.
@@ -1034,23 +1042,26 @@ def impute(
             #     ).repartition("ref", "grouping", "period").localCheckpoint(eager=True)
             # else:
             null_response_df = null_response_df.join(
-            broadcast(calculation_df).select("ref", "period", "grouping"),
-            ["ref", "period", "grouping"],
-            "leftanti",
+                broadcast(calculation_df).select("ref", "period", "grouping"),
+                ["ref", "period", "grouping"],
+                "leftanti",
             ).localCheckpoint(eager=True)
-            # print("inside impute_helper: 22::: leftanti join :: null_response_df : count")
-            # print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        #imputed_df_tmp, join_condition = rename_columns_and_generate_join_condition(imputed_df.select("ref", "period", "grouping", "output", "marker"), ["ref", "period", "grouping"], "_imp_helper")
         print("inside impute_helper: 3333::: final df :: before leftouter join")
         # df.printSchema()
-        df = df.drop("output", "marker").join(
-            broadcast(imputed_df.select("ref", "period", "grouping", "output", "marker")),
-            ["ref", "period", "grouping"],
-            "leftouter",
-        ).localCheckpoint(eager=True)
+        df = (
+            df.drop("output", "marker")
+            .join(
+                broadcast(
+                    imputed_df.select("ref", "period", "grouping", "output", "marker")
+                ),
+                ["ref", "period", "grouping"],
+                "leftouter",
+            )
+            .localCheckpoint(eager=True)
+        )
         print("inside impute_helper: 3333::: final df :: leftouter join")
         # print("inside impute_helper: 44444:::  null count")
         # df.filter(col("output").isNull()).count()
@@ -1066,11 +1077,13 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-        print("forward_impute_from_response.......")   
-        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE.value, True)
+        print("forward_impute_from_response.......")
+        return impute_helper(
+            df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE.value, True
+        )
 
     def backward_impute(df: DataFrame) -> DataFrame:
-        print("backward_impute.......")    
+        print("backward_impute.......")
         return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE.value, False)
 
     # --- Forward impute from manual construction ---
@@ -1081,17 +1094,18 @@ def impute(
         null_response_df = None
         if back_data_df:
             # Add the MC and FIMC from the back data
-            df = df.unionByName(
-                back_data_period_df.filter(
-                    (col("marker") == lit(Marker.MANUAL_CONSTRUCTION.value))
-                    | (
-                        col("marker")
-                        == lit(Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
-                    )
-                ),
-                allowMissingColumns=True,
+            back_ms_fimc_df = back_data_period_df.filter(
+                (col("marker") == lit(Marker.MANUAL_CONSTRUCTION.value))
+                | (
+                    col("marker")
+                    == lit(Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value)
+                )
             )
-        print("forward_impute_from_manual_construction.......")    
+            df = df.unionByName(
+                back_ms_fimc_df,
+                allowMissingColumns=True,
+            ).localCheckpoint(eager=True)
+        print("forward_impute_from_manual_construction....... after union")
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION.value, True
         )
@@ -1099,24 +1113,23 @@ def impute(
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
         if back_data_df:
-            df = df.unionByName(
-                back_data_period_df.filter(
-                    (
-                        (col("marker") == lit(Marker.CONSTRUCTED.value))
-                        | (
-                            col("marker")
-                            == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
-                        )
-                    )
-                ),
-                allowMissingColumns=True,
+            back_c_fic_df = back_data_period_df.filter(
+                (col("marker") == lit(Marker.CONSTRUCTED.value))
+                | (col("marker") == lit(Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value))
             )
+            df = df.unionByName(
+                back_c_fic_df,
+                allowMissingColumns=True,
+            ).localCheckpoint(eager=True)
+        print("construct_values. after union..")
 
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
         other_df = df.select("ref", "period", "grouping").alias("other")
-        construction_df = construction_df.alias("construction").repartition("ref", "grouping", "period")
+        construction_df = construction_df.alias("construction").repartition(
+            "ref", "grouping", "period"
+        )
         construction_df = construction_df.join(
             other_df,
             [
@@ -1132,11 +1145,11 @@ def impute(
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-        #.repartition("ref", "grouping", "period")
+            # .repartition("ref", "grouping", "period")
         ).localCheckpoint(eager=True)
-        print("after the localCheckpoint eager = true construct_values.......")    
+        print("after the localCheckpoint eager = true construct_values.......")
         # construction_df.printSchema()
-        
+
         df = (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
@@ -1145,17 +1158,19 @@ def impute(
                 ["ref", "period", "grouping"],
                 "leftouter",
             )
-            .select(
-                "*",
-                when(col("existing_output").isNull(), col("constructed_output"))
-                .otherwise(col("existing_output"))
-                .alias("output"),
-                when(col("existing_marker").isNull(), col("constructed_marker"))
-                .otherwise(col("existing_marker"))
-                .alias("marker"),
-            )
-            .drop("existing_output", "constructed_output", "constructed_marker")
-        ).localCheckpoint(eager=True)
+            .localCheckpoint(eager=True)
+        )
+        print(" construct_values....... 22")
+
+        df = df.select(
+            "*",
+            when(col("existing_output").isNull(), col("constructed_output"))
+            .otherwise(col("existing_output"))
+            .alias("output"),
+            when(col("existing_marker").isNull(), col("constructed_marker"))
+            .otherwise(col("existing_marker"))
+            .alias("marker"),
+        ).drop("existing_output", "constructed_output", "constructed_marker")
         return df
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
@@ -1165,7 +1180,7 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-        print("forward_impute_from_construction.......")    
+        print("forward_impute_from_construction.......")
         # df.printSchema()
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value, True
@@ -1201,7 +1216,7 @@ def impute(
     # prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
     # TODO check
     # df = prepared_df.localCheckpoint(eager=True)
-    
+
     # print("before the different stages")
     # df.printSchema()
     # df.show(3)
@@ -1220,8 +1235,7 @@ def impute(
     #         # df.show(3)
     #     df = stage(df).localCheckpoint(eager=False)
 
-
-    def check_all_imputed(df: DataFrame,stage: str) -> bool:
+    def check_all_imputed(df: DataFrame, stage: str) -> bool:
         """
         Check if all outputs are imputed.
 
@@ -1240,7 +1254,7 @@ def impute(
                 # df.show(10)
                 return True
         return False
-    
+
     # df = prepared_df
     # for stage in (
     #     forward_impute_from_response,
@@ -1261,7 +1275,9 @@ def impute(
     #         ):
     #             break
 
-    df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(eager=True)
+    df = prepared_df.repartition("ref", "grouping", "period").localCheckpoint(
+        eager=True
+    )
 
     print("before the different stages")
     for stage in (
@@ -1278,69 +1294,19 @@ def impute(
             # df.printSchema()
             # df.show(3)
         df = stage(df).localCheckpoint(eager=True)
-        
+
         if df.filter(col("output").isNull()).count() == 0:
             print("There isn't any null output colum in the df")
             if (not manual_construction_col) or (
                 manual_construction_col and stage == construct_values
             ):
                 break
-        print("after each stages.......")    
+        print("after each stages.......")
         # df.printSchema()
     # df.show(5)
     print("after all stages")
     # df.printSchema()
     df.show(10)
-    # df.filter(
-    #         (col("marker") == Marker.MANUAL_CONSTRUCTION.value)
-    #     ).show(10)
-    # df.filter(
-    #         (col("marker") == Marker.CONSTRUCTED.value)
-    #     ).show(10)
-    # df.filter(
-    #         (col("marker") == Marker.FORWARD_IMPUTE_FROM_RESPONSE.value)
-    #     ).show(10)
-    # df.filter(
-    #         (col("marker") == Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION.value)
-    #     ).show(10)
-    # df.filter(
-    #         (col("marker") == Marker.BACKWARD_IMPUTE.value)
-    #     ).show(10)
-    # null_output_col = df.filter(
-    #     col("output").isNull()
-    # ).count()
-    # print(f"final df with output column is null{null_output_col}")
-    # df.filter(
-    #     col("output").isNull()
-    # ).show(10)
-    # try :: Individual calls to each stage function - improve a bit but not helped to resolve the issue
-    # df = forward_impute_from_response(df).localCheckpoint(eager=True)
-    # print("after forward_impute_from_response stage")
-    # df.printSchema()
-    # if not check_all_imputed(df,"forward_impute_from_response"):
-    #     df = backward_impute(df).localCheckpoint(eager=True)
-    #     print("after backward_impute stage")
-    #     df.printSchema()
-    #     if not check_all_imputed(df,"backward_impute"):
-    #         if manual_construction_col:
-    #             # Add the mc data
-    #             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
-    #             print("manual_construction_df")
-    #             df.printSchema()
-
-    #         df = forward_impute_from_manual_construction(df).localCheckpoint(eager=True)
-    #         print("after forward_impute_from_manual_construction stage")
-    #         df.printSchema()
-    #         if not check_all_imputed(df,"forward_impute_from_manual_construction"):
-    #             df = construct_values(df).localCheckpoint(eager=True)
-    #             print("after construct_values stage")
-    #             df.printSchema()
-    #             if not check_all_imputed(df,"construct_values"):
-    #                 df = forward_impute_from_construction(df).localCheckpoint(eager=True)
-    #                 print("after forward_impute_from_construction stage")
-    #                 df.printSchema()
-
-
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
