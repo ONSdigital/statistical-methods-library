@@ -41,6 +41,7 @@ from pyspark.sql.functions import lit, when
 @dataclass
 class RatioCalculationResult:
     "Type for returns from ratio calculators"
+
     data: DataFrame
     "The data being returned"
 
@@ -259,6 +260,10 @@ def mean_of_ratios(
         # When calculating row numbers we put the null values last to avoid
         # them impacting the trimmed mean. This works because the upper
         # bound is calculated based on the count of non-null growth ratios.
+        # Secondary ordering by reference. This does not impact the calculated
+        # forward/backward links, since it will only apply to contributors with equal
+        # growth ratios, but keeps the selection of rows for trimming deterministic.
+
         df = (
             df.withColumn(
                 "num_forward",
@@ -266,7 +271,7 @@ def mean_of_ratios(
                     """
                     row_number() OVER (
                         PARTITION BY period, grouping
-                        ORDER BY growth_forward ASC NULLS LAST
+                        ORDER BY growth_forward ASC NULLS LAST, ref ASC
                     )
                 """
                 ),
@@ -277,7 +282,7 @@ def mean_of_ratios(
                     """
                     row_number() OVER (
                         PARTITION BY period, grouping
-                        ORDER BY growth_backward ASC NULLS LAST
+                        ORDER BY growth_backward ASC NULLS LAST, ref ASC
                     )
                 """
                 ),
