@@ -615,7 +615,7 @@ def impute(
                 [
                     col(other_period_col) == col("other_period"),
                     col("ref") == col("other_ref"),
-                    col("grouping") == col("other_grouping")
+                    col("grouping") == col("other_grouping"),
                 ],
             ).localCheckpoint(eager=True)
             calculation_df = (
@@ -643,7 +643,8 @@ def impute(
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
-            # calculation_df gets smaller in each iteration. Broadcasting it helps optimize the join.
+            # calculation_df gets smaller in each iteration,
+            # so broadcasting it helps optimize the join.
             null_response_df = null_response_df.join(
                 broadcast(calculation_df).select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
@@ -652,7 +653,8 @@ def impute(
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        # The selected columns in imputed_df are small enough to be broadcasted, which optimize the join.
+        # The selected columns in imputed_df are small enough to be broadcasted,
+        # which optimize the join.
         df = (
             df.drop("output", "marker")
             .join(
