@@ -8,51 +8,12 @@ permissions:
   contents: read
 
 jobs:
-  python37-test:
-    runs-on: ubuntu-22.04
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: ['3.7']
-        java-version: ['8']
-      fail-fast: false 
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'adopt'
-          java-version: ${{ matrix.java-version }}
-      - name: Run image ${{matrix.python-version}}
-        uses: abatilo/actions-poetry@v2.4.0
-        with:
-          poetry-version: 1.5.1
-      - name: Test ${{matrix.python-version}}
-        run: |-
-          set -e
-          poetry install
-          poetry run pytest --tap-stream --cov-report=lcov:lcov-${{matrix.python-version}}.info --junitxml=junit-${{matrix.python-version}}.xml
-      - name: Upload Test report ${{matrix.python-version}}
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: test-results-${{matrix.python-version}}
-          path: junit-${{matrix.python-version}}.xml
-          reporter: java-junit
-      - name: upload-coverage-report-${{matrix.python-version}}
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-${{matrix.python-version}}-lcov
-          path: lcov-${{matrix.python-version}}.info
   test:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10','3.11']
         java-version: ['8']
       fail-fast: false 
     steps:
@@ -87,11 +48,11 @@ jobs:
           name: coverage-report-${{matrix.python-version}}-lcov
           path: lcov-${{matrix.python-version}}.info
   flake8:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: ['3.9', '3.10','3.11']
       fail-fast: false 
     steps:
       - uses: actions/checkout@v4
@@ -108,11 +69,11 @@ jobs:
           poetry install
           poetry run flake8 statistical_methods_library tests
   black:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: ['3.9', '3.10','3.11']
       fail-fast: false 
     steps:
       - uses: actions/checkout@v4
