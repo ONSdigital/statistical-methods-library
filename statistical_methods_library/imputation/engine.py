@@ -344,7 +344,12 @@ def impute(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
-
+        print("back data is exists.......")
+        back_data_df.printSchema()
+        back_data_df.show(5)
+    print("before calculate ratios........")
+    prepared_df.printSchema()
+    prepared_df.show(10)
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df

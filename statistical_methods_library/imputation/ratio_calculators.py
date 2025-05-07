@@ -321,7 +321,10 @@ def mean_of_ratios(
         df = df.withColumn("trim_inclusion_forward", lit(True)).withColumn(
             "trim_inclusion_backward", lit(True)
         )
-
+    print("**************")
+    print("before mean agg")
+    df.printSchema
+    df.show(50)
     ratio_df = (
         df.groupBy("period", "grouping")
         .agg(
@@ -349,7 +352,9 @@ def mean_of_ratios(
         .withColumn("default_forward", expr("forward IS NULL"))
         .withColumn("default_backward", expr("backward IS NULL"))
     )
-
+    print("after mean agg")
+    ratio_df.show(50)
+    print("----------------")
     growth_additional_outputs = {
         "growth_forward": growth_forward_col,
         "growth_backward": growth_backward_col,
