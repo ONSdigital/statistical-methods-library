@@ -442,6 +442,9 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         fill_values = {}
+        print("before calculate ratios........222")
+        ratio_calculation_df.printSchema()
+        ratio_calculation_df.show(10)
         for result in sum(
             (
                 calculator(df=ratio_calculation_df, **ratio_calculator_params)

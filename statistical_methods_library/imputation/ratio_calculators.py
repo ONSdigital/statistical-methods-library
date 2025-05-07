@@ -177,7 +177,9 @@ def mean_of_ratios(
                 END
             END AS growth_backward""",
     )
-
+    print("after the growth calculation")
+    df.printSchema()
+    df.show(5)
     if lower_trim is not None:
 
         def lower_bound(c):
@@ -255,7 +257,9 @@ def mean_of_ratios(
             )
             .localCheckpoint(eager=True)
         )
-
+        print("after the lower & upper bound calculation:: df_lwr_upr_bound")
+        df_lwr_upr_bound.printSchema()
+        df_lwr_upr_bound.show(5)
         df = df.join(df_lwr_upr_bound, ["period", "grouping"])
         # When calculating row numbers we put the null values last to avoid
         # them impacting the trimmed mean. This works because the upper
