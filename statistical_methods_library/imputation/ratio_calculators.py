@@ -118,7 +118,9 @@ def mean_of_ratios(
     The `lower_trim` and `upper_trim` are approximate percentages as trimming
     uses exclusive bounds when calculating which rows to remove.
     """
-
+    print("before the growth calculation")
+    df.printSchema()
+    df.show(5)
     if lower_trim is not None:
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
