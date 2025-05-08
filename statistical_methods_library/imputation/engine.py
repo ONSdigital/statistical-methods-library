@@ -560,7 +560,8 @@ def impute(
             )
 
     calculate_ratios()
-
+    print("inside engine.py after calculate_ratios")
+    prepared_df.printSchema()
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
