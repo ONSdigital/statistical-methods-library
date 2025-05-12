@@ -356,8 +356,8 @@ def mean_of_ratios(
             )) AS count_backward"""
             ),
         )
-        .withColumn("forward").cast(DecimalType(38, 6))
-        .withColumn("backward").cast(DecimalType(38, 6))
+        .withColumn("forward", col("forward").cast(DecimalType(38, 6)))
+        .withColumn("backward", col("backward").cast(DecimalType(38, 6)))
         .withColumn("default_forward", expr("forward IS NULL"))
         .withColumn("default_backward", expr("backward IS NULL"))
     )
