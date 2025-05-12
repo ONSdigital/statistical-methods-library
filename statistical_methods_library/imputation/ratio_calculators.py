@@ -36,6 +36,7 @@ from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
 from pyspark.sql.functions import floor as sql_floor
 from pyspark.sql.functions import lit, when
+from pyspark.sql.types import DecimalType
 
 
 @dataclass
@@ -338,12 +339,12 @@ def mean_of_ratios(
                 """mean(
                 CASE WHEN trim_inclusion_forward THEN growth_forward END
             ) AS forward"""
-            ),
+            ).cast(DecimalType(38, 6)),
             expr(
                 """mean(
                 CASE WHEN trim_inclusion_backward THEN growth_backward END
             ) AS backward"""
-            ),
+            ).cast(DecimalType(38, 6)),
             expr(
                 """sum(cast(
                 trim_inclusion_forward AND growth_forward IS NOT NULL AS integer
