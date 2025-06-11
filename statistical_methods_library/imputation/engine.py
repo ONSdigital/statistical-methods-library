@@ -741,7 +741,6 @@ def impute(
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-            # .repartition("ref", "grouping", "period")
         ).localCheckpoint(eager=True)
 
         df = df.withColumnRenamed("output", "existing_output").withColumnRenamed(
