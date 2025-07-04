@@ -119,9 +119,6 @@ def mean_of_ratios(
     The `lower_trim` and `upper_trim` are approximate percentages as trimming
     uses exclusive bounds when calculating which rows to remove.
     """
-    print("before the growth calculation")
-    df.printSchema()
-    df.show(5)
     if lower_trim is not None:
         lower_trim = Decimal(lower_trim)
         upper_trim = Decimal(upper_trim)
@@ -180,9 +177,6 @@ def mean_of_ratios(
                 END
             END AS growth_backward""",
     )
-    print("after the growth calculation")
-    df.printSchema()
-    df.show(5)
     if lower_trim is not None:
 
         def lower_bound(c):
@@ -260,9 +254,6 @@ def mean_of_ratios(
             )
             .localCheckpoint(eager=True)
         )
-        print("after the lower & upper bound calculation:: df_lwr_upr_bound")
-        df_lwr_upr_bound.printSchema()
-        df_lwr_upr_bound.show(5)
         df = df.join(df_lwr_upr_bound, ["period", "grouping"])
         # When calculating row numbers we put the null values last to avoid
         # them impacting the trimmed mean. This works because the upper
@@ -328,10 +319,6 @@ def mean_of_ratios(
         df = df.withColumn("trim_inclusion_forward", lit(True)).withColumn(
             "trim_inclusion_backward", lit(True)
         )
-    print("**************")
-    print("before mean agg")
-    df.printSchema
-    df.show(50)
     ratio_df = (
         df.groupBy("period", "grouping")
         .agg(
@@ -356,14 +343,9 @@ def mean_of_ratios(
             )) AS count_backward"""
             ),
         )
-        .withColumn("forward", col("forward").cast(DecimalType(38, 6)))
-        .withColumn("backward", col("backward").cast(DecimalType(38, 6)))
         .withColumn("default_forward", expr("forward IS NULL"))
         .withColumn("default_backward", expr("backward IS NULL"))
     )
-    print("after mean agg")
-    ratio_df.show(50)
-    print("----------------")
     growth_additional_outputs = {
         "growth_forward": growth_forward_col,
         "growth_backward": growth_backward_col,

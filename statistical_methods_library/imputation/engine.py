@@ -344,12 +344,6 @@ def impute(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
-        print("back data is exists.......")
-        back_data_df.printSchema()
-        back_data_df.show(5)
-    print("before calculate ratios........")
-    prepared_df.printSchema()
-    prepared_df.show(10)
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
@@ -442,9 +436,6 @@ def impute(
         # Join the grouping ratios onto the input such that each contributor has
         # a set of ratios.
         fill_values = {}
-        print("before calculate ratios........222")
-        ratio_calculation_df.printSchema()
-        ratio_calculation_df.show(10)
         for result in sum(
             (
                 calculator(df=ratio_calculation_df, **ratio_calculator_params)
@@ -560,8 +551,6 @@ def impute(
             )
 
     calculate_ratios()
-    print("inside engine.py after calculate_ratios")
-    prepared_df.printSchema()
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
@@ -762,7 +751,6 @@ def impute(
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-            # .repartition("ref", "grouping", "period")
         ).localCheckpoint(eager=True)
 
         df = df.withColumnRenamed("output", "existing_output").withColumnRenamed(
