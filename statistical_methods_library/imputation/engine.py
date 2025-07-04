@@ -594,7 +594,7 @@ def impute(
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
             # ref_df is small enough to be broadcasted, which optimize the join.
-            ref_df = broadcast(ref_df)
+            # ref_df = broadcast(ref_df)
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
@@ -650,7 +650,8 @@ def impute(
             # calculation_df gets smaller in each iteration,
             # so broadcasting it helps optimize the join.
             null_response_df = null_response_df.join(
-                broadcast(calculation_df).select("ref", "period", "grouping"),
+                # broadcast(calculation_df).select("ref", "period", "grouping"),
+                calculation_df.select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
             ).localCheckpoint(eager=True)
@@ -664,9 +665,10 @@ def impute(
         df = (
             df.drop("output", "marker")
             .join(
-                broadcast(
-                    imputed_df.select("ref", "period", "grouping", "output", "marker")
-                ),
+                # broadcast(
+                #     imputed_df.select("ref", "period", "grouping", "output", "marker")
+                # ),
+                imputed_df.select("ref", "period", "grouping", "output", "marker"),
                 ["ref", "period", "grouping"],
                 "leftouter",
             )
