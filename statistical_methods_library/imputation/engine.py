@@ -570,6 +570,7 @@ def impute(
     def impute_helper(
         df: DataFrame, link_col: str, marker: Marker, direction: bool
     ) -> DataFrame:
+        print("inside engine.py ********* impute_helper *********")
         nonlocal imputed_df
         nonlocal null_response_df
         if direction:
@@ -611,6 +612,7 @@ def impute(
                 .join(ref_df, ["ref", "grouping"])
                 .localCheckpoint(eager=True)
             )
+        print("inside engine.py before the while loop")
         while True:
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref",
@@ -643,6 +645,10 @@ def impute(
                 .localCheckpoint(eager=False)
             )
             cal_df_count = calculation_df.count()
+            print("inside engine.py <<<<< calculation_df count >>>>>>")
+            print(cal_df_count)
+            print("inside engine.py <<<<<  null_response_df count before join >>>>>>")
+            print(null_response_df.count())
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if cal_df_count == 0:
@@ -659,6 +665,8 @@ def impute(
                 ["ref", "period", "grouping"],
                 "leftanti",
             ).localCheckpoint(eager=True)
+            print("inside engine.py <<<<<  null_response_df count after join >>>>>>")
+            print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
@@ -675,7 +683,8 @@ def impute(
             )
             .localCheckpoint(eager=True)
         )
-
+        print("inside engine.py ********* impute_helper end df count*********")
+        print(df.count())
         return df
 
     # --- Imputation functions ---
@@ -688,6 +697,7 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
+        print("inside engine.py ********* forward_impute_from_response *********")
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
@@ -711,7 +721,7 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-
+        print("inside engine.py ********* forward_impute_from_manual_construction *********")
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
         )
@@ -731,7 +741,7 @@ def impute(
                 ),
                 allowMissingColumns=True,
             ).localCheckpoint(eager=True)
-
+        print("inside engine.py ********* construct_values started *********")
         construction_df = df.filter(col("output").isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
@@ -773,6 +783,7 @@ def impute(
             .otherwise(col("existing_marker"))
             .alias("marker"),
         ).drop("existing_output", "constructed_output", "constructed_marker")
+        print("inside engine.py ********* construct_values completed *********")
         return df
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
@@ -782,6 +793,7 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
+        print("inside engine.py ********* forward_impute_from_construction *********")
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
