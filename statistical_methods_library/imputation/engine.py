@@ -688,22 +688,28 @@ def impute(
         # output column with our one. Same goes for the marker column.
         # The selected columns in imputed_df are small enough to be broadcasted,
         # which optimize the join.
-        df = (
-            df.drop("output", "marker")
-            .join(
-                # broadcast(
-                #     imputed_df.select("ref", "period", "grouping", "output", "marker")
-                # ),
-                imputed_df.select("ref", "period", "grouping", "output", "marker"),
-                ["ref", "period", "grouping"],
-                "leftouter",
-            )
-            .localCheckpoint(eager=True)
+        # TODO uncomment start
+        # df = (
+        #     df.drop("output", "marker")
+        #     .join(
+        #         # broadcast(
+        #         #     imputed_df.select("ref", "period", "grouping", "output", "marker")
+        #         # ),
+        #         imputed_df.select("ref", "period", "grouping", "output", "marker"),
+        #         ["ref", "period", "grouping"],
+        #         "leftouter",
+        #     )
+        #     .localCheckpoint(eager=True)
+        # )
+        # print("inside engine.py ********* impute_helper end df count*********")
+        # print(df.count())
+        # return df
+        # TODO uncomment end
+        return df.drop("output", "marker").join(
+            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            ["ref", "period", "grouping"],
+            "leftouter",
         )
-        print("inside engine.py ********* impute_helper end df count*********")
-        print(df.count())
-        return df
-
     # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
         if back_data_df:
@@ -856,6 +862,7 @@ def impute(
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
         df = stage(df).localCheckpoint(eager=True)
+        print("inside engine.py ********* stage end *********")
 
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
