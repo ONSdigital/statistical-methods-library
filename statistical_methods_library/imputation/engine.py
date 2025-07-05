@@ -337,13 +337,14 @@ def impute(
             .withColumn(
                 "next_period", calculate_next_period(col("period"), periodicity)
             )
-            .localCheckpoint(eager=True)
+            .localCheckpoint(eager=False)
         )
 
         prepared_df = prepared_df.unionByName(
             back_data_period_df.filter(col("marker") == lit(Marker.RESPONSE.value)),
             allowMissingColumns=True,
         )
+
     def calculate_ratios():
         # This allows us to return early if we have nothing to do
         nonlocal prepared_df
@@ -850,8 +851,7 @@ def impute(
             | (~(col("marker") == Marker.MANUAL_CONSTRUCTION.value))
         )
 
-    df = prepared_df.localCheckpoint(eager=True)
-
+    df = prepared_df
     for stage in (
         forward_impute_from_response,
         backward_impute,
