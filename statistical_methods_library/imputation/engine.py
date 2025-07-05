@@ -751,6 +751,7 @@ def impute(
 
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
+        print("inside engine.py ********* construct_values started 11 *********")
         if back_data_df:
             df = df.unionByName(
                 back_data_period_df.filter(
@@ -763,9 +764,9 @@ def impute(
                     )
                 ),
                 allowMissingColumns=True,
-            ).localCheckpoint(eager=True)
-        print("inside engine.py ********* construct_values started *********")
-        construction_df = df.filter(col("output").isNull()).select(
+            )
+        print("inside engine.py ********* construct_values started 22 *********")
+        construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
         other_df = df.select("ref", "period", "grouping").alias("other")
@@ -786,26 +787,29 @@ def impute(
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         ).localCheckpoint(eager=True)
+        print("inside engine.py ********* construct_values started 33 *********")
 
-        df = df.withColumnRenamed("output", "existing_output").withColumnRenamed(
-            "marker", "existing_marker"
-        )
-        df = df.join(
-            construction_df,
-            ["ref", "period", "grouping"],
-            "leftouter",
+        df = (
+            df.withColumnRenamed("output", "existing_output")
+            .withColumnRenamed("marker", "existing_marker")
+            .join(
+                construction_df,
+                ["ref", "period", "grouping"],
+                "leftouter",
+            )
+            .select(
+                "*",
+                when(col("existing_output").isNull(), col("constructed_output"))
+                .otherwise(col("existing_output"))
+                .alias("output"),
+                when(col("existing_marker").isNull(), col("constructed_marker"))
+                .otherwise(col("existing_marker"))
+                .alias("marker"),
+            )
+            .drop("existing_output", "constructed_output", "constructed_marker")
         ).localCheckpoint(eager=True)
+        print("inside engine.py ********* construct_values end *********")
 
-        df = df.select(
-            "*",
-            when(col("existing_output").isNull(), col("constructed_output"))
-            .otherwise(col("existing_output"))
-            .alias("output"),
-            when(col("existing_marker").isNull(), col("constructed_marker"))
-            .otherwise(col("existing_marker"))
-            .alias("marker"),
-        ).drop("existing_output", "constructed_output", "constructed_marker")
-        print("inside engine.py ********* construct_values completed *********")
         return df
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
