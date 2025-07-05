@@ -608,18 +608,44 @@ def impute(
                 "period AS other_period",
                 "output AS other_output",
                 "grouping AS other_grouping",
-            ).localCheckpoint(eager=True)
-
-            imputed_null_df = null_response_df.join(
-                other_df,
-                [
-                    col(other_period_col) == col("other_period"),
-                    col("ref") == col("other_ref"),
-                    col("grouping") == col("other_grouping"),
-                ],
-            ).localCheckpoint(eager=True)
+            )
+            # TODO uncomment  start
+            # .localCheckpoint(eager=True)
+            
+            # imputed_null_df = null_response_df.join(
+            #     other_df,
+            #     [
+            #         col(other_period_col) == col("other_period"),
+            #         col("ref") == col("other_ref"),
+            #         col("grouping") == col("other_grouping"),
+            #     ],
+            # ).localCheckpoint(eager=True)
+           
+            # calculation_df = (
+            #     imputed_null_df.drop("other_period", "other_ref", "other_grouping")
+            #     .select(
+            #         "ref",
+            #         "period",
+            #         "grouping",
+            #         (col(link_col) * col("other_output")).alias("output"),
+            #         lit(marker.value).alias("marker"),
+            #         "previous_period",
+            #         "next_period",
+            #         "forward",
+            #         "backward",
+            #     )
+            #     .localCheckpoint(eager=False)
+            # )
+            # TODO uncomment end
             calculation_df = (
-                imputed_null_df.drop("other_period", "other_ref", "other_grouping")
+                null_response_df.join(
+                    other_df,
+                    [
+                        col(other_period_col) == col("other_period"),
+                        col("ref") == col("other_ref"),
+                        col("grouping") == col("other_grouping"),
+                    ],
+                )
                 .select(
                     "ref",
                     "period",
@@ -636,8 +662,8 @@ def impute(
             cal_df_count = calculation_df.count()
             print("inside engine.py <<<<< calculation_df count >>>>>>")
             print(cal_df_count)
-            print("inside engine.py <<<<<  null_response_df count before join >>>>>>")
-            print(null_response_df.count())
+            # print("inside engine.py <<<<<  null_response_df count before join >>>>>>")
+            # print(null_response_df.count())
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if cal_df_count == 0:
@@ -656,7 +682,7 @@ def impute(
                 "leftanti",
             ).localCheckpoint(eager=True)
             print("inside engine.py <<<<<  null_response_df count after join >>>>>>")
-            print(null_response_df.count())
+            # print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
