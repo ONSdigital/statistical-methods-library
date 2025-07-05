@@ -12,7 +12,7 @@ from functools import reduce
 from typing import Optional, Union
 
 from pyspark.sql import Column, DataFrame
-from pyspark.sql.functions import col, expr, first, lit, when, broadcast
+from pyspark.sql.functions import col, expr, first, lit, when
 from pyspark.sql.types import DecimalType, StringType
 
 from statistical_methods_library.utilities.periods import (
@@ -658,14 +658,9 @@ def impute(
                 )
                 .localCheckpoint(eager=False)
             )
-            cal_df_count = calculation_df.count()
-            print("inside engine.py <<<<< calculation_df count >>>>>>")
-            print(cal_df_count)
-            # print("inside engine.py <<<<<  null_response_df count before join >>>>>>")
-            # print(null_response_df.count())
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
-            if cal_df_count == 0:
+            if calculation_df.count() == 0:
                 break
 
             # Store this set of imputed values in our main set for the next
@@ -778,17 +773,16 @@ def impute(
                 col("construction.grouping") == col("other.grouping"),
             ],
             "leftanti",
-        ).localCheckpoint(eager=True)
-        construction_df = construction_df.select(
+        ).select(
             col("construction.ref").alias("ref"),
             col("construction.period").alias("period"),
             col("construction.grouping").alias("grouping"),
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
-        ).localCheckpoint(eager=True)
+        )
         print("inside engine.py ********* construct_values started 33 *********")
 
-        df = (
+        return (
             df.withColumnRenamed("output", "existing_output")
             .withColumnRenamed("marker", "existing_marker")
             .join(
@@ -806,10 +800,7 @@ def impute(
                 .alias("marker"),
             )
             .drop("existing_output", "constructed_output", "constructed_marker")
-        ).localCheckpoint(eager=True)
-        print("inside engine.py ********* construct_values end *********")
-
-        return df
+        )
 
     def forward_impute_from_construction(df: DataFrame) -> DataFrame:
         # We need to recalculate our imputed and null response data frames to
@@ -863,8 +854,7 @@ def impute(
             # Add the mc data
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
-        df = stage(df).localCheckpoint(eager=True)
-        print("inside engine.py ********* stage end *********")
+        df = stage(df).localCheckpoint(eager=False)
 
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
