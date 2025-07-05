@@ -446,7 +446,7 @@ def impute(
             fill_values.update(result.fill_values)
             output_col_mapping.update(result.additional_outputs)
 
-        prepared_df = prepared_df.fillna(fill_values).localCheckpoint(eager=True)
+        prepared_df = prepared_df.fillna(fill_values)
 
         if link_filter:
             prepared_df = prepared_df.join(
