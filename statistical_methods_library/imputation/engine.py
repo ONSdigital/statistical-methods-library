@@ -550,6 +550,7 @@ def impute(
             )
 
     calculate_ratios()
+
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
@@ -558,7 +559,6 @@ def impute(
     def impute_helper(
         df: DataFrame, link_col: str, marker: Marker, direction: bool
     ) -> DataFrame:
-        print("inside engine.py ********* impute_helper *********")
         nonlocal imputed_df
         nonlocal null_response_df
         if direction:
@@ -592,15 +592,13 @@ def impute(
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
             ref_df = imputed_df.select("ref", "grouping").distinct()
-            # ref_df is small enough to be broadcasted, which optimize the join.
-            # ref_df = broadcast(ref_df)
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
                 .join(ref_df, ["ref", "grouping"])
                 .localCheckpoint(eager=True)
             )
-        print("inside engine.py before the while loop")
+
         while True:
             other_df = imputed_df.selectExpr(
                 "ref AS other_ref",
@@ -608,34 +606,6 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             )
-            # TODO uncomment  start
-            # .localCheckpoint(eager=True)
-            
-            # imputed_null_df = null_response_df.join(
-            #     other_df,
-            #     [
-            #         col(other_period_col) == col("other_period"),
-            #         col("ref") == col("other_ref"),
-            #         col("grouping") == col("other_grouping"),
-            #     ],
-            # ).localCheckpoint(eager=True)
-           
-            # calculation_df = (
-            #     imputed_null_df.drop("other_period", "other_ref", "other_grouping")
-            #     .select(
-            #         "ref",
-            #         "period",
-            #         "grouping",
-            #         (col(link_col) * col("other_output")).alias("output"),
-            #         lit(marker.value).alias("marker"),
-            #         "previous_period",
-            #         "next_period",
-            #         "forward",
-            #         "backward",
-            #     )
-            #     .localCheckpoint(eager=False)
-            # )
-            # TODO uncomment end
             calculation_df = (
                 null_response_df.join(
                     other_df,
@@ -667,43 +637,20 @@ def impute(
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
             imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
             # Remove the newly imputed rows from our filtered set.
-            # calculation_df gets smaller in each iteration,
-            # so broadcasting it helps optimize the join.
             null_response_df = null_response_df.join(
-                # broadcast(calculation_df).select("ref", "period", "grouping"),
                 calculation_df.select("ref", "period", "grouping"),
                 ["ref", "period", "grouping"],
                 "leftanti",
             ).localCheckpoint(eager=True)
-            print("inside engine.py <<<<<  null_response_df count after join >>>>>>")
-            # print(null_response_df.count())
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
-        # The selected columns in imputed_df are small enough to be broadcasted,
-        # which optimize the join.
-        # TODO uncomment start
-        # df = (
-        #     df.drop("output", "marker")
-        #     .join(
-        #         # broadcast(
-        #         #     imputed_df.select("ref", "period", "grouping", "output", "marker")
-        #         # ),
-        #         imputed_df.select("ref", "period", "grouping", "output", "marker"),
-        #         ["ref", "period", "grouping"],
-        #         "leftouter",
-        #     )
-        #     .localCheckpoint(eager=True)
-        # )
-        # print("inside engine.py ********* impute_helper end df count*********")
-        # print(df.count())
-        # return df
-        # TODO uncomment end
         return df.drop("output", "marker").join(
             imputed_df.select("ref", "period", "grouping", "output", "marker"),
             ["ref", "period", "grouping"],
             "leftouter",
         )
+
     # --- Imputation functions ---
     def forward_impute_from_response(df: DataFrame) -> DataFrame:
         if back_data_df:
@@ -714,7 +661,6 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-        print("inside engine.py ********* forward_impute_from_response *********")
         return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
     def backward_impute(df: DataFrame) -> DataFrame:
@@ -738,14 +684,13 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-        print("inside engine.py ********* forward_impute_from_manual_construction *********")
+
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
         )
 
     # --- Construction functions ---
     def construct_values(df: DataFrame) -> DataFrame:
-        print("inside engine.py ********* construct_values started 11 *********")
         if back_data_df:
             df = df.unionByName(
                 back_data_period_df.filter(
@@ -759,7 +704,7 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-        print("inside engine.py ********* construct_values started 22 *********")
+
         construction_df = df.filter(df.output.isNull()).select(
             "ref", "period", "grouping", "aux", "construction", "previous_period"
         )
@@ -780,7 +725,6 @@ def impute(
             (col("aux") * col("construction")).alias("constructed_output"),
             lit(Marker.CONSTRUCTED.value).alias("constructed_marker"),
         )
-        print("inside engine.py ********* construct_values started 33 *********")
 
         return (
             df.withColumnRenamed("output", "existing_output")
@@ -809,7 +753,6 @@ def impute(
         nonlocal null_response_df
         imputed_df = None
         null_response_df = None
-        print("inside engine.py ********* forward_impute_from_construction *********")
         return impute_helper(
             df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
@@ -861,7 +804,6 @@ def impute(
                 manual_construction_col and stage == construct_values
             ):
                 break
-
     return df.join(prior_period_df, [col("prior_period") < col("period")]).select(
         [
             col(k).alias(output_col_mapping[k])
