@@ -36,7 +36,6 @@ from pyspark.sql.functions import ceil as sql_ceil
 from pyspark.sql.functions import col, expr
 from pyspark.sql.functions import floor as sql_floor
 from pyspark.sql.functions import lit, when
-from pyspark.sql.types import DecimalType
 
 
 @dataclass
