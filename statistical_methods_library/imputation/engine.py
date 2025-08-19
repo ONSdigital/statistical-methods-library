@@ -22,6 +22,7 @@ from statistical_methods_library.utilities.periods import (
 from statistical_methods_library.utilities.validation import validate_dataframe
 
 from .ratio_calculators import RatioCalculator, ratio_of_means_construction
+from pyspark.sql import SparkSession
 
 
 class Marker(Enum):
@@ -193,7 +194,7 @@ def impute(
     # --- Validate params ---
     if not isinstance(input_df, DataFrame):
         raise TypeError("Input is not a DataFrame")
-
+    input_df.show()
     link_cols = [forward_link_col, backward_link_col]
     if any(link_cols) and not all(link_cols):
         raise TypeError("Either all or no link columns must be specified")
@@ -345,10 +346,8 @@ def impute(
             allowMissingColumns=True,
         )
 
-    def calculate_ratios():
+    def calculate_ratios(prepared_df):
         # This allows us to return early if we have nothing to do
-        nonlocal prepared_df
-
         ratio_calculators = []
         if "forward" in prepared_df.columns:
             prepared_df = (
@@ -370,7 +369,7 @@ def impute(
             ratio_calculators.append(construction_ratio_calculator)
 
         if not ratio_calculators:
-            return
+            return prepared_df
 
         # Since we're going to join on to the main df filtering here
         # won't cause us to lose grouping as they'll just be filled with
@@ -548,19 +547,19 @@ def impute(
                     ["period", "grouping"],
                 )
             )
+        return prepared_df
 
-    calculate_ratios()
-
+    prepared_df = calculate_ratios(prepared_df.localCheckpoint(eager=False)).localCheckpoint(True)
+    print(prepared_df)
+    print("prepdf")
     # Caching for both imputed and unimputed data.
     imputed_df = None
     null_response_df = None
 
     # --- Impute helper ---
     def impute_helper(
-        df: DataFrame, link_col: str, marker: Marker, direction: bool
+        df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame, link_col: str, marker: Marker, direction: bool
     ) -> DataFrame:
-        nonlocal imputed_df
-        nonlocal null_response_df
         if direction:
             # Forward imputation
             other_period_col = "previous_period"
@@ -579,6 +578,8 @@ def impute(
                 "next_period",
                 "forward",
                 "backward",
+            ).localCheckpoint(
+                eager=True
             )
             # Anything which isn't null is already imputed or a response and thus
             # can be imputed from. Note that in the case of backward imputation
@@ -591,7 +592,7 @@ def impute(
             )
             # Any ref and grouping combos which have no values at all can't be
             # imputed from so we don't care about them here.
-            ref_df = imputed_df.select("ref", "grouping").distinct()
+            ref_df = imputed_df.select("ref", "grouping").distinct().localCheckpoint(eager=True)
             null_response_df = (
                 working_df.filter(col("output").isNull())
                 .drop("output", "marker")
@@ -606,6 +607,10 @@ def impute(
                 "output AS other_output",
                 "grouping AS other_grouping",
             )
+            print("other_df")
+            other_df.show()
+            print("null_response_df")
+            null_response_df.show()
             calculation_df = (
                 null_response_df.join(
                     other_df,
@@ -626,8 +631,8 @@ def impute(
                     "forward",
                     "backward",
                 )
-                .localCheckpoint(eager=False)
-            )
+            ).localCheckpoint(eager=True)
+            print(calculation_df.count())
             # If we've imputed nothing then we've got as far as we can get for
             # this phase.
             if calculation_df.count() == 0:
@@ -635,24 +640,26 @@ def impute(
 
             # Store this set of imputed values in our main set for the next
             # iteration. Use eager checkpoints to help prevent rdd DAG explosion.
-            imputed_df = imputed_df.union(calculation_df).localCheckpoint(eager=True)
+            imputed_df = imputed_df.union(calculation_df)
             # Remove the newly imputed rows from our filtered set.
+            import copy
             null_response_df = null_response_df.join(
-                calculation_df.select("ref", "period", "grouping"),
-                ["ref", "period", "grouping"],
+                calculation_df.select("ref", "period", "grouping").withColumnRenamed("ref", "cref").withColumnRenamed("period", "cperiod").withColumnRenamed("grouping", "cgrouping"),
+                [col("ref") == col("cref"), col("period")==col("cperiod"), col("grouping")==col("cgrouping")],
                 "leftanti",
-            ).localCheckpoint(eager=True)
+            ).drop("cref", "cperiod", "cgrouping").localCheckpoint(eager=True)
+        df=df.localCheckpoint(eager=True)
         # We should now have an output column which is as fully populated as
         # this phase of imputation can manage. As such replace the existing
         # output column with our one. Same goes for the marker column.
         return df.drop("output", "marker").join(
-            imputed_df.select("ref", "period", "grouping", "output", "marker"),
+            imputed_df.select("ref", "period", "grouping", "output", "marker").localCheckpoint(True),
             ["ref", "period", "grouping"],
             "leftouter",
         )
 
     # --- Imputation functions ---
-    def forward_impute_from_response(df: DataFrame) -> DataFrame:
+    def forward_impute_from_response(df: DataFrame, working_df:DataFrame, null_response_df:DataFrame) -> DataFrame:
         if back_data_df:
             # Add the forward imputes from responses from the back data
             df = df.unionByName(
@@ -661,17 +668,15 @@ def impute(
                 ),
                 allowMissingColumns=True,
             )
-        return impute_helper(df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
+        return impute_helper(df, imputed_df, null_response_df, "forward", Marker.FORWARD_IMPUTE_FROM_RESPONSE, True)
 
-    def backward_impute(df: DataFrame) -> DataFrame:
-        return impute_helper(df, "backward", Marker.BACKWARD_IMPUTE, False)
+    def backward_impute(df: DataFrame,imputed_df: DataFrame, null_response_df) -> DataFrame:
+        return impute_helper(df,imputed_df, null_response_df, "backward", Marker.BACKWARD_IMPUTE, False)
 
     # --- Forward impute from manual construction ---
-    def forward_impute_from_manual_construction(df: DataFrame) -> DataFrame:
-        nonlocal imputed_df
-        nonlocal null_response_df
-        imputed_df = None
-        null_response_df = None
+    def forward_impute_from_manual_construction(df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame) -> DataFrame:
+        imputed_df=None
+        null_response_df=None
         if back_data_df:
             # Add the MC and FIMC from the back data
             df = df.unionByName(
@@ -686,11 +691,11 @@ def impute(
             )
 
         return impute_helper(
-            df, "forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
+            df, imputed_df, null_response_df,"forward", Marker.FORWARD_IMPUTE_FROM_MANUAL_CONSTRUCTION, True
         )
 
     # --- Construction functions ---
-    def construct_values(df: DataFrame) -> DataFrame:
+    def construct_values(df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame) -> DataFrame:
         if back_data_df:
             df = df.unionByName(
                 back_data_period_df.filter(
@@ -746,15 +751,13 @@ def impute(
             .drop("existing_output", "constructed_output", "constructed_marker")
         )
 
-    def forward_impute_from_construction(df: DataFrame) -> DataFrame:
+    def forward_impute_from_construction(df: DataFrame, imputed_df: DataFrame, null_response_df: DataFrame) -> DataFrame:
         # We need to recalculate our imputed and null response data frames to
         # account for construction.
-        nonlocal imputed_df
-        nonlocal null_response_df
-        imputed_df = None
-        null_response_df = None
+        imputed_df=None
+        null_response_df=None
         return impute_helper(
-            df, "forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
+            df, imputed_df, null_response_df,"forward", Marker.FORWARD_IMPUTE_FROM_CONSTRUCTION, True
         )
 
     if manual_construction_col:
@@ -797,7 +800,7 @@ def impute(
             # Add the mc data
             df = df.unionByName(manual_construction_df, allowMissingColumns=True)
 
-        df = stage(df).localCheckpoint(eager=False)
+        df = stage(df, imputed_df, null_response_df).localCheckpoint(eager=False)
 
         if df.filter(col("output").isNull()).count() == 0:
             if (not manual_construction_col) or (
