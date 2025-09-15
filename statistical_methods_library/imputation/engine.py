@@ -6,6 +6,7 @@ ratio calculation being handled by provided callables.
 
 For Copyright information, please see LICENCE.
 """
+
 from decimal import Decimal
 from enum import Enum
 from functools import reduce
