@@ -17,7 +17,7 @@ flake8 = "^5.0.4"
 coverage = "^7.2"
 pytest-cov = "^7.0.0"
 pytest-dependency = "^0.6.0"
-pytest-tap = "^3.3"
+pytest-tap = "^3.5"
 flake8-pyproject = "^1.2.3"
 
 [tool.pytest.ini_options]
