@@ -43,7 +43,7 @@ jobs:
           path: junit-${{matrix.python-version}}.xml
           reporter: java-junit
       - name: upload-coverage-report-${{matrix.python-version}}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report-${{matrix.python-version}}-lcov
           path: lcov-${{matrix.python-version}}.info
